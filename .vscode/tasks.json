@@ -1,0 +1,49 @@
+{
+    "tasks": [
+        {
+            "label": "Build pybind",
+            "type": "shell",
+            "command": "c++ -O3 -Wall -shared -std=c++11 -fPIC $(python3 -m pybind11 --includes) ${workspaceFolder}/cpp/pybind/pywrap.cpp -o ${workspaceFolder}/lib/physical_system/cpp_lib$(python3-config --extension-suffix)"
+        },
+        {
+            "label": "Run cpp",
+            "type": "shell",
+            "dependsOn": [
+                "C/C++: g++ build active file"
+            ],
+            "command": "${fileDirname}/../tests/test_solver",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            }
+        },
+        {
+            "type": "cppbuild",
+            "label": "C/C++: g++ build active file",
+            "command": "/usr/bin/g++",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-g",
+                "${fileDirname}/../tests/test_solver.cpp",
+                "-o",
+                "${fileDirname}/../tests/test_solver"
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "compiler: /usr/bin/g++"
+        }
+    ],
+    "version": "2.0.0"
+}

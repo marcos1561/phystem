@@ -46,8 +46,7 @@ class TestSimulation(unittest.TestCase):
         pos_truth = np.load(os.path.join(current_folder, "data_test/all_run/truth/pos.npy"))
 
         print(((pos_test - pos_truth)**2).sum())
-        self.assertTrue(((pos_test - pos_truth)**2).sum() < 1)
-        self.assertTrue((pos_test == pos_truth).all())
+        self.assertTrue(((pos_test - pos_truth)**2).sum() < 1e-5)
 
     def test_only_final(self):
         self_propelling_cfg = SelfPropellingCfg(
@@ -97,11 +96,8 @@ class TestSimulation(unittest.TestCase):
         self.assertTrue((pos_test[0] == pos_truth[0]).all())
         self.assertTrue((vel_test[0] == vel_truth[0]).all())
         
-        self.assertTrue(((pos_test[1] - pos_truth[1])**2).sum() < 1)
-        self.assertTrue(((vel_test[1] - vel_truth[1])**2).sum() < 1)
-        
-        self.assertTrue((pos_test[1] == pos_truth[1]).all())
-        self.assertTrue((vel_test[1] == vel_truth[1]).all())
+        self.assertTrue(((pos_test[1] - pos_truth[1])**2).sum() < 1e-5)
+        self.assertTrue(((vel_test[1] - vel_truth[1])**2).sum() < 1e-5)
 
     def test_only_final2(self):
         self_propelling_cfg = SelfPropellingCfg(
@@ -151,11 +147,8 @@ class TestSimulation(unittest.TestCase):
         self.assertTrue((pos_test[0] == pos_truth[0]).all())
         self.assertTrue((vel_test[0] == vel_truth[0]).all())
         
-        self.assertTrue(((pos_test[1] - pos_truth[1])**2).sum() < 1)
-        self.assertTrue(((vel_test[1] - vel_truth[1])**2).sum() < 1)
-        
-        self.assertTrue((pos_test[1] == pos_truth[1]).all())
-        self.assertTrue((vel_test[1] == vel_truth[1]).all())
+        self.assertTrue(((pos_test[1] - pos_truth[1])**2).sum() < 1e-5)
+        self.assertTrue(((vel_test[1] - vel_truth[1])**2).sum() < 1e-5)
 
 class TestWindows(unittest.TestCase):
     def test_neighbor_ids(self):

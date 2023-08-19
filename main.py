@@ -22,7 +22,8 @@ create_cfg = CreateCfg(
     type = CreateType.SQUARE,
 )
 
-seed = 40028922
+# seed = 40028922
+seed=None
 
 run_type = RunType.REAL_TIME
 

@@ -178,7 +178,8 @@ int main() {
     Solver s = Solver(p, v, self_prop_cfg, size, dt, 10);
     
     for (int i=0; i < 4; i++) {
-        s.update_self_propelling_windows();
+        // s.update_self_propelling_windows();
+        s.update_self_propelling();
         cout << s.propelling_angle[2] << endl;
         cout << s.pos[0][0] << ", " << s.pos[0][1] << endl;
     }

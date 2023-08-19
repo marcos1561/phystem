@@ -61,6 +61,8 @@ public:
     RngManager rng_manager;
     double random_number;
 
+    vector<array<int, 2>> pairs_computed;
+
     vector<array<double, 2>> sum_forces_matrix_debug;    
     //  
 
@@ -205,11 +207,25 @@ public:
     }
 
     void calc_force(int p_id, int other_id) {
+        // Debug
+        // pairs_computed.push_back({p_id, other_id});
+        // pairs_computed.push_back({other_id, p_id});
+        //
+
         auto &other = pos[other_id]; 
         auto &pos_i = pos[p_id]; 
 
         double dx = other[0] - pos_i[0];
         double dy = other[1] - pos_i[1];
+
+        // NOTE: Quando o espaço não for um quadrado, é necessário
+        // usar box_width para o dx e box_height para o dy.         
+        if (abs(dx) > size * 0.5)
+            dx -= copysign(size, dx);
+
+        if (abs(dy) > size * 0.5)
+            dy -= copysign(size, dy);
+
         double dist = sqrt(dx*dx + dy*dy);
 
         if (dist > max_r) {
@@ -244,6 +260,7 @@ public:
     void update_self_propelling_windows() {
         // Debug
         rng_manager.update();
+        // pairs_computed = vector<array<int, 2>>();
         //  
         
         windows_manager.update_window_members();
@@ -315,6 +332,7 @@ public:
     void update_self_propelling() {
         // Debug
         rng_manager.update();
+        pairs_computed = vector<array<int, 2>>();
         //  
         
         for (int i=0; i < n-1; i++) {
