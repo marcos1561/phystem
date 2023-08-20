@@ -36,6 +36,7 @@ class TestSimulation(unittest.TestCase):
             dt = 0.05,
             folder_path=os.path.join(current_folder, "data_test/all_run/test"),
             solver_type=SolverType.CPP,
+            update_type=UpdateType.WINDOWS,
         )
 
         sim = Simulation(create_cfg, self_propelling_cfg, space_cfg, run_cfg, seed)
@@ -77,6 +78,7 @@ class TestSimulation(unittest.TestCase):
             dt = 0.05,
             folder_path=os.path.join(current_folder, "data_test/only_final/test"),
             solver_type=SolverType.CPP,
+            update_type=UpdateType.WINDOWS,
             only_last=True,
         )
 
@@ -128,6 +130,7 @@ class TestSimulation(unittest.TestCase):
             dt = 0.05,
             folder_path=os.path.join(current_folder, "data_test/only_final/test"),
             solver_type=SolverType.CPP,
+            update_type=UpdateType.WINDOWS,
             only_last=True,
         )
 

@@ -10,11 +10,12 @@
 
 using namespace std;
 
-class Solver {
+class SelfPropelling {
 private:
     double size;
     double dt;
 
+    // Self propelling config
     SelfPropellingCfg propelling_cfg;
     double nabla;
     double relaxation_time;
@@ -26,21 +27,11 @@ private:
     double max_attractive_force;
     double r_eq;
     double max_r;
+    //
     
     vector<array<double, 2>> sum_forces_matrix;
     
     WindowsManager windows_manager;
-
-    // Vicsek stuff
-    double alpha;
-    double ro;
-    vector<double> new_angles;
-    vector<array<double, 2>> sum_vel_matrix;
-    
-    double* new_angles_arr;
-    double** sum_vel_matrix_arr;
-    ////
-
 public:
     int n;
 
@@ -49,10 +40,6 @@ public:
     vector<array<double, 2>> propelling_vel;
     vector<double> propelling_angle;
         
-    double** pos_arr;
-    double** vel_arr;
-    vector<vector<double*>> py_pos_arr = vector<vector<double*>>(2);
-    
     vector<vector<double*>> py_pos = vector<vector<double*>>(2);
     vector<vector<double*>> py_vel = vector<vector<double*>>(2);
     vector<vector<double*>> py_propelling_vel = vector<vector<double*>>(2);
@@ -66,7 +53,7 @@ public:
     vector<array<double, 2>> sum_forces_matrix_debug;    
     //  
 
-    Solver(vector<array<double, 2>> &pos0, vector<array<double, 2>> &vel0, 
+    SelfPropelling(vector<array<double, 2>> &pos0, vector<array<double, 2>> &vel0, 
         SelfPropellingCfg propelling_cfg, double size, double dt, int num_col_windows, double seed=-1.) 
     : size(size), dt(dt), propelling_cfg(propelling_cfg), pos(pos0), vel(vel0)
     {
@@ -79,7 +66,6 @@ public:
         
         windows_manager = WindowsManager(&pos, num_col_windows, num_col_windows, size);
 
-        initialize_arrays(pos0, vel0);
         initialize_propelling();
 
         for (size_t i=0; i < pos.size(); i ++) {
@@ -92,16 +78,6 @@ public:
             py_propelling_vel[0].push_back(&propelling_vel[i][0]);
             py_propelling_vel[1].push_back(&propelling_vel[i][1]);
         }        
-
-        for (size_t i=0; i < pos0.size(); i ++) {
-            py_pos_arr[0].push_back(&pos_arr[i][0]);
-            py_pos_arr[1].push_back(&pos_arr[i][1]);
-        }        
-        
-        // Vicsek stuff
-        new_angles = vector<double>(n);
-        sum_vel_matrix = vector<array<double, 2>>(n, {0., 0.});
-        //
 
         // Debug
         rng_manager = RngManager(n);
@@ -133,76 +109,6 @@ public:
             propelling_angle[i] = angle;
             propelling_vel[i][0] = cos(angle);
             propelling_vel[i][1] = sin(angle);
-        }
-    }
-
-    void initialize_arrays(vector<array<double, 2>> &pos_vec, vector<array<double, 2>> &vel_vec) {
-        int num_particles = pos_vec.size();
-
-        double* pos_row_data = new double[2*num_particles];
-        double* vel_row_data = new double[2*num_particles];
-        double* sum_vel_row_data = new double[2*num_particles];
-
-        pos_arr = new double*[num_particles];
-        vel_arr = new double*[num_particles];
-        sum_vel_matrix_arr = new double*[num_particles];
-
-        for (int i=0; i < num_particles; i++) {
-            pos_arr[i] = pos_row_data + 2*i;
-            vel_arr[i] = vel_row_data + 2*i;
-            sum_vel_matrix_arr[i] = sum_vel_row_data + 2*i;
-
-            pos_arr[i][0] = pos_vec[i][0];
-            pos_arr[i][1] = pos_vec[i][1];
-
-            vel_arr[i][0] = vel_vec[i][0];
-            vel_arr[i][1] = vel_vec[i][1];
-            
-            sum_vel_matrix_arr[i][0] = 0;
-            sum_vel_matrix_arr[i][1] = 0;
-        }
-
-        new_angles_arr = new double[num_particles];
-    }
-
-    void update_arr() {
-        for (int i=0; i < n; i++) {
-            for (int j=i; j < n; j++) {
-                double dx = pos_arr[i][0] - pos_arr[j][0];
-                double dy = pos_arr[i][1] - pos_arr[j][1];
-                double dist = sqrt(dx*dx + dy*dy);
-
-                if (dist < ro) {
-                    sum_vel_matrix_arr[i][0] += vel_arr[j][0];
-                    sum_vel_matrix_arr[i][1] += vel_arr[j][1];
-                    
-                    if (j != i) {
-                        sum_vel_matrix_arr[j][0] += vel_arr[i][0];
-                        sum_vel_matrix_arr[j][1] += vel_arr[i][1];
-                    }
-                }
-            }
-        }
-
-        for (int i=0; i < n; i++) {
-            double random_angle = (2. * (double)rand()/(double)RAND_MAX - 1.) * nabla / 2.0;
-            double angle = alpha * atan2(sum_vel_matrix_arr[i][1], sum_vel_matrix_arr[i][0]) + random_angle;  
-
-            vel_arr[i][0] = cos(angle) * vo;
-            vel_arr[i][1] = sin(angle) * vo;
-
-            pos_arr[i][0] += dt * vel_arr[i][0];
-            pos_arr[i][1] += dt * vel_arr[i][1];
-
-            for (int dim = 0; dim < 2; dim ++) {
-                if (pos_arr[i][dim] > size/2)
-                    pos_arr[i][dim] = -size/2;
-                else if (pos_arr[i][dim] < -size/2)
-                    pos_arr[i][dim] = size/2;
-            }
-
-            sum_vel_matrix_arr[i][0] = 0;
-            sum_vel_matrix_arr[i][1] = 0;
         }
     }
 
@@ -257,7 +163,7 @@ public:
         return;
     }
 
-    void update_self_propelling_windows() {
+    void update_windows() {
         // Debug
         rng_manager.update();
         // pairs_computed = vector<array<int, 2>>();
@@ -329,7 +235,7 @@ public:
         }
     }
 
-    void update_self_propelling() {
+    void update_normal() {
         // Debug
         rng_manager.update();
         pairs_computed = vector<array<int, 2>>();
@@ -415,7 +321,54 @@ public:
         }
     }
 
-    void update_second_law() {
+    double mean_vel() {
+        double sum_vel[2] = {0, 0};
+        for (array<double, 2> vel_i: vel) {
+            sum_vel[0] += vel_i[0];
+            sum_vel[1] += vel_i[1];
+        }
+        double speed = sqrt(sum_vel[0]*sum_vel[0] + sum_vel[1]*sum_vel[1]);
+        return speed / n / vo;
+    }
+
+    array<double, 2> mean_vel_vec() {
+        array<double, 2> sum_vel = {0., 0.};
+        for (array<double, 2> vel_i: vel) {
+            sum_vel[0] += vel_i[0];
+            sum_vel[1] += vel_i[1];
+        }
+        sum_vel[0] /= (double)n;
+        sum_vel[1] /= (double)n;
+        return sum_vel;
+    }
+};
+
+class Vicsek {
+private:
+    double nabla;
+    double alpha;
+    double ro;
+    double vo;
+    vector<double> new_angles;
+    vector<array<double, 2>> sum_vel_matrix;
+    
+    double size;
+    double dt;
+    
+    int n;
+public:
+    vector<array<double, 2>> pos;
+    vector<array<double, 2>> vel;
+    
+    Vicsek(vector<array<double, 2>> pos0, vector<array<double, 2>> vel0, double alpha, double nabla,
+        double ro, double vo, double size, double dt) 
+    : nabla(nabla), alpha(alpha), ro(ro), vo(vo), size(size), dt(dt), pos(pos0), vel(vel0)
+    {
+        sum_vel_matrix = vector<array<double, 2>>(n, {0., 0.});
+        new_angles = vector<double>(n, 0.);
+    }
+
+    void update_third_law() {
         for (int i=0; i < n; i++) {
             array<double, 2> &pos_i = pos[i];
 
@@ -503,26 +456,5 @@ public:
                     pos[i][dim] = size/2;
             }
         }
-    }
-
-    double mean_vel() {
-        double sum_vel[2] = {0, 0};
-        for (array<double, 2> vel_i: vel) {
-            sum_vel[0] += vel_i[0];
-            sum_vel[1] += vel_i[1];
-        }
-        double speed = sqrt(sum_vel[0]*sum_vel[0] + sum_vel[1]*sum_vel[1]);
-        return speed / n / vo;
-    }
-
-    array<double, 2> mean_vel_vec() {
-        array<double, 2> sum_vel = {0., 0.};
-        for (array<double, 2> vel_i: vel) {
-            sum_vel[0] += vel_i[0];
-            sum_vel[1] += vel_i[1];
-        }
-        sum_vel[0] /= (double)n;
-        sum_vel[1] /= (double)n;
-        return sum_vel;
     }
 };

@@ -34,7 +34,7 @@ class Simulation:
             raise Exception("Python solver ainda não implementado.")
         elif self.run_cfg.solver_type == SolverType.CPP:
             self.solver = CppSolver(self.particles.pos, self.particles.vel, self.self_propelling_cfg,
-                self.space_cfg.size, self.run_cfg.dt, self.rng_seed)
+                self.space_cfg.size, self.run_cfg.dt, self.run_cfg.update_type, self.rng_seed)
             self.particles.pos = self.solver.cpp_solver.py_pos
 
     def run(self):

@@ -31,7 +31,8 @@ real_time_cfg = RealTimeCfg(
     dt = 0.05,
     num_steps_frame = 10,
     fps = 60,
-    solver_type = SolverType.CPP
+    solver_type = SolverType.CPP,
+    update_type = UpdateType.WINDOWS,
 )
 
 collect_data_cfg = CollectDataCfg(
@@ -43,12 +44,14 @@ collect_data_cfg = CollectDataCfg(
 )
 
 save_cfg = SaveCfg(
-    path = "videos/teste.mp4",
-    speed=30,
-    fps=60, 
-    dt=0.1,
+    path = "data/teste_teste.mp4",
+    speed=5,
+    fps=30, 
+    dt=0.05,
     duration=5,
-    tf=None
+    tf=None,
+    solver_type=SolverType.CPP,
+    update_type=UpdateType.WINDOWS,
 )
 
 run_type_to_cfg = {RunType.COLLECT_DATA: collect_data_cfg, RunType.REAL_TIME: real_time_cfg, RunType.SAVE_VIDEO: save_cfg}

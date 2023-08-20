@@ -77,7 +77,7 @@ public:
             if (col_pos == num_cols)
                 col_pos -= 1;
 
-            int id = capacity[row_pos][col_pos];
+            size_t id = capacity[row_pos][col_pos];
             
             if (id < windows[row_pos][col_pos].size()) {
                 windows[row_pos][col_pos][id] = p_id;

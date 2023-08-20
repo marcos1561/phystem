@@ -40,36 +40,25 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def_readonly("windows_ids", &WindowsManager::windows_ids)
         .def_readonly("window_neighbor", &WindowsManager::window_neighbor)
         ;
-    
-    py::class_<Solver>(m, "Solver")
+
+    py::class_<SelfPropelling>(m, "SelfPropelling")
         .def(py::init<vector<array<double, 2>>&, vector<array<double, 2>>&, SelfPropellingCfgPy, 
             double, double, int, double>(), py::arg("pos0"), py::arg("vel0"), py::arg("propelling_cfg"), 
             py::arg("size"), py::arg("dt"), py::arg("num_windows"), py::arg("seed")=-1.)
-        .def("update_self_propelling", &Solver::update_self_propelling, py::call_guard<py::gil_scoped_release>())
-        .def("update_self_propelling_windows", &Solver::update_self_propelling_windows, py::call_guard<py::gil_scoped_release>())
-        .def("update_basic", &Solver::update_basic, py::call_guard<py::gil_scoped_release>())
-        .def("update_second_law", &Solver::update_second_law, py::call_guard<py::gil_scoped_release>())
-        .def("update_arr", &Solver::update_arr, py::call_guard<py::gil_scoped_release>())
-        .def("mean_vel", &Solver::mean_vel)
-        .def("mean_vel_vec", &Solver::mean_vel_vec)
-        .def_readonly("pos", &Solver::pos, byref)
-        .def_readonly("vel", &Solver::vel, byref)
-        .def_readonly("propelling_vel", &Solver::propelling_vel, byref)
-        .def_readonly("propelling_angle", &Solver::propelling_angle, byref)
-        .def_readonly("py_pos", &Solver::py_pos, byref)
-        .def_readonly("py_vel", &Solver::py_vel, byref)
-        .def_readonly("py_propelling_vel", &Solver::py_propelling_vel, byref)
-        .def_readonly("py_pos_arr", &Solver::py_pos_arr, byref)
-        .def_readonly("rng_manager", &Solver::rng_manager, byref)
-        .def_readonly("random_number", &Solver::random_number, byref)
-        .def_readonly("sum_forces_matrix_debug", &Solver::sum_forces_matrix_debug, byref)
-        .def_readonly("n", &Solver::n, byref)
+        .def("update_normal", &SelfPropelling::update_normal, py::call_guard<py::gil_scoped_release>())
+        .def("update_windows", &SelfPropelling::update_windows, py::call_guard<py::gil_scoped_release>())
+        .def("mean_vel", &SelfPropelling::mean_vel)
+        .def("mean_vel_vec", &SelfPropelling::mean_vel_vec)
+        .def_readonly("pos", &SelfPropelling::pos, byref)
+        .def_readonly("vel", &SelfPropelling::vel, byref)
+        .def_readonly("propelling_vel", &SelfPropelling::propelling_vel, byref)
+        .def_readonly("propelling_angle", &SelfPropelling::propelling_angle, byref)
+        .def_readonly("py_pos", &SelfPropelling::py_pos, byref)
+        .def_readonly("py_vel", &SelfPropelling::py_vel, byref)
+        .def_readonly("py_propelling_vel", &SelfPropelling::py_propelling_vel, byref)
+        .def_readonly("rng_manager", &SelfPropelling::rng_manager, byref)
+        .def_readonly("random_number", &SelfPropelling::random_number, byref)
+        .def_readonly("sum_forces_matrix_debug", &SelfPropelling::sum_forces_matrix_debug, byref)
+        .def_readonly("n", &SelfPropelling::n, byref)
         ;
 }
-
-// PYBIND11_MODULE(example, m) {
-//     py::class_<Test>(m, "Test")
-//     .def(py::init<vector<array<double, 2>>>())  
-//     .def_readonly("pos", &Test::pos, byref)
-//     ;
-// }

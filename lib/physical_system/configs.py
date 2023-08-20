@@ -13,6 +13,10 @@ class SolverType(Enum):
     PYTHON = auto()
     CPP = auto()
 
+class UpdateType(Enum):
+    NORMAL = auto()
+    WINDOWS = auto()
+
 class SelfPropellingCfg:
     def __init__(self, relaxation_time, mobility, max_repulsive_force, max_attractive_force,
         r_eq,  max_r, vo, nabla) -> None:
@@ -59,29 +63,33 @@ class SpaceCfg:
 
 class RunCfg:
     id: RunType
-    def __init__(self, dt: float, solver_type = SolverType.PYTHON) -> None:
+    def __init__(self, dt: float, solver_type = SolverType.PYTHON, update_type = UpdateType.NORMAL) -> None:
         self.dt = dt
-        self.solver_type = solver_type 
+        self.solver_type = solver_type
+        self.update_type = update_type
 
 class CollectDataCfg(RunCfg):
     id = RunType.COLLECT_DATA
-    def __init__(self, tf: float, dt: float, folder_path: str, solver_type: SolverType, only_last=False) -> None:
-        super().__init__(dt, solver_type)
+    def __init__(self, tf: float, dt: float, folder_path: str, solver_type: SolverType, 
+        update_type = UpdateType.NORMAL, only_last=False) -> None:
+        super().__init__(dt, solver_type, update_type)
         self.tf = tf
         self.folder_path = folder_path
         self.only_last = only_last
 
 class RealTimeCfg(RunCfg):
     id = RunType.REAL_TIME
-    def __init__(self, dt: float, num_steps_frame: int, fps: int, solver_type: SolverType) -> None:
-        super().__init__(dt, solver_type)
+    def __init__(self, dt: float, num_steps_frame: int, fps: int, solver_type: SolverType,
+        update_type = UpdateType.NORMAL) -> None:
+        super().__init__(dt, solver_type, update_type)
         self.num_steps_frame = num_steps_frame
         self.fps = fps
 
 class SaveCfg(RunCfg):
     id = RunType.SAVE_VIDEO
     def __init__(self, path:str, speed: float, fps: int, dt: float, 
-        duration: float = None, tf: float = None) -> None:  
+        duration: float = None, tf: float = None, solver_type=SolverType.CPP, update_type=UpdateType.NORMAL) -> None:  
+        super().__init__(dt, solver_type, update_type)
         if duration == None and tf == None:
             raise ValueError("Um dos parâmetros `duration` ou `tf` deve ser passado.")
         self.speed = speed

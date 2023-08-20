@@ -174,12 +174,12 @@ int main() {
 
     // test_windows_neighbors(p);
 
-    // Solver s = Solver(p, v, self_prop_cfg, size, dt);
-    Solver s = Solver(p, v, self_prop_cfg, size, dt, 10);
+    // SelfPropelling s = SelfPropelling(p, v, self_prop_cfg, size, dt);
+    SelfPropelling s = SelfPropelling(p, v, self_prop_cfg, size, dt, 10);
     
     for (int i=0; i < 4; i++) {
         // s.update_self_propelling_windows();
-        s.update_self_propelling();
+        s.update_normal();
         cout << s.propelling_angle[2] << endl;
         cout << s.pos[0][0] << ", " << s.pos[0][1] << endl;
     }

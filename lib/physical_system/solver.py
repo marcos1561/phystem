@@ -1,21 +1,27 @@
 import numpy as np
 from math import atan2
 
-from physical_system.configs import SelfPropellingCfg
+from physical_system.configs import SelfPropellingCfg, UpdateType
 import physical_system.cpp_lib as cpp_lib
 
 class CppSolver:
     def __init__(self, pos: np.ndarray, vel: np.ndarray, self_prop_cfg: SelfPropellingCfg, 
-        size: float, dt: float, rng_seed=None) -> None:
-        pos = cpp_lib.PosVec(pos.T)
-        vel = cpp_lib.PosVec(vel.T)
-
-        self_prop_cfg = cpp_lib.SelfPropellingCfg(self_prop_cfg.cpp_constructor_args())
-
+        size: float, dt: float, update_type: UpdateType, rng_seed=None) -> None:
         if rng_seed is None:
             rng_seed = -1
 
-        self.cpp_solver = cpp_lib.Solver(pos, vel, self_prop_cfg, size, dt, 10, rng_seed)
+        self_prop_cfg = cpp_lib.SelfPropellingCfg(self_prop_cfg.cpp_constructor_args())
+        
+        pos = cpp_lib.PosVec(pos.T)
+        vel = cpp_lib.PosVec(vel.T)
+
+        self.cpp_solver = cpp_lib.SelfPropelling(pos, vel, self_prop_cfg, size, dt, 10, rng_seed)
+        update_func = {
+            UpdateType.NORMAL: self.cpp_solver.update_normal,
+            UpdateType.WINDOWS: self.cpp_solver.update_windows,
+        }
+        self.update_func = update_func[update_type]
+
         self.time = 0
         self.dt = dt
 
@@ -47,11 +53,7 @@ class CppSolver:
         return self.cpp_solver.mean_vel_vec()
 
     def update(self):
-        # self.cpp_solver.update1()
-        # self.cpp_solver.update2()
-        # self.cpp_solver.update_arr()
-        # self.cpp_solver.update_self_propelling()
-        self.cpp_solver.update_self_propelling_windows()
+        self.update_func()
         self.time += self.dt
 
     def mean_vel(self):
