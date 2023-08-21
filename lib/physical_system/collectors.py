@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-from physical_system.solver import VicsekSolver, CppSolver
+from physical_system.solver import CppSolver
 
 class State:
     file_names = ("pos.npy", "vel.npy", "propelling_vel.npy", "propelling_angle.npy", "rng.npy", "time.npy")
@@ -57,8 +57,8 @@ class State:
         return data_list
 
 class MeanVel:
-    def __init__(self, solver: VicsekSolver, tf: float, num_points: int, path: str) -> None:
-        freq = int(tf/num_points)
+    def __init__(self, solver: CppSolver, tf: float, dt: float, num_points: int, path: str) -> None:
+        freq = int((tf/dt)/num_points)
         if freq == 0:
             freq = 1
         self.freq = freq
@@ -68,6 +68,8 @@ class MeanVel:
         self.data_count = 0
         self.has_space = True
 
+        self.num_points = num_points
+
         self.path = path
 
     def collect(self, count: int):
@@ -76,7 +78,7 @@ class MeanVel:
             self.data[1, self.data_count] = self.solver.time
             self.data_count += 1
             
-            if self.data_count >= self.data.size:
+            if self.data_count >= self.num_points:
                 self.has_space = False
 
     def save(self):

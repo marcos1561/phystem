@@ -58,6 +58,7 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def_readonly("py_propelling_vel", &SelfPropelling::py_propelling_vel, byref)
         .def_readonly("rng_manager", &SelfPropelling::rng_manager, byref)
         .def_readonly("random_number", &SelfPropelling::random_number, byref)
+        .def_readonly("superposition_count", &SelfPropelling::superposition_count, byref)
         .def_readonly("sum_forces_matrix_debug", &SelfPropelling::sum_forces_matrix_debug, byref)
         .def_readonly("n", &SelfPropelling::n, byref)
         ;

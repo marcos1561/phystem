@@ -63,6 +63,8 @@ class MeanVelGraph:
 
         self.vel_vec.set_UVC(*self.solver.mean_vel_vec())
 
+    
+
 class Info:
     def __init__(self, ax: Axes, solver: VicsekSolver, time_it: TimeIt, 
         self_propelling_cfg: SelfPropellingCfg, create_cfg: CreateCfg, space_cfg: SpaceCfg) -> None:

@@ -48,8 +48,44 @@ class Simulation:
         from metcompb import progress
         run_cfg: CollectDataCfg = self.run_cfg
 
-        prog = progress.Continuos(self.run_cfg.tf)
+        num_points = 1000
+        nabla_range = np.linspace(0, 1, 4)
+        nabla_range = np.array([0])
+        
+        prog = progress.Continuos(nabla_range.max())
+        
+        time_data = None
+        mean_vel_data = np.zeros((nabla_range.size, num_points))
+        for id, nabla in enumerate(nabla_range):
+            self.self_propelling_cfg.nabla = nabla
+            self.init_sim()
 
+            collector = collectors.MeanVel(
+                self.solver, run_cfg.tf, run_cfg.dt,
+                num_points=num_points, path=run_cfg.folder_path,
+            )
+
+            count = 0
+            while self.solver.time < run_cfg.tf:
+                self.solver.update()
+                collector.collect(count)
+                
+                count += 1
+            
+            prog.update(nabla)
+
+            mean_vel_data[id] = collector.data[0]     
+            time_data = collector.data[1]     
+        
+        import os
+        folder_path = "data/self_propelling/nabla"
+        np.save(os.path.join(folder_path, "mean_vel.npy"), mean_vel_data)
+        np.save(os.path.join(folder_path, "nabla.npy"), nabla_range)
+        np.save(os.path.join(folder_path, "time.npy"), time_data)
+
+        return 
+
+        prog = progress.Continuos(self.run_cfg.tf)
         if not run_cfg.only_last:
             state_collector = collectors.State(
                 self.solver, run_cfg.folder_path, 
@@ -122,7 +158,6 @@ class Simulation:
             info_graph.update()
             particles_graph.update()
             mean_vel_graph.update()
-            fig.canvas.draw_idle()
 
         if self.run_cfg.id is RunType.SAVE_VIDEO:
             self.run_cfg: SaveCfg

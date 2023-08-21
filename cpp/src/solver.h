@@ -47,6 +47,7 @@ public:
     // Debug
     RngManager rng_manager;
     double random_number;
+    int superposition_count;
 
     vector<array<int, 2>> pairs_computed;
 
@@ -139,6 +140,10 @@ public:
         }
 
         if (dist < 1e-6) {
+            // Debug
+            superposition_count += 1;
+            //
+
             sum_forces_matrix[p_id][0] += propelling_cfg.max_repulsive_force;
             sum_forces_matrix[p_id][1] += 0;
 
@@ -167,6 +172,8 @@ public:
         // Debug
         rng_manager.update();
         // pairs_computed = vector<array<int, 2>>();
+        
+        superposition_count = 0;
         //  
         
         windows_manager.update_window_members();
@@ -205,7 +212,8 @@ public:
             random_number = (double)rng_manager.get_random_num(i);
             //
 
-            double random_angle = (2. * random_number/(double)RAND_MAX - 1.) * nabla / 2.0;
+            double noise = 1. / (2. * sqrt(dt)) * (2. * random_number/(double)RAND_MAX - 1.);
+            double random_angle = noise * nabla;
             double speed = sqrt(vel[i][0]*vel[i][0] + vel[i][1]*vel[i][1]);
             double cross_prod = propelling_vel[i][0] * vel[i][1]/speed - propelling_vel[i][1] * vel[i][0]/speed;
             double angle_derivate = 1.f / relaxation_time * asin(cross_prod) + random_angle;  
@@ -239,6 +247,8 @@ public:
         // Debug
         rng_manager.update();
         pairs_computed = vector<array<int, 2>>();
+        
+        superposition_count = 0;
         //  
         
         for (int i=0; i < n-1; i++) {
@@ -324,11 +334,16 @@ public:
     double mean_vel() {
         double sum_vel[2] = {0, 0};
         for (array<double, 2> vel_i: vel) {
-            sum_vel[0] += vel_i[0];
-            sum_vel[1] += vel_i[1];
+            double speed = sqrt(vel_i[0]*vel_i[0] + vel_i[1]*vel_i[1]);
+            
+            if (speed == 0)
+                continue;
+
+            sum_vel[0] += vel_i[0]/speed;
+            sum_vel[1] += vel_i[1]/speed;
         }
-        double speed = sqrt(sum_vel[0]*sum_vel[0] + sum_vel[1]*sum_vel[1]);
-        return speed / n / vo;
+        double speed_total = sqrt(sum_vel[0]*sum_vel[0] + sum_vel[1]*sum_vel[1]);
+        return speed_total / n;
     }
 
     array<double, 2> mean_vel_vec() {
