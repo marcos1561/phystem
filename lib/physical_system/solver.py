@@ -34,6 +34,10 @@ class CppSolver:
         return self.cpp_solver.py_pos
     
     @property
+    def sum_forces_matrix_debug(self):
+        return self.cpp_solver.sum_forces_matrix_debug
+    
+    @property
     def vel(self):
         return self.cpp_solver.py_vel
     

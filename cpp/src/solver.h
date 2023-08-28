@@ -349,8 +349,12 @@ public:
     array<double, 2> mean_vel_vec() {
         array<double, 2> sum_vel = {0., 0.};
         for (array<double, 2> vel_i: vel) {
-            sum_vel[0] += vel_i[0];
-            sum_vel[1] += vel_i[1];
+            double speed = sqrt(vel_i[0]*vel_i[0] + vel_i[1]*vel_i[1]);
+            if (speed == 0)
+                continue;
+
+            sum_vel[0] += vel_i[0]/speed;
+            sum_vel[1] += vel_i[1]/speed;
         }
         sum_vel[0] /= (double)n;
         sum_vel[1] /= (double)n;

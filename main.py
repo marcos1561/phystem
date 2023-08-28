@@ -12,8 +12,9 @@ self_propelling_cfg = SelfPropellingCfg(
     max_r = 1.,
 )
 
+
 space_cfg = SpaceCfg(
-    size = 40.824829,
+    size = 40.82482904,
 )
 
 create_cfg = CreateCfg(
@@ -25,22 +26,35 @@ create_cfg = CreateCfg(
 # seed = 40028922
 seed=None
 
-run_type = RunType.REAL_TIME
+run_type = RunType.SAVED_DATA
 
 real_time_cfg = RealTimeCfg(
-    dt = 0.05,
-    num_steps_frame = 20,
+    dt = 0.005,
+    num_steps_frame = 1,
     fps = 60,
     solver_type = SolverType.CPP,
-    update_type = UpdateType.NORMAL,
+    update_type = UpdateType.WINDOWS,
+    graph_cfg = GraphCfg(
+        show_circles=False),
+)
+
+saved_data_cfg = SavedDataCfg(
+    dt = 0.005,
+    num_steps_frame = 1,
+    fps = 60,
+    solver_type = SolverType.CPP,
+    update_type = UpdateType.WINDOWS,
+    graph_cfg = GraphCfg(
+        show_circles=False),
+    frequency=10,
 )
 
 collect_data_cfg = CollectDataCfg(
     tf = 1000,
-    dt = 0.05,
-    folder_path="data_test/only_final/truth",
+    dt = 0.005,
+    folder_path="data/self_propelling/teste",
     solver_type=SolverType.CPP,
-    update_type=UpdateType.NORMAL,
+    update_type=UpdateType.WINDOWS,
     only_last=False,
 )
 
@@ -55,6 +69,7 @@ save_cfg = SaveCfg(
     update_type=UpdateType.WINDOWS,
 )
 
-run_type_to_cfg = {RunType.COLLECT_DATA: collect_data_cfg, RunType.REAL_TIME: real_time_cfg, RunType.SAVE_VIDEO: save_cfg}
+run_type_to_cfg = {RunType.COLLECT_DATA: collect_data_cfg, RunType.REAL_TIME: real_time_cfg, 
+    RunType.SAVE_VIDEO: save_cfg, RunType.SAVED_DATA: saved_data_cfg}
 sim = Simulation(create_cfg, self_propelling_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type], rng_seed=seed)
 sim.run()

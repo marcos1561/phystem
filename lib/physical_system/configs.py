@@ -8,6 +8,7 @@ class RunType(Flag):
     COLLECT_DATA = auto()
     REAL_TIME = auto()
     SAVE_VIDEO = auto()
+    SAVED_DATA = auto()
 
 class SolverType(Enum):
     PYTHON = auto()
@@ -61,6 +62,10 @@ class SpaceCfg:
     def __init__(self, size:float) -> None:
         self.size = size
 
+class GraphCfg:
+    def __init__(self, show_circles=False) -> None:
+        self.show_circles = show_circles
+
 class RunCfg:
     id: RunType
     def __init__(self, dt: float, solver_type = SolverType.PYTHON, update_type = UpdateType.NORMAL) -> None:
@@ -80,10 +85,19 @@ class CollectDataCfg(RunCfg):
 class RealTimeCfg(RunCfg):
     id = RunType.REAL_TIME
     def __init__(self, dt: float, num_steps_frame: int, fps: int, solver_type: SolverType,
-        update_type = UpdateType.NORMAL) -> None:
+        update_type = UpdateType.NORMAL, graph_cfg = GraphCfg()) -> None:
         super().__init__(dt, solver_type, update_type)
         self.num_steps_frame = num_steps_frame
         self.fps = fps
+        self.graph_cfg = graph_cfg
+
+class SavedDataCfg(RealTimeCfg):
+    id = RunType.SAVED_DATA
+
+    def __init__(self, dt: float, num_steps_frame: int, fps: int, solver_type: SolverType, 
+    update_type=UpdateType.NORMAL, graph_cfg=GraphCfg(), frequency=0) -> None:
+        super().__init__(dt, num_steps_frame, fps, solver_type, update_type, graph_cfg)
+        self.frequency = frequency
 
 class SaveCfg(RunCfg):
     id = RunType.SAVE_VIDEO
