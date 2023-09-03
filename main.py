@@ -4,7 +4,7 @@ from physical_system.configs import *
 self_propelling_cfg = SelfPropellingCfg(
     mobility = 1.,
     relaxation_time = 1.,
-    nabla = 0,
+    nabla = 3,
     vo = 1.,
     max_repulsive_force = 30.,
     max_attractive_force = 0.75,
@@ -14,7 +14,9 @@ self_propelling_cfg = SelfPropellingCfg(
 
 
 space_cfg = SpaceCfg(
-    size = 40.82482904,
+    # size = 18.2574185,
+    # size = 57.73502691, # 0.3
+    size = 40.824829046, # 0.6
 )
 
 create_cfg = CreateCfg(
@@ -26,11 +28,11 @@ create_cfg = CreateCfg(
 # seed = 40028922
 seed=None
 
-run_type = RunType.SAVED_DATA
+run_type = RunType.COLLECT_DATA
 
 real_time_cfg = RealTimeCfg(
-    dt = 0.005,
-    num_steps_frame = 1,
+    dt = 0.01,
+    num_steps_frame = 100,
     fps = 60,
     solver_type = SolverType.CPP,
     update_type = UpdateType.WINDOWS,
@@ -39,7 +41,7 @@ real_time_cfg = RealTimeCfg(
 )
 
 saved_data_cfg = SavedDataCfg(
-    dt = 0.005,
+    dt = 0.05,
     num_steps_frame = 1,
     fps = 60,
     solver_type = SolverType.CPP,
@@ -50,8 +52,8 @@ saved_data_cfg = SavedDataCfg(
 )
 
 collect_data_cfg = CollectDataCfg(
-    tf = 1000,
-    dt = 0.005,
+    tf = 400,
+    dt = 0.01,
     folder_path="data/self_propelling/teste",
     solver_type=SolverType.CPP,
     update_type=UpdateType.WINDOWS,

@@ -92,7 +92,7 @@ public:
         vo = propelling_cfg.vo;
         nabla = propelling_cfg.nabla;
 
-        max_repulsive_force =  propelling_cfg.max_attractive_force;
+        max_repulsive_force =  propelling_cfg.max_repulsive_force;
         max_attractive_force =  propelling_cfg.max_attractive_force;
         r_eq =  propelling_cfg.r_eq;
         max_r =  propelling_cfg.max_r;
@@ -213,6 +213,8 @@ public:
             //
 
             double noise = 1. / (2. * sqrt(dt)) * (2. * random_number/(double)RAND_MAX - 1.);
+            // double noise = 1. / (2. * sqrt(0.05)) * (2. * random_number/(double)RAND_MAX - 1.);
+            
             double random_angle = noise * nabla;
             double speed = sqrt(vel[i][0]*vel[i][0] + vel[i][1]*vel[i][1]);
             double cross_prod = propelling_vel[i][0] * vel[i][1]/speed - propelling_vel[i][1] * vel[i][0]/speed;
@@ -298,7 +300,8 @@ public:
             random_number = (double)rng_manager.get_random_num(i);
             //
 
-            double random_angle = (2. * random_number/(double)RAND_MAX - 1.) * nabla / 2.0;
+            double noise = 1. / (2. * sqrt(dt)) * (2. * random_number/(double)RAND_MAX - 1.);
+            double random_angle = noise * nabla;
             double speed = sqrt(vel[i][0]*vel[i][0] + vel[i][1]*vel[i][1]);
             double cross_prod = propelling_vel[i][0] * vel[i][1]/speed - propelling_vel[i][1] * vel[i][0]/speed;
             double angle_derivate = 1.f / relaxation_time * asin(cross_prod) + random_angle;  

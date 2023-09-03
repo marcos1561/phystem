@@ -109,6 +109,6 @@ def generate_final_run_data_2():
         sim = Simulation(create_cfg, self_propelling_cfg, space_cfg, run_cfg, seed)
         sim.run()
 
-# generate_total_run_data()
-# generate_final_run_data_1()
-# generate_final_run_data_2()
+generate_total_run_data()
+generate_final_run_data_1()
+generate_final_run_data_2()

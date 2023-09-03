@@ -7,8 +7,7 @@ class State:
     file_names = ("pos.npy", "vel.npy", "propelling_vel.npy", "propelling_angle.npy", 
         "sum_forces_matrix.npy" "rng.npy", "time.npy")
 
-    def __init__(self, solver: CppSolver, path: str, to=0.0, tf: float=None, 
-        dt: float=None, num_points:int=None) -> None:
+    def __init__(self, solver: CppSolver, path: str, tf: float, dt: float, to=0.0, num_points:int=None) -> None:
         if num_points is None:
             if tf is None or dt is None:
                 raise ValueError("Como 'num_points = None', 'tf' e 'dt' devem ser passados.")

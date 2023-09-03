@@ -15,7 +15,7 @@ class CppSolver:
         pos = cpp_lib.PosVec(pos.T)
         vel = cpp_lib.PosVec(vel.T)
 
-        self.cpp_solver = cpp_lib.SelfPropelling(pos, vel, self_prop_cfg, size, dt, 10, rng_seed)
+        self.cpp_solver = cpp_lib.SelfPropelling(pos, vel, self_prop_cfg, size, dt, 20, rng_seed)
         update_func = {
             UpdateType.NORMAL: self.cpp_solver.update_normal,
             UpdateType.WINDOWS: self.cpp_solver.update_windows,

@@ -152,76 +152,72 @@ class Simulation:
         from metcompb import progress
         run_cfg: CollectDataCfg = self.run_cfg
 
-        # num_points = 1000
-        # nabla_range = np.linspace(0, 1, 20)
-        # nabla_range = np.array([0])
+        num_points = 1000
+        nabla_range = np.linspace(0, 3, 20)
         
-        # prog = progress.Continuos(nabla_range.max())
+        prog = progress.Continuos(nabla_range.max())
         
-        # time_data = None
-        # mean_vel_data = np.zeros((nabla_range.size, num_points))
-        # for id, nabla in enumerate(nabla_range):
-        #     self.self_propelling_cfg.nabla = nabla
-        #     self.init_sim()
+        mean_vel_data = np.zeros((nabla_range.size, num_points))
+        for id, nabla in enumerate(nabla_range):
+            self.self_propelling_cfg.nabla = nabla
+            self.init_sim()
 
-        #     collector = collectors.MeanVel(
-        #         self.solver, run_cfg.tf, run_cfg.dt,
-        #         num_points=num_points, path=run_cfg.folder_path,
-        #     )
-
-        #     count = 0
-        #     while self.solver.time < run_cfg.tf:
-        #         self.solver.update()
-        #         collector.collect(count)
-        #         count += 1
-            
-        #     prog.update(nabla)
-
-        #     mean_vel_data[id] = collector.data[0]     
-        #     time_data = collector.data[1]     
-        
-        # import os
-        # folder_path = "data/self_propelling/nabla"
-        # np.save(os.path.join(folder_path, "mean_vel.npy"), mean_vel_data)
-        # np.save(os.path.join(folder_path, "nabla.npy"), nabla_range)
-        # np.save(os.path.join(folder_path, "time.npy"), time_data)
-
-        # return 
-
-        prog = progress.Continuos(self.run_cfg.tf)
-        if not run_cfg.only_last:
-            # state_collector = collectors.State(
-            #     self.solver, run_cfg.folder_path, 
-            #     to=100, tf=300, dt=run_cfg.dt
-            # )
-            state_collector = collectors.State(
-                self.solver, run_cfg.folder_path, 
-                dt=run_cfg.dt, tf=run_cfg.tf, num_points=1000,
+            collector = collectors.MeanVel(
+                self.solver, run_cfg.tf, run_cfg.dt,
+                num_points=num_points, path=run_cfg.folder_path,
             )
-            
-            state_collector.collect(0)
+
             count = 0
             while self.solver.time < run_cfg.tf:
                 self.solver.update()
-                state_collector.collect(count)
-                
-                prog.update(self.solver.time)
+                collector.collect(count)
                 count += 1
             
-            state_collector.save()
-        else:
-            state_collector = collectors.State(
-                self.solver, run_cfg.folder_path, 
-                num_points=2,
-            )
+            prog.update(nabla)
+
+            mean_vel_data[id] = collector.data[0]     
+            time_data = collector.data[1]     
+        
+        import os
+        folder_path = "data/self_propelling/nabla_0-01"
+        np.save(os.path.join(folder_path, "mean_vel.npy"), mean_vel_data)
+        np.save(os.path.join(folder_path, "nabla.npy"), nabla_range)
+        np.save(os.path.join(folder_path, "time.npy"), time_data)
+
+        # prog = progress.Continuos(self.run_cfg.tf)
+        # if not run_cfg.only_last:
+        #     # state_collector = collectors.State(
+        #     #     self.solver, run_cfg.folder_path, 
+        #     #     to=100, tf=300, dt=run_cfg.dt
+        #     # )
+        #     state_collector = collectors.State(
+        #         self.solver, run_cfg.folder_path, 
+        #         dt=run_cfg.dt, tf=run_cfg.tf, num_points=1000,
+        #     )
             
-            state_collector.collect(0)
-            while self.solver.time < run_cfg.tf:
-                self.solver.update()
-                prog.update(self.solver.time)
+        #     state_collector.collect(0)
+        #     count = 0
+        #     while self.solver.time < run_cfg.tf:
+        #         self.solver.update()
+        #         state_collector.collect(count)
+                
+        #         prog.update(self.solver.time)
+        #         count += 1
             
-            state_collector.collect(1)
-            state_collector.save()
+        #     state_collector.save()
+        # else:
+        #     state_collector = collectors.State(
+        #         self.solver, run_cfg.folder_path, 
+        #         tf=0, dt=self.run_cfg.dt, num_points=2,
+        #     )
+            
+        #     state_collector.collect(0)
+        #     while self.solver.time < run_cfg.tf:
+        #         self.solver.update()
+        #         prog.update(self.solver.time)
+            
+        #     state_collector.collect(1)
+        #     state_collector.save()
 
     def run_real_time(self):
         '''
