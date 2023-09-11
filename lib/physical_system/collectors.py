@@ -1,13 +1,28 @@
 import numpy as np
-import os
+import os, yaml
 
 from physical_system.solver import CppSolver
 
-class State:
+class Collector:
+    def __init__(self, path: str, configs: list) -> None:
+        self.configs = configs
+        self.path = path
+
+    def save(self):
+        config_path = os.path.join(self.path, "config.yaml")
+        with open(config_path, "w") as f:
+            yaml.dump(self.configs, f)
+
+class State(Collector):
     file_names = ("pos.npy", "vel.npy", "propelling_vel.npy", "propelling_angle.npy", 
         "sum_forces_matrix.npy" "rng.npy", "time.npy")
 
-    def __init__(self, solver: CppSolver, path: str, tf: float, dt: float, to=0.0, num_points:int=None) -> None:
+    def __init__(self, solver: CppSolver, path: str, configs: list, tf: float, dt: float, to=0.0, 
+        num_points:int=None) -> None:
+        super().__init__(path, configs)
+
+        collect_all_steps = num_points is None
+
         if num_points is None:
             if tf is None or dt is None:
                 raise ValueError("Como 'num_points = None', 'tf' e 'dt' devem ser passados.")
@@ -16,13 +31,16 @@ class State:
         if not os.path.exists(path):
             raise ValueError("O caminho especificado não existe.")
 
-        self.num_points = int(num_points)
+        if collect_all_steps:
+            freq = 1
+        else:
+            freq = int(((tf-to)/dt)/num_points)
+            if freq == 0:
+                freq = 1
+
+        self.num_points = num_points
         self.dt = dt
         self.tf = tf
-
-        freq = int(((tf-to)/dt)/num_points)
-        if freq == 0:
-            freq = 1
         self.freq = freq
 
         self.solver = solver
@@ -46,7 +64,6 @@ class State:
         }
 
         self.data_count = 0
-        self.path = path
 
     def collect(self, count: int):
         if count % self.freq == 0 and self.data_count < self.num_points:
@@ -60,9 +77,11 @@ class State:
             self.data_count += 1
     
     def save(self):
+        super().save()
         for var_name, var_data in self.data_vars.items():
             np.save(os.path.join(self.path, var_name + ".npy"), var_data)
-    
+
+
     @staticmethod
     def load(path: str):
         data_list = []

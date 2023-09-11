@@ -1,4 +1,5 @@
 from physical_system.simulation import Simulation
+from physical_system import collect_pipelines
 from physical_system.configs import *
 
 self_propelling_cfg = SelfPropellingCfg(
@@ -11,7 +12,6 @@ self_propelling_cfg = SelfPropellingCfg(
     r_eq =  5/6,
     max_r = 1.,
 )
-
 
 space_cfg = SpaceCfg(
     # size = 18.2574185,
@@ -28,7 +28,7 @@ create_cfg = CreateCfg(
 # seed = 40028922
 seed=None
 
-run_type = RunType.COLLECT_DATA
+run_type = RunType.REPLAY_DATA
 
 real_time_cfg = RealTimeCfg(
     dt = 0.01,
@@ -40,7 +40,7 @@ real_time_cfg = RealTimeCfg(
         show_circles=False),
 )
 
-saved_data_cfg = SavedDataCfg(
+saved_data_cfg = ReplayDataCfg(
     dt = 0.05,
     num_steps_frame = 1,
     fps = 60,
@@ -55,6 +55,7 @@ collect_data_cfg = CollectDataCfg(
     tf = 400,
     dt = 0.01,
     folder_path="data/self_propelling/teste",
+    func = collect_pipelines.state,
     solver_type=SolverType.CPP,
     update_type=UpdateType.WINDOWS,
     only_last=False,
@@ -72,6 +73,6 @@ save_cfg = SaveCfg(
 )
 
 run_type_to_cfg = {RunType.COLLECT_DATA: collect_data_cfg, RunType.REAL_TIME: real_time_cfg, 
-    RunType.SAVE_VIDEO: save_cfg, RunType.SAVED_DATA: saved_data_cfg}
+    RunType.SAVE_VIDEO: save_cfg, RunType.REPLAY_DATA: saved_data_cfg}
 sim = Simulation(create_cfg, self_propelling_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type], rng_seed=seed)
 sim.run()

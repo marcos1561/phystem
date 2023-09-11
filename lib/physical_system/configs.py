@@ -8,7 +8,7 @@ class RunType(Flag):
     COLLECT_DATA = auto()
     REAL_TIME = auto()
     SAVE_VIDEO = auto()
-    SAVED_DATA = auto()
+    REPLAY_DATA = auto()
 
 class SolverType(Enum):
     PYTHON = auto()
@@ -75,12 +75,13 @@ class RunCfg:
 
 class CollectDataCfg(RunCfg):
     id = RunType.COLLECT_DATA
-    def __init__(self, tf: float, dt: float, folder_path: str, solver_type: SolverType, 
+    def __init__(self, tf: float, dt: float, folder_path: str, func: callable, solver_type: SolverType, 
         update_type = UpdateType.NORMAL, only_last=False) -> None:
         super().__init__(dt, solver_type, update_type)
         self.tf = tf
         self.folder_path = folder_path
         self.only_last = only_last
+        self.func = func
 
 class RealTimeCfg(RunCfg):
     id = RunType.REAL_TIME
@@ -91,8 +92,8 @@ class RealTimeCfg(RunCfg):
         self.fps = fps
         self.graph_cfg = graph_cfg
 
-class SavedDataCfg(RealTimeCfg):
-    id = RunType.SAVED_DATA
+class ReplayDataCfg(RealTimeCfg):
+    id = RunType.REPLAY_DATA
 
     def __init__(self, dt: float, num_steps_frame: int, fps: int, solver_type: SolverType, 
     update_type=UpdateType.NORMAL, graph_cfg=GraphCfg(), frequency=0) -> None:

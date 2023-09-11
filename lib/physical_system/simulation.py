@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, Slider
 import matplotlib.animation as animation
+from copy import deepcopy
 
 from physical_system.solver import VicsekSolver, CppSolver
 from physical_system.particles import Particles
@@ -34,7 +35,7 @@ class WidgetManager:
         self.sliders["speed"].label.set_horizontalalignment("left")
         self.sliders["speed"].on_changed(self.speed_callback)
         
-        if run_cfg.id is RunType.SAVED_DATA:
+        if run_cfg.id is RunType.REPLAY_DATA:
             self.sliders["freq"] = Slider(
                 ax=slider_ax["freq"],
                 label="freq",
@@ -82,12 +83,23 @@ class Simulation:
 
         self.rng_seed = rng_seed
 
+        self.configs = {
+            "create_cfg": deepcopy(create_cfg),
+            "self_propelling_cfg": deepcopy(self_propelling_cfg),
+            "space_cfg": deepcopy(space_cfg),
+            "run_cfg": deepcopy(run_cfg),
+            "rng_seed": deepcopy(rng_seed),
+        }
+        if run_cfg.id is RunType.COLLECT_DATA:
+            self.configs["run_cfg"].func = "nao salvo"
+
+
         self.init_sim()        
 
     def init_sim(self):
-        if self.run_cfg.id is RunType.SAVED_DATA:
+        if self.run_cfg.id is RunType.REPLAY_DATA:
             class SolverSD:
-                def __init__(self, run_cfg: SavedDataCfg) -> None:
+                def __init__(self, run_cfg: ReplayDataCfg) -> None:
                     self.pos = np.load("data/self_propelling/teste/pos.npy")
                     self.vel = np.load("data/self_propelling/teste/vel.npy")
                     self.time_arr = np.load("data/self_propelling/teste/time.npy")
@@ -142,82 +154,14 @@ class Simulation:
             self.particles.pos = self.solver.cpp_solver.py_pos
 
     def run(self):
-        if self.run_cfg.id in RunType.REAL_TIME | RunType.SAVE_VIDEO | RunType.SAVED_DATA:
+        if self.run_cfg.id in RunType.REAL_TIME | RunType.SAVE_VIDEO | RunType.REPLAY_DATA:
             self.run_real_time()
         elif self.run_cfg.id is RunType.COLLECT_DATA:
             self.run_only_sim()
 
     def run_only_sim(self):
-        import physical_system.collectors as collectors
-        from metcompb import progress
         run_cfg: CollectDataCfg = self.run_cfg
-
-        num_points = 1000
-        nabla_range = np.linspace(0, 3, 20)
-        
-        prog = progress.Continuos(nabla_range.max())
-        
-        mean_vel_data = np.zeros((nabla_range.size, num_points))
-        for id, nabla in enumerate(nabla_range):
-            self.self_propelling_cfg.nabla = nabla
-            self.init_sim()
-
-            collector = collectors.MeanVel(
-                self.solver, run_cfg.tf, run_cfg.dt,
-                num_points=num_points, path=run_cfg.folder_path,
-            )
-
-            count = 0
-            while self.solver.time < run_cfg.tf:
-                self.solver.update()
-                collector.collect(count)
-                count += 1
-            
-            prog.update(nabla)
-
-            mean_vel_data[id] = collector.data[0]     
-            time_data = collector.data[1]     
-        
-        import os
-        folder_path = "data/self_propelling/nabla_0-01"
-        np.save(os.path.join(folder_path, "mean_vel.npy"), mean_vel_data)
-        np.save(os.path.join(folder_path, "nabla.npy"), nabla_range)
-        np.save(os.path.join(folder_path, "time.npy"), time_data)
-
-        # prog = progress.Continuos(self.run_cfg.tf)
-        # if not run_cfg.only_last:
-        #     # state_collector = collectors.State(
-        #     #     self.solver, run_cfg.folder_path, 
-        #     #     to=100, tf=300, dt=run_cfg.dt
-        #     # )
-        #     state_collector = collectors.State(
-        #         self.solver, run_cfg.folder_path, 
-        #         dt=run_cfg.dt, tf=run_cfg.tf, num_points=1000,
-        #     )
-            
-        #     state_collector.collect(0)
-        #     count = 0
-        #     while self.solver.time < run_cfg.tf:
-        #         self.solver.update()
-        #         state_collector.collect(count)
-                
-        #         prog.update(self.solver.time)
-        #         count += 1
-            
-        #     state_collector.save()
-        # else:
-        #     state_collector = collectors.State(
-        #         self.solver, run_cfg.folder_path, 
-        #         tf=0, dt=self.run_cfg.dt, num_points=2,
-        #     )
-            
-        #     state_collector.collect(0)
-        #     while self.solver.time < run_cfg.tf:
-        #         self.solver.update()
-        #         prog.update(self.solver.time)
-            
-        #     state_collector.collect(1)
-        #     state_collector.save()
+        run_cfg.func(self)
 
     def run_real_time(self):
         '''
@@ -303,7 +247,7 @@ class Simulation:
         speed_slider_ax = fig.add_axes(buttons_manager.get_new_rect())
         
         freq_slider_ax = None
-        if run_type is RunType.SAVED_DATA:
+        if run_type is RunType.REPLAY_DATA:
             freq_slider_ax = fig.add_axes(buttons_manager.get_new_rect())
 
         axes["buttons"] = {
