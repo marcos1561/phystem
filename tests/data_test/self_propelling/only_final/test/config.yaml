@@ -1,0 +1,31 @@
+create_cfg: !!python/object:phystem.self_propelling.configs.CreateCfg
+  n: 10
+  r: 5.5
+  type: !!python/object/apply:phystem.self_propelling.configs.CreateType
+  - 2
+dynamic_cfg: !!python/object:phystem.self_propelling.configs.SelfPropellingCfg
+  max_attractive_force: 1.0
+  max_r: 1.0
+  max_repulsive_force: 1.0
+  mobility: 1.0
+  nabla: 2
+  r_eq: 0.8333333333333334
+  relaxation_time: 1.0
+  vo: 1.0
+rng_seed: 40028922
+run_cfg: !!python/object:phystem.self_propelling.run_config.CollectDataCfg
+  dt: 0.01
+  folder_path: /home/marcos/Documents/Programacao/IC/active-matter/tests/data_test/self_propelling/only_final/test
+  func: nao salvo
+  func_cfg: !!python/object:phystem.core.run_config.CollectPlCfg
+    only_last: true
+  func_id: !!python/object/apply:phystem.self_propelling.collect_pipelines.FuncID
+  - 1
+  num_windows: 10
+  solver_type: !!python/object/apply:phystem.core.run_config.SolverType
+  - 2
+  tf: 100
+  update_type: !!python/object/apply:phystem.core.run_config.UpdateType
+  - 2
+space_cfg: !!python/object:phystem.self_propelling.configs.SpaceCfg
+  size: 11
