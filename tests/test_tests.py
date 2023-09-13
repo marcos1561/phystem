@@ -1,96 +1,40 @@
 import unittest
-import os 
+import os, yaml
 
-from physical_system.simulation import Simulation
-from physical_system.configs import *
+from phystem.self_propelling.simulation import Simulation
+from phystem.self_propelling import collect_pipelines
+from phystem.self_propelling.configs import *
+from phystem.self_propelling.run_config import CollectDataCfg
+from phystem.core.run_config import UpdateType
 
 current_folder = os.path.dirname(__file__)
 
-class TestSimulation(unittest.TestCase):
-    def test_total_run(self):
-        self_propelling_cfg = SelfPropellingCfg(
-            mobility = 1.,
-            relaxation_time = 1.,
-            nabla = 2 ,
-            vo = 1.,
-            max_repulsive_force = 1.,
-            max_attractive_force = 1.,
-            r_eq =  5/6,
-            max_r = 1.,
-        )
-
-        space_cfg = SpaceCfg(
-            size = 30,
-        )
-
-        create_cfg = CreateCfg(
-            n = 100,
-            r = space_cfg.size/2,
-            type = CreateType.SQUARE,
-        )
-
-        seed = 40028922
-
-        run_cfg = CollectDataCfg(
-            tf = 0.05 * 1000,
-            dt = 0.05,
-            folder_path=os.path.join(current_folder, "data_test/all_run/test"),
-            solver_type=SolverType.CPP,
-            update_type=UpdateType.WINDOWS,
-        )
-
-        sim = Simulation(create_cfg, self_propelling_cfg, space_cfg, run_cfg, seed)
-        sim.run()
-
-        import numpy as np
-        pos_test = np.load(os.path.join(current_folder, "data_test/all_run/test/pos.npy"))
-        pos_truth = np.load(os.path.join(current_folder, "data_test/all_run/truth/pos.npy"))
-
-        print(((pos_test - pos_truth)**2).sum())
-        self.assertTrue(((pos_test - pos_truth)**2).sum() < 1e-5)
+class TestSelfPropelling(unittest.TestCase):
+    root_folder = "data_test/self_propelling"
 
     def test_only_final(self):
-        self_propelling_cfg = SelfPropellingCfg(
-            mobility = 1.,
-            relaxation_time = 1.,
-            nabla = 2 ,
-            vo = 1.,
-            max_repulsive_force = 1.,
-            max_attractive_force = 1.,
-            r_eq =  5/6,
-            max_r = 1.,
-        )
+        folder_path = os.path.join(current_folder, self.root_folder, "only_final")
 
-        space_cfg = SpaceCfg(
-            size = 30,
-        )
+        cfg_path = os.path.join(folder_path, "truth/config.yaml")
 
-        create_cfg = CreateCfg(
-            n = 200,
-            r = space_cfg.size/2,
-            type = CreateType.SQUARE,
-        )
+        with open(cfg_path, "r") as f:
+            cfg = yaml.unsafe_load(f)
 
-        seed = 40028922
+        run_cfg: CollectDataCfg = cfg["run_cfg"] 
 
-        run_cfg = CollectDataCfg(
-            tf = 100,
-            dt = 0.05,
-            folder_path=os.path.join(current_folder, "data_test/only_final/test"),
-            solver_type=SolverType.CPP,
-            update_type=UpdateType.WINDOWS,
-            only_last=True,
-        )
+        run_cfg.folder_path = os.path.join(folder_path, "test")
+        run_cfg.update_type = UpdateType.WINDOWS
+        run_cfg.func = collect_pipelines.get_func(run_cfg.func_id)
 
-        sim = Simulation(create_cfg, self_propelling_cfg, space_cfg, run_cfg, seed)
+        sim = Simulation(**cfg)
         sim.run()
 
         import numpy as np
-        pos_test = np.load(os.path.join(current_folder, "data_test/only_final/test/pos.npy"))
-        vel_test = np.load(os.path.join(current_folder, "data_test/only_final/test/vel.npy"))
+        pos_test = np.load(os.path.join(folder_path, "test/pos.npy"))
+        vel_test = np.load(os.path.join(folder_path, "test/vel.npy"))
         
-        pos_truth = np.load(os.path.join(current_folder, "data_test/only_final/truth/pos.npy"))
-        vel_truth = np.load(os.path.join(current_folder, "data_test/only_final/truth/vel.npy"))
+        pos_truth = np.load(os.path.join(folder_path, "truth/pos.npy"))
+        vel_truth = np.load(os.path.join(folder_path, "truth/vel.npy"))
 
         print("pos error:", ((pos_test[1] - pos_truth[1])**2).sum())
         print("vel_error:", ((vel_test[1] - vel_truth[1])**2).sum())
@@ -102,47 +46,28 @@ class TestSimulation(unittest.TestCase):
         self.assertTrue(((vel_test[1] - vel_truth[1])**2).sum() < 1e-5)
 
     def test_only_final2(self):
-        self_propelling_cfg = SelfPropellingCfg(
-            mobility = 1.,
-            relaxation_time = 1.,
-            nabla = 2 ,
-            vo = 1.,
-            max_repulsive_force = 1.,
-            max_attractive_force = 1.,
-            r_eq =  5/6,
-            max_r = 1.,
-        )
+        folder_path = os.path.join(current_folder, self.root_folder, "only_final")
 
-        space_cfg = SpaceCfg(
-            size = 10,
-        )
+        cfg_path = os.path.join(folder_path, "truth2/config.yaml")
 
-        create_cfg = CreateCfg(
-            n = 5,
-            r = space_cfg.size/2,
-            type = CreateType.SQUARE,
-        )
+        with open(cfg_path, "r") as f:
+            cfg = yaml.unsafe_load(f)
 
-        seed = 40028922
+        run_cfg: CollectDataCfg = cfg["run_cfg"] 
 
-        run_cfg = CollectDataCfg(
-            tf = 100,
-            dt = 0.05,
-            folder_path=os.path.join(current_folder, "data_test/only_final/test"),
-            solver_type=SolverType.CPP,
-            update_type=UpdateType.WINDOWS,
-            only_last=True,
-        )
+        run_cfg.folder_path = os.path.join(folder_path, "test")
+        run_cfg.update_type = UpdateType.WINDOWS
+        run_cfg.func = collect_pipelines.get_func(run_cfg.func_id)
 
-        sim = Simulation(create_cfg, self_propelling_cfg, space_cfg, run_cfg, seed)
+        sim = Simulation(**cfg)
         sim.run()
 
         import numpy as np
-        pos_test = np.load(os.path.join(current_folder, "data_test/only_final/test/pos.npy"))
-        vel_test = np.load(os.path.join(current_folder, "data_test/only_final/test/vel.npy"))
+        pos_test = np.load(os.path.join(folder_path, "test/pos.npy"))
+        vel_test = np.load(os.path.join(folder_path, "test/vel.npy"))
         
-        pos_truth = np.load(os.path.join(current_folder, "data_test/only_final/truth2/pos.npy"))
-        vel_truth = np.load(os.path.join(current_folder, "data_test/only_final/truth2/vel.npy"))
+        pos_truth = np.load(os.path.join(folder_path, "truth2/pos.npy"))
+        vel_truth = np.load(os.path.join(folder_path, "truth2/vel.npy"))
 
         print("pos error:", ((pos_test[1] - pos_truth[1])**2).sum())
         print("vel_error:", ((vel_test[1] - vel_truth[1])**2).sum())
@@ -155,7 +80,7 @@ class TestSimulation(unittest.TestCase):
 
 class TestWindows(unittest.TestCase):
     def test_neighbor_ids(self):
-        import physical_system.cpp_lib as cpp_lib
+        import phystem.cpp_lib as cpp_lib
         import numpy as np
 
         n = 40
@@ -164,9 +89,9 @@ class TestWindows(unittest.TestCase):
         num_rows = num_cols
 
         pos = np.random.random((n, 2))*size - size/2
-        pos = cpp_lib.PosVec(pos)
+        pos = cpp_lib.data_types.PosVec(pos)
 
-        wm = cpp_lib.WindowsManager(pos, num_cols, num_cols, size)
+        wm = cpp_lib.managers.WindowsManager(pos, num_cols, num_cols, size)
 
         correct_neighbors = self.get_correct_neighbors(num_cols, num_rows)
         
