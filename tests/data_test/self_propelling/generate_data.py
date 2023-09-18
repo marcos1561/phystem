@@ -2,8 +2,9 @@ import os
 
 from phystem.self_propelling.configs import *
 from phystem.self_propelling.run_config import CollectDataCfg
-from phystem.core.run_config import SolverType, UpdateType, CollectPlCfg
+from phystem.core.run_config import SolverType, UpdateType
 from phystem.self_propelling.simulation import Simulation
+from phystem.self_propelling.collect_pipelines import CollectPlCfg
 from phystem.self_propelling import collect_pipelines
 
 current_folder = os.path.dirname(__file__)
@@ -33,7 +34,7 @@ def generate_final_run_data_1():
         seed = 40028922
 
         run_cfg = CollectDataCfg(
-            tf = 30,
+            tf = 20,
             dt = 0.05,
             num_windows=15,
             folder_path=os.path.join(current_folder, "only_final/truth"),

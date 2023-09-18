@@ -78,7 +78,7 @@ class Simulation(SimulationCore):
         
             ani.save(save_video_cfg.path, fps=save_video_cfg.fps, progress_callback=progress.update)
         else:
-            ani = animation.FuncAnimation(fig, update, interval=1/(real_time_cfg.fps)*1000)
+            ani = animation.FuncAnimation(fig, update, interval=1/(real_time_cfg.fps)*1000, cache_frame_data=False)
             plt.show()
     
     @staticmethod

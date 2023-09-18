@@ -21,9 +21,21 @@ from phystem.self_propelling.simulation import Simulation
 from phystem.self_propelling.solvers import CppSolver
 from phystem.self_propelling.configs import *
 from phystem.self_propelling.run_config import CollectDataCfg
-from phystem.core.run_config import CollectPlCfg
 
 from ic_utils import progress
+
+class CollectPlCfg:
+    '''
+    Configurações para a pipeline de coleta de dados.
+    '''
+    def __init__(self, only_last: bool) -> None:
+        '''
+        Parameters:
+        -----------
+            only_last:
+                Se for `True` apenas coleta o último frame da simulação.
+        '''
+        self.only_last = only_last
 
 def state(sim: Simulation, collect_cfg: CollectPlCfg):
     solver: CppSolver = sim.solver
@@ -57,7 +69,7 @@ def state(sim: Simulation, collect_cfg: CollectPlCfg):
             solver.update()
             prog.update(solver.time)
         
-        state_collector.collect(1)
+        state_collector.collect(0)
         state_collector.save()
 
 def nabla_range(sim: Simulation, collect_cfg: CollectDataCfg):

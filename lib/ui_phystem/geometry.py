@@ -34,10 +34,11 @@ class SpaceManager:
         
         self.widget_order = []
 
-        self.width = width
         if width is None:
             self.width = main_ax_rect[2] * 0.6
-        
+        else:
+            self.width = main_ax_rect[2] * width
+
         self.height = height
         if height is None:
             self.height = main_ax_rect[3] * 0.1

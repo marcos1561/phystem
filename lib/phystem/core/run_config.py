@@ -66,19 +66,6 @@ class UpdateType(Enum):
     NORMAL = auto()
     WINDOWS = auto()
 
-class CollectPlCfg:
-    '''
-    Configurações para a pipeline de coleta de dados.
-    '''
-    def __init__(self, only_last: bool) -> None:
-        '''
-        Parameters:
-        -----------
-            only_last:
-                Se for `True` apenas coleta o último frame da simulação.
-        '''
-        self.only_last = only_last
-
 class RunCfg:
     '''
     Base para as configurações do mode de execução.

@@ -1,8 +1,9 @@
 from phystem.self_propelling.simulation import Simulation
 import phystem.self_propelling.collect_pipelines as collect_pipelines
 from phystem.self_propelling.configs import *
-from phystem.core.run_config import UpdateType, SolverType, ReplayDataCfg, RunType, CollectPlCfg
+from phystem.core.run_config import UpdateType, SolverType, ReplayDataCfg, RunType
 from phystem.self_propelling.run_config import CollectDataCfg, RealTimeCfg, SaveCfg, GraphCfg
+
 
 self_propelling_cfg = SelfPropellingCfg(
     mobility = 1.,
@@ -65,7 +66,7 @@ collect_data_cfg = CollectDataCfg(
     func = collect_pipelines.state,
     # func_id = collect_pipelines.FuncID.state,
     # get_func= collect_pipelines.get_func,
-    func_cfg = CollectPlCfg(
+    func_cfg = collect_pipelines.CollectPlCfg(
         only_last=False, 
     ),
     solver_type=SolverType.CPP,

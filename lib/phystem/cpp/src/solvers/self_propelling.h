@@ -4,7 +4,7 @@
 #include <iostream>
 #include <cstdlib> 
 
-#include "../config.h"
+#include "../configs/self_propelling.h"
 #include "../rng_manager.h"
 #include "../windows_manager.h"
 
@@ -209,7 +209,7 @@ public:
             
             // random_number = (double)rand();
             // Debug
-            random_number = (double)rng_manager.get_random_num(i);
+            random_number = (double)rng_manager.get_random_num(i)[0];
             //
 
             double noise = 1. / (2. * sqrt(dt)) * (2. * random_number/(double)RAND_MAX - 1.);
@@ -230,9 +230,9 @@ public:
 
             for (int dim = 0; dim < 2.f; dim ++) {
                 if (pos[i][dim] > size/2.f)
-                    pos[i][dim] = -size/2.f;
+                    pos[i][dim] -= size;
                 else if (pos[i][dim] < -size/2.f)
-                    pos[i][dim] = size/2.f;
+                    pos[i][dim] += size;
             }
 
             // Debug
@@ -297,7 +297,7 @@ public:
             
             // random_number = (double)rand();
             // Debug
-            random_number = (double)rng_manager.get_random_num(i);
+            random_number = rng_manager.get_random_num(i)[0];
             //
 
             double noise = 1. / (2. * sqrt(dt)) * (2. * random_number/(double)RAND_MAX - 1.);
@@ -319,9 +319,9 @@ public:
 
             for (int dim = 0; dim < 2.f; dim ++) {
                 if (pos[i][dim] > size/2.f)
-                    pos[i][dim] = -size/2.f;
+                    pos[i][dim] -= size;
                 else if (pos[i][dim] < -size/2.f)
-                    pos[i][dim] = size/2.f;
+                    pos[i][dim] += size;
             }
 
             // Debug

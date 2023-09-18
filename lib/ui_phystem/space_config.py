@@ -12,11 +12,11 @@ class StandardSpace:
         self.axes = {}
         self.space_mngs = {}
 
-    def run(self):
+    def run(self, panel_width=0.2, widget_width=0.6):
         from ui_phystem import geometry
         fig = self.fig
 
-        width = 0.2
+        width = panel_width
         x_pad = 0.01
         y_pad = 0.01
         rel_y_pad = 0.01
@@ -31,8 +31,8 @@ class StandardSpace:
         bottom = y_pad
         left = x_pad
         buttons_ax = fig.add_axes([left, bottom, width, buttons_v_space], xticks=[], yticks=[])
-
-        widget_space_mng = geometry.SpaceManager(buttons_ax.get_position().bounds, rel_pad=0.02)
+        
+        widget_space_mng = geometry.SpaceManager(buttons_ax.get_position().bounds, width=widget_width, rel_pad=0.02)
         pause_button_ax = fig.add_axes(widget_space_mng.get_new_rect("pause", WidgetType.button))
         speed_slider_ax = fig.add_axes(widget_space_mng.get_new_rect("speed", WidgetType.slider))
         

@@ -4,7 +4,7 @@
 #include <iostream>
 #include <cstdlib> 
 
-#include "../config.h"
+#include "../configs.h"
 #include "../rng_manager.h"
 #include "../windows_manager.h"
 

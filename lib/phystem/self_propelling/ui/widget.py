@@ -1,12 +1,14 @@
 from matplotlib.widgets import Button, Slider
 
 from phystem.self_propelling.run_config import RealTimeCfg
+from phystem.self_propelling.run_config import RealTimeCfg
 from phystem.core.run_config import RealTimeCfg, RunType
 from ui_phystem import widget
 
 class WidgetManager(widget.StandardManager):
     def __init__(self, buttons_ax, slider_ax, run_cfg: RealTimeCfg) -> None:
         super().__init__(buttons_ax, slider_ax, run_cfg)
+        
         self.buttons["circles"] = Button(buttons_ax["circles"], "Show Circles")
         self.buttons["circles"].on_clicked(self.circles_callback)
         

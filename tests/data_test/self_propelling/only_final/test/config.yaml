@@ -17,7 +17,7 @@ run_cfg: !!python/object:phystem.self_propelling.run_config.CollectDataCfg
   dt: 0.01
   folder_path: /home/marcos/Documents/Programacao/IC/active-matter/tests/data_test/self_propelling/only_final/test
   func: nao salvo
-  func_cfg: !!python/object:phystem.core.run_config.CollectPlCfg
+  func_cfg: !!python/object:phystem.self_propelling.collect_pipelines.CollectPlCfg
     only_last: true
   func_id: !!python/object/apply:phystem.self_propelling.collect_pipelines.FuncID
   - 1

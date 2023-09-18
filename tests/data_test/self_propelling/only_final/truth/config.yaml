@@ -17,14 +17,14 @@ run_cfg: !!python/object:phystem.self_propelling.run_config.CollectDataCfg
   dt: 0.05
   folder_path: /home/marcos/Documents/Programacao/IC/active-matter/tests/data_test/self_propelling/only_final/truth
   func: nao salvo
-  func_cfg: !!python/object:phystem.core.run_config.CollectPlCfg
+  func_cfg: !!python/object:phystem.self_propelling.collect_pipelines.CollectPlCfg
     only_last: true
   func_id: !!python/object/apply:phystem.self_propelling.collect_pipelines.FuncID
   - 1
   num_windows: 15
   solver_type: !!python/object/apply:phystem.core.run_config.SolverType
   - 2
-  tf: 30
+  tf: 20
   update_type: !!python/object/apply:phystem.core.run_config.UpdateType
   - 1
 space_cfg: !!python/object:phystem.self_propelling.configs.SpaceCfg
