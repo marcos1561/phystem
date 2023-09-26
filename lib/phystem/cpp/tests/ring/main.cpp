@@ -35,8 +35,8 @@ int main() {
     for (size_t i = 0; i < 1000; i++)
     {
         solver.update_normal();
-        // auto pos = solver.pos[0];
-        // std::cout << pos[0] << ", " << pos[1] << std::endl;
+        auto pos = solver.pos[0];
+        std::cout << pos[0] << ", " << pos[1] << std::endl;
     }
     
     // for (auto pos: solver.pos) {

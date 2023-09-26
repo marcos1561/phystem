@@ -35,7 +35,7 @@ create_cfg = CreateCfg(
 seed = 40028922
 seed=None
 
-run_type = RunType.SAVE_VIDEO
+run_type = RunType.REAL_TIME
 
 real_time_cfg = RealTimeCfg(
     dt = 0.001,

@@ -2,7 +2,8 @@
     "files.associations": {
         "array": "cpp",
         "cmath": "cpp",
-        "initializer_list": "cpp"
+        "initializer_list": "cpp",
+        "iostream": "cpp"
     },
     "python.testing.unittestArgs": [
         "-v",
@@ -16,5 +17,7 @@
     "cmake.configureOnOpen": false,
     "cSpell.words": [
         "phystem"
-    ]
+    ],
+    "cmake.sourceDirectory": "/home/marcos/Documents/Programacao/IC/active-matter/lib/phystem/cpp/ui",
+    "cmake.buildDirectory": "/home/marcos/Documents/Programacao/IC/active-matter/lib/phystem/cpp/ui/build"
 }
