@@ -15,7 +15,6 @@ public:
     vector<array<int, 2>> windows_ids;
     vector<vector<vector<array<int, 2>>>> window_neighbor;
 
-private:
     vector<array<double, 2>> *point_pos;
     int num_cols;
     int num_rows;

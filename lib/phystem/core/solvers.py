@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-class SolverCore:
+class SolverCore(ABC):
     '''
     Responsável pela integração do sistema.
     '''

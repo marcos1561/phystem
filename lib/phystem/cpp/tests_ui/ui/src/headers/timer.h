@@ -5,6 +5,8 @@
 
 class TimeIt {
 public:
+    TimeIt() {}
+
     TimeIt(int num_samples);
 
     void start();

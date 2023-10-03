@@ -1,5 +1,4 @@
-from collections.abc import Iterable, Sequence
-from typing import Sequence, Callable
+from typing import Callable
 from matplotlib.axes._axes import Axes
 from matplotlib.widgets import Button, Slider, CheckButtons
 from matplotlib.axes import Axes

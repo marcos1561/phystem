@@ -10,10 +10,6 @@
 
 #include "../intersections.h"
 
-void log_vec(string name, double x, double y) {
-    cout << name << ": (" << x << ", " << y << ")" << endl;
-} 
-
 class Ring {
 private:
     double spring_k;

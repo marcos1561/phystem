@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-from phystem.core.run_config import RealTimeCfg, RunCfg, SaveCfg, RunType
+from phystem.core.run_config import RealTimeCfg, SaveCfg, RunType
 
 from phystem.core.simulation import SimulationCore
 from phystem.core.solvers import SolverCore

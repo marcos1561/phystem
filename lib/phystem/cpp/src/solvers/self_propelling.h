@@ -58,6 +58,8 @@ public:
     vector<array<double, 2>> sum_forces_matrix_debug;    
     //  
 
+    SelfPropelling() {}
+
     SelfPropelling(vector<array<double, 2>> &pos0, vector<array<double, 2>> &vel0, 
         SelfPropellingCfg propelling_cfg, double size, double dt, int num_col_windows, double seed=-1.) 
     : size(size), dt(dt), propelling_cfg(propelling_cfg), pos(pos0), vel(vel0)
@@ -88,6 +90,10 @@ public:
         // Debug
         rng_manager = RngManager(n);
         //
+    }
+
+    void update_windows_manager_pointer() {
+        windows_manager.point_pos = &pos;
     }
 
     void initialize_propelling() {

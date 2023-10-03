@@ -5,6 +5,8 @@
 
 #include "headers/main_graph.h"
 
+const std::string shader_dir = "../ui/src/shaders/";
+
 bool check_for_opengl_errors();
 
 float get_biggest_square(float width, float height) {
@@ -23,7 +25,7 @@ float get_biggest_square(float width, float height) {
     return side;
 }
 
-MainGraph::MainGraph(SelfPropelling* in_solver, ElementGeometry el_geo, GLFWwindow* window) {
+CoreMainGraph::CoreMainGraph(SelfPropelling* in_solver, ElementGeometry el_geo, GLFWwindow* window) {
     solver = in_solver;
     pos_vertices = std::vector<float>(2*solver->pos.size());
 
@@ -45,7 +47,6 @@ MainGraph::MainGraph(SelfPropelling* in_solver, ElementGeometry el_geo, GLFWwind
         float side = get_biggest_square(rel_width * width - 2 * x_pad, rel_height * height - 2 * y_pad);
         glViewport(x * width + x_pad, height - y_pad - side, side, side);
         // glViewport(width * x, 0, width * (1 - x), height);
-
     };
 
     int width, height;
@@ -55,7 +56,7 @@ MainGraph::MainGraph(SelfPropelling* in_solver, ElementGeometry el_geo, GLFWwind
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 }
 
-void MainGraph::update_pos_vertices() {
+void CoreMainGraph::update_pos_vertices() {
     for (size_t i = 0; i < solver->pos.size(); i++)
     {
         auto pos_i = solver->pos[i];
@@ -66,13 +67,12 @@ void MainGraph::update_pos_vertices() {
         pos_vertices[2*i] = pos_i[0];
         pos_vertices[2*i + 1] = pos_i[1];
     }
-    
 }
 
-void MainGraph::setup_main() {
+void CoreMainGraph::setup_main() {
     auto item = RenderItem::Main;
 
-    shaders[item] = Shader("../src/shaders/points/vertex.glsl", "../src/shaders/points/fragment.glsl"); 
+    shaders[item] = Shader((shader_dir + "points/vertex.glsl").c_str(), (shader_dir + "points/fragment.glsl").c_str()); 
     auto& shader = shaders[item];
 
     scene_obj[item] = SceneObjetcs();
@@ -95,7 +95,7 @@ void MainGraph::setup_main() {
     check_for_opengl_errors();
 }
 
-void MainGraph::update_main() {
+void CoreMainGraph::update_main() {
     auto item = RenderItem::Main;
 
     update_pos_vertices();
@@ -117,8 +117,8 @@ void MainGraph::update_main() {
     // check_for_opengl_errors();
 }
 
-void MainGraph::setup_triangle() {
-    shaders[RenderItem::Triangle] = Shader("../src/shaders/vertex.glsl", "../src/shaders/fragment.glsl");
+void CoreMainGraph::setup_triangle() {
+    shaders[RenderItem::Triangle] = Shader((shader_dir + "vertex.glsl").c_str(), (shader_dir + "fragment.glsl").c_str()); 
     
     // Vertex data
     float vertices[] = {
@@ -153,8 +153,8 @@ void MainGraph::setup_triangle() {
     check_for_opengl_errors();
 }
 
-void MainGraph::setup_points() {
-    shaders[RenderItem::Points] = Shader("../src/shaders/points/vertex.glsl", "../src/shaders/points/fragment.glsl");
+void CoreMainGraph::setup_points() {
+    shaders[RenderItem::Points] = Shader((shader_dir + "points/vertex.glsl").c_str(), (shader_dir + "points/fragment.glsl").c_str()); 
     
     // Vertex data
     float vertices[] = {
@@ -183,8 +183,8 @@ void MainGraph::setup_points() {
     check_for_opengl_errors();
 }
 
-void MainGraph::setup_boarder() {
-    shaders[RenderItem::Border] = Shader("../src/shaders/points/vertex.glsl", "../src/shaders/points/fragment.glsl");
+void CoreMainGraph::setup_boarder() {
+    shaders[RenderItem::Border] = Shader((shader_dir + "points/vertex.glsl").c_str(), (shader_dir + "points/fragment.glsl").c_str()); 
     
     // Vertex data
     float vertices[] = {
@@ -216,10 +216,10 @@ void MainGraph::setup_boarder() {
     check_for_opengl_errors();
 }
 
-void MainGraph::setup_background() {
+void CoreMainGraph::setup_background() {
     auto item = RenderItem::Background;
 
-    shaders[item] = Shader("../src/shaders/points/vertex.glsl", "../src/shaders/points/fragment.glsl");
+    shaders[item] = Shader((shader_dir + "points/vertex.glsl").c_str(), (shader_dir + "points/fragment.glsl").c_str()); 
     auto& shader = shaders[item];
 
     // Vertex data
@@ -254,7 +254,7 @@ void MainGraph::setup_background() {
     check_for_opengl_errors();
 }
 
-void MainGraph::update_points() {
+void CoreMainGraph::update_points() {
     auto item = RenderItem::Points;
 
     shaders[item].use();        
@@ -265,7 +265,7 @@ void MainGraph::update_points() {
     glDrawArrays(GL_POINTS, 0, 5);
 }
 
-void MainGraph::update_boarder() {
+void CoreMainGraph::update_boarder() {
     auto item = RenderItem::Border;
 
     shaders[item].use();        
@@ -276,7 +276,7 @@ void MainGraph::update_boarder() {
     glDrawArrays(GL_LINES, 0, 16);
 }
 
-void MainGraph::update_background() {
+void CoreMainGraph::update_background() {
     auto item = RenderItem::Background;
 
     shaders[item].use();        
@@ -286,7 +286,7 @@ void MainGraph::update_background() {
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
-void MainGraph::update_triangle() {
+void CoreMainGraph::update_triangle() {
     auto mode = RenderItem::Triangle;
 
     shaders[mode].use();
@@ -299,7 +299,7 @@ void MainGraph::update_triangle() {
     glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
-void MainGraph::setup() {
+void CoreMainGraph::setup() {
     setup_boarder();
     setup_main();
     // setup_triangle();
@@ -307,7 +307,7 @@ void MainGraph::setup() {
     setup_background();
 }
 
-void MainGraph::update() {
+void CoreMainGraph::update() {
     update_background();
     update_main();
     // update_points();

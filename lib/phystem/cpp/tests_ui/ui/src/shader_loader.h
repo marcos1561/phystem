@@ -2,6 +2,7 @@
 
 #include <glad/glad.h>
 
+#include <cstring>
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -39,6 +40,8 @@ public:
 
         } catch(std::ifstream::failure e) {
             std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+            std::cout << vertexPath << std::endl;
+            std::cerr << "Error: " << std::strerror(errno);
         }
 
         const char* vShaderCode = vertexCode.c_str();

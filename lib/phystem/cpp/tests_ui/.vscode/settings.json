@@ -1,9 +1,8 @@
 {
     "files.associations": {
-        "array": "cpp",
+        "vector": "cpp",
         "cmath": "cpp",
-        "initializer_list": "cpp",
-        "iostream": "cpp",
+        "array": "cpp",
         "atomic": "cpp",
         "bit": "cpp",
         "*.tcc": "cpp",
@@ -22,14 +21,9 @@
         "cwchar": "cpp",
         "cwctype": "cpp",
         "deque": "cpp",
-        "forward_list": "cpp",
-        "list": "cpp",
         "map": "cpp",
-        "set": "cpp",
         "string": "cpp",
         "unordered_map": "cpp",
-        "unordered_set": "cpp",
-        "vector": "cpp",
         "exception": "cpp",
         "algorithm": "cpp",
         "functional": "cpp",
@@ -37,7 +31,6 @@
         "memory": "cpp",
         "memory_resource": "cpp",
         "numeric": "cpp",
-        "optional": "cpp",
         "random": "cpp",
         "ratio": "cpp",
         "string_view": "cpp",
@@ -46,7 +39,9 @@
         "type_traits": "cpp",
         "utility": "cpp",
         "fstream": "cpp",
+        "initializer_list": "cpp",
         "iosfwd": "cpp",
+        "iostream": "cpp",
         "istream": "cpp",
         "limits": "cpp",
         "new": "cpp",
@@ -56,26 +51,6 @@
         "stdexcept": "cpp",
         "streambuf": "cpp",
         "cinttypes": "cpp",
-        "typeindex": "cpp",
-        "typeinfo": "cpp",
-        "valarray": "cpp",
-        "variant": "cpp"
-    },
-    "python.testing.unittestArgs": [
-        "-v",
-        "-s",
-        "./tests",
-        "-p",
-        "test_*.py"
-    ],
-    "python.testing.pytestEnabled": false,
-    "python.testing.unittestEnabled": true,
-    "cmake.configureOnOpen": false,
-    "cSpell.words": [
-        "phystem"
-    ],
-    "cmake.sourceDirectory": "/home/marcos/Documents/Programacao/IC/active-matter/lib/phystem/cpp/tests",
-    "cmake.buildDirectory": "/home/marcos/Documents/Programacao/IC/active-matter/lib/phystem/cpp/tests/build",
-    // "cmake.sourceDirectory": "/home/marcos/Documents/Programacao/IC/active-matter/lib/phystem/cpp/tests/ui",
-    // "cmake.buildDirectory": "/home/marcos/Documents/Programacao/IC/active-matter/lib/phystem/cpp/ui/build"
+        "typeinfo": "cpp"
+    }
 }

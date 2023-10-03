@@ -28,7 +28,7 @@
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
-                "${fileDirname}/*.cpp",
+                "${fileDirname}/teste_rap.cpp",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}"
             ],

@@ -76,7 +76,7 @@ class RunCfg:
             Id identificando qual é o mode de execução .
     '''
     id: RunType
-    def __init__(self, dt: float, solver_type = SolverType.PYTHON, update_type = UpdateType.NORMAL) -> None:
+    def __init__(self, dt: float, solver_type = SolverType.CPP, update_type = UpdateType.NORMAL) -> None:
         '''
         Parameters:
         -----------

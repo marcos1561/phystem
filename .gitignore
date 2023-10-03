@@ -3,5 +3,8 @@ data
 random_stuff
 tests/data_test/all_run
 *cpp_lib.cpython*
-lib/phystem/cpp/ui/build
-lib/phystem/cpp/ui/deps
+*/ui/deps
+
+lib/phystem/cpp/tests_ui/build
+lib/phystem/cpp/tests_ui/ui/build
+lib/phystem/cpp/tests_ui/ui/deps
