@@ -87,21 +87,23 @@ class Simulation(SimulationCore):
         from ui_phystem.geometry import SpaceManager
         from ui_phystem.widget import WidgetType
 
-        fig, axes, space_mngs = StandardSpace().run(panel_width=0.25, widget_width=0.8)
+        fig, axes, space_mngs = StandardSpace().run(panel_width=0.35, widget_width=0.8)
         widget_space_mng: SpaceManager = space_mngs["widgets"]
 
         #==
         # Widgets
         #==
         circles_button_ax = fig.add_axes(widget_space_mng.get_new_rect("circles", WidgetType.button))
-        check_buttons_ax = fig.add_axes(widget_space_mng.get_new_rect("check_buttons", WidgetType.button))
+        cb_forces_ax = fig.add_axes(widget_space_mng.get_new_rect("check_buttons", WidgetType.button))
+        cb_pos_cont = fig.add_axes(widget_space_mng.get_new_rect("cb_pos_cont", WidgetType.button))
 
         freq_slider_ax = None
         if run_type is RunType.REPLAY_DATA:
             freq_slider_ax = fig.add_axes(widget_space_mng.get_new_rect("freq", WidgetType.slider))
 
         axes[WidgetType.button]["circles"] = circles_button_ax
-        axes[WidgetType.button]["check_buttons"] = check_buttons_ax
+        axes[WidgetType.button]["check_buttons"] = cb_forces_ax
+        axes[WidgetType.button]["cb_pos_cont"] = cb_pos_cont
         axes[WidgetType.slider]["freq"] = freq_slider_ax
 
         #==
@@ -111,6 +113,7 @@ class Simulation(SimulationCore):
             ("pause", WidgetType.button), 
             ("circles", WidgetType.button),
             ("check_buttons", WidgetType.button),
+            ("cb_pos_cont", WidgetType.button),
             ("speed", WidgetType.slider),
             ("freq", WidgetType.slider),
         )

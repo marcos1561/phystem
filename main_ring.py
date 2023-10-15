@@ -11,14 +11,22 @@ enable_force = 1
 dynamic_cfg = RingCfg(
     spring_k=enable_force*4,
     spring_r=0.8,
-    bend_k=1,
+    
+    k_bend=1,
+    # p0=4.828427, # Triângulo retângulo
+    p0=4.55901, # Triângulo equilátero
+    # p0=4, # quadrado
+    # p0=3.5449077018, # Círculo
+
     exclusion_vol=enable_force*1,
-    mobility=enable_force*1,
     diameter=1,
+    
     relax_time=1,
+    mobility=enable_force*1,
     vo=10,
-    trans_diff=1*enable_force*0.01,
-    rot_diff=1*enable_force*0.01,
+    
+    trans_diff=1*enable_force*0.1,
+    rot_diff=1*enable_force*0.1,
 )
 
 space_cfg = SpaceCfg(
@@ -45,6 +53,7 @@ real_time_cfg = RealTimeCfg(
         show_circles  = False,
         show_f_spring = False,
         show_f_vol    = False,
+        show_f_area   = True,
         show_f_total  = False,
     )
 )

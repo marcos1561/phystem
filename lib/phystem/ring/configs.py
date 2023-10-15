@@ -5,15 +5,16 @@ class RingCfg:
     '''
     Variáveis relacionadas a dinâmica do sistema.
     '''
-    args_names = ("spring_k", "spring_r", "bend_k", "mobility", "relax_time",
-        "vo", "trans_diff", "rot_diff", "exclusion_vol", "diameter")
+    args_names = ("spring_k", "spring_r", "k_bend", "mobility", "relax_time",
+        "vo", "trans_diff", "rot_diff", "exclusion_vol", "diameter", "p0")
 
-    def __init__(self,  spring_k, spring_r, bend_k, mobility, relax_time,
+    def __init__(self,  spring_k, spring_r, k_bend, p0, mobility, relax_time,
         vo, trans_diff, rot_diff, exclusion_vol, diameter) -> None:
         self.spring_k = spring_k
         self.spring_r = spring_r
         
-        self.bend_k = bend_k
+        self.k_bend = k_bend
+        self.p0 = p0
 
         self.mobility = mobility
         self.relax_time = relax_time
@@ -29,7 +30,8 @@ class RingCfg:
         self.spring_k = other.spring_k
         self.spring_r = other.spring_r
         
-        self.bend_k = other.bend_k
+        self.bend_k = other.k_bend
+        self.p0 = other.p0
 
         self.mobility = other.mobility
         self.relax_time = other.relax_time
@@ -45,7 +47,8 @@ class RingCfg:
         return {
             "spring_k": self.spring_k,
             "spring_r": self.spring_r,
-            "bend_k": self.bend_k,
+            "k_bend": self.k_bend,
+            "p0": self.p0,
             "mobility": self.mobility,
             "relax_time": self.relax_time,
             "vo": self.vo,
@@ -59,6 +62,7 @@ class RingCfg:
         return (
             f"$D_T$ = {self.trans_diff:.2f}\n"
             f"$D_R$ = {self.rot_diff:.2f}\n"
+            f"$p0$ = {self.p0:.2f}\n"
         )
 
 class CreateCfg:

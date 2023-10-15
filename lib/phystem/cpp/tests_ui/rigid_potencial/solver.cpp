@@ -96,25 +96,38 @@ double Solver::calc_potencial(Vec2d& p) {
 }
 
 void Solver::calc_force_numeric() {
-    double current_p = calc_potencial(pos_numeric);
+    double phi = calc_potencial(pos_numeric);
 
-    Vec2d& dr = pos_check_list[0];
-    auto p_check = calc_sum(pos_numeric, dr);
-    double gradient = (calc_potencial(p_check) - current_p) / numeric_cfg.dr;
-    for (auto& dr_i: pos_check_list) {
-        p_check = calc_sum(pos_numeric, dr_i);
-        double gradient_check = (calc_potencial(p_check) - current_p) / numeric_cfg.dr;
+    Vec2d p_i = pos_numeric;
+    p_i[0] += numeric_cfg.dr;
+    double phi_x = calc_potencial(p_i);
+    
+    p_i = pos_numeric;
+    p_i[1] += numeric_cfg.dr;
+    double phi_y = calc_potencial(p_i);
+
+    force_numeric[0] = -(phi_x - phi)/numeric_cfg.dr; 
+    force_numeric[1] = -(phi_y - phi)/numeric_cfg.dr; 
+
+    // double current_p = calc_potencial(pos_numeric);
+
+    // Vec2d& dr = pos_check_list[0];
+    // auto p_check = calc_sum(pos_numeric, dr);
+    // double gradient = (calc_potencial(p_check) - current_p) / numeric_cfg.dr;
+    // for (auto& dr_i: pos_check_list) {
+    //     p_check = calc_sum(pos_numeric, dr_i);
+    //     double gradient_check = (calc_potencial(p_check) - current_p) / numeric_cfg.dr;
         
-        if (gradient_check > gradient) {
-            gradient = gradient_check;
-            dr = dr_i;
-        }
-    }
+    //     if (gradient_check > gradient) {
+    //         gradient = gradient_check;
+    //         dr = dr_i;
+    //     }
+    // }
 
-    Vec2d force_dir = {-dr[0]/numeric_cfg.dr, -dr[1]/numeric_cfg.dr};
+    // Vec2d force_dir = {-dr[0]/numeric_cfg.dr, -dr[1]/numeric_cfg.dr};
 
-    force_numeric[0] = gradient * force_dir[0]; 
-    force_numeric[1] = gradient * force_dir[1]; 
+    // force_numeric[0] = gradient * force_dir[0]; 
+    // force_numeric[1] = gradient * force_dir[1]; 
 }
 
 

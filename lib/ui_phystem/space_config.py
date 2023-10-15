@@ -65,7 +65,7 @@ class StandardSpace:
         main_ax = fig.add_axes([
             left,
             bottom, 
-            h_space/2,
+            h_space * 0.8,
             0.9
         ])
 

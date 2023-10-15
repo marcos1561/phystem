@@ -48,6 +48,10 @@ class CppSolver:
         return self.cpp_solver.self_prop_angle
     
     @property
+    def pos_continuos(self):
+        return self.cpp_solver.pos_continuos
+    
+    @property
     def total_forces(self):
         return self.cpp_solver.total_forces
     
@@ -66,6 +70,10 @@ class CppSolver:
     @property
     def vol_forces(self):
         return self.cpp_solver.vol_forces
+
+    @property
+    def area_forces(self):
+        return self.cpp_solver.area_forces
     
     @property
     def total_forces(self):

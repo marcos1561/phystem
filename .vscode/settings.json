@@ -74,8 +74,8 @@
     "cSpell.words": [
         "phystem"
     ],
-    "cmake.sourceDirectory": "/home/marcos/Documents/Programacao/IC/active-matter/lib/phystem/cpp/tests",
-    "cmake.buildDirectory": "/home/marcos/Documents/Programacao/IC/active-matter/lib/phystem/cpp/tests/build",
+    "cmake.sourceDirectory": "/home/marcos/Documents/Programacao/IC/active-matter/lib/phystem/cpp/tests_ui",
+    "cmake.buildDirectory": "/home/marcos/Documents/Programacao/IC/active-matter/lib/phystem/cpp/tests_ui/build",
     // "cmake.sourceDirectory": "/home/marcos/Documents/Programacao/IC/active-matter/lib/phystem/cpp/tests/ui",
     // "cmake.buildDirectory": "/home/marcos/Documents/Programacao/IC/active-matter/lib/phystem/cpp/ui/build"
 }

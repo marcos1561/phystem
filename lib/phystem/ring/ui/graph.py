@@ -13,24 +13,29 @@ from phystem.ring.solvers import CppSolver
 from phystem.ring.configs import RingCfg, SpaceCfg, CreateCfg, RingCfg
 
 class GraphCfg:
-    def __init__(self, show_circles=False, show_f_spring=False, show_f_vol=False, show_f_total=False, 
-        force_to_color=None) -> None:
+    def __init__(self, show_circles=False, show_f_spring=False, show_f_vol=False, show_f_area=False, 
+        show_f_total=False, force_to_color=None) -> None:
         self.show_circles = show_circles
         self.show_f_spring = show_f_spring
         self.show_f_vol = show_f_vol
+        self.show_f_area = show_f_area
         self.show_f_total = show_f_total
+
+        self.show_pos_cont = False
 
         self.force_to_color = force_to_color
         if force_to_color is None:
             self.force_to_color = {
                 "spring": "red",
                 "vol": "blue",
+                "area": "green",
                 "total": "black",
             }
 
         self.f_name_to_show = {
             "spring": self.show_f_spring,
             "vol": self.show_f_vol,
+            "area": self.show_f_area,
             "total": self.show_f_total,
         }
 
@@ -42,6 +47,8 @@ class GraphCfg:
             self.show_f_spring = value
         elif name == "vol":
             self.show_f_vol = value
+        elif name == "area":
+            self.show_f_area = value
         elif name == "total":
             self.show_f_total = value
 
@@ -58,6 +65,7 @@ class MainGraph:
 
         # self.event_handler = MainEventHandler(self, self.graph_cfg)
         self.forces_state = deepcopy(self.graph_cfg.f_name_to_show)
+        self.pos_cont_state = self.graph_cfg.show_pos_cont
 
         self.circles: list[Circle] = None
         self.circles_col: PatchCollection = None
@@ -66,6 +74,7 @@ class MainGraph:
 
         self.lines: LineCollection = None
         self.points: PathCollection = None
+        self.points_continuos: PathCollection = None
         
         self.pos_t = solver.pos_t
         self.pos = solver.pos
@@ -88,6 +97,7 @@ class MainGraph:
         forces = {
             "spring": np.array(self.solver.spring_forces).T,
             "vol": np.array(self.solver.vol_forces).T,
+            "area": np.array(self.solver.area_forces).T,
             "total": np.array(self.solver.total_forces).T,
         }
         return forces
@@ -107,6 +117,11 @@ class MainGraph:
         self.ax.plot([-r, -r], [-r, r], color="black")
 
         self.points = self.ax.scatter(*self.pos_t)
+       
+        self.points_continuos = self.ax.scatter(*(np.array(self.solver.pos_continuos).T))
+        if not self.graph_cfg.show_pos_cont:
+            self.points_continuos.remove()
+
         # self.gg_points = self.ax.scatter(*np.array(self.graph_points).T)
 
         self.lines = LineCollection(self.get_segments())
@@ -146,9 +161,21 @@ class MainGraph:
     def update(self):
         # TODO: Setar os segmentos sem reconstruir os mesmos.
         #   Talvez criar os segmentos no c++ e apenas referenciar eles aqui.
-        self.points.set_offsets(self.pos)
-        # self.gg_points.set_offsets(self.graph_points)
         
+        self.points.set_offsets(self.pos)
+
+        if self.graph_cfg.show_pos_cont:
+            if not self.pos_cont_state:
+                self.ax.add_artist(self.points_continuos)
+                self.pos_cont_state = True
+
+            self.points_continuos.set_offsets(self.solver.pos_continuos)
+        else:
+            if self.pos_cont_state:
+                self.points_continuos.remove()
+                self.pos_cont_state = False
+
+
         self.lines.set_segments(self.get_segments())
 
         #==

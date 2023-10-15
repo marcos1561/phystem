@@ -23,7 +23,7 @@ int main() {
 
         solver_cfg.vel = {0.0, 0.0};
 
-        solver_cfg.numeric_cfg = NumericCfg(200, 0.00001);
+        solver_cfg.numeric_cfg = NumericCfg(200, 0.001);
 
     RunCfg run_cfg;
         run_cfg.speed = 20;

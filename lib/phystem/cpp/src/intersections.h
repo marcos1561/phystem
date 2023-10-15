@@ -6,9 +6,9 @@
 using namespace std;
 
 class IntersectionCalculator {
-    /** 
-     * Calcula os pontos de intersecção de uma linha com um quadrado. 
-     */
+/** 
+ * Calcula os pontos de intersecção de uma linha com um quadrado. 
+ */
 
 public:
     double size; // Lado do quadrado

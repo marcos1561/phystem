@@ -16,7 +16,8 @@ int main() {
     cfg.spring_k = 1.;
     cfg.spring_r = 1.;
     
-    cfg.bend_k = 1.;
+    cfg.k_bend = 1.;
+    cfg.p0 = 3.54;
 
     cfg.mobility = 1.;
     cfg.relax_time = 1.;

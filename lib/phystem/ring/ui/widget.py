@@ -52,19 +52,28 @@ class WidgetManager(widget.StandardManager):
         internal_name_to_label = {
             "spring": "F_spring",
             "vol": "F_vol",
+            "area": "F_area",
             "total": "F_total",
         }
-        self.label_to_internal = dict(zip(internal_name_to_label.values(), internal_name_to_label.keys()))
-
+        self.force_label_to_internal = dict(zip(internal_name_to_label.values(), internal_name_to_label.keys()))
         self.buttons["check_buttons"] = CheckButtonsV(
             ax=buttons_ax["check_buttons"],
             labels=internal_name_to_label,
             actives=self.graph_cfg.f_name_to_show,
-            callback=dict(zip(internal_name_to_label.keys(), [self.forces_callback]*3)),
+            callback=dict(zip(internal_name_to_label.keys(), [self.forces_callback]*len(internal_name_to_label.keys()))),
             rel_pad=0,
-            colors=self.graph_cfg.force_to_color
+            colors=self.graph_cfg.force_to_color,
         )
-
+       
+        internal_name_to_label = {"pos_cont": "Show pos_cont" }
+        self.pos_cont_label_to_internal = dict(zip(internal_name_to_label.values(), internal_name_to_label.keys()))
+        self.buttons["cb_pos_cont"] = CheckButtonsV(
+            ax=buttons_ax["cb_pos_cont"],
+            labels=internal_name_to_label,
+            actives={"pos_cont": self.graph_cfg.show_pos_cont},
+            callback={"pos_cont": self.pos_cont_callback},
+        )
+        
         if run_cfg.id is RunType.REPLAY_DATA:
             self.sliders["freq"] = Slider(
                 ax=slider_ax["freq"],
@@ -78,8 +87,11 @@ class WidgetManager(widget.StandardManager):
             self.sliders["freq"].label.set_horizontalalignment("left")
             self.sliders["freq"].on_changed(self.freq_callback)
 
+    def pos_cont_callback(self, label):
+        self.graph_cfg.show_pos_cont = not self.graph_cfg.show_pos_cont
+
     def forces_callback(self, label):
-        internal_l = self.label_to_internal[label]
+        internal_l = self.force_label_to_internal[label]
         self.graph_cfg.f_name_to_show[internal_l] = not self.graph_cfg.f_name_to_show[internal_l] 
 
     def circles_callback(self, event):

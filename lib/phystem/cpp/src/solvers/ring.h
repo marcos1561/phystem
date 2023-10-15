@@ -10,12 +10,32 @@
 
 #include "../intersections.h"
 
+using Vec2d = std::array<double, 2>;
+using PosArray = std::vector<std::array<double, 2>>;
+
+double dot_prod(Vec2d &a, Vec2d& b) {
+    return a[0] * b[0] + a[1] * b[1];
+}
+
+double cross_prod(Vec2d &a, Vec2d& b) {
+    return a[0] * b[1] - a[1] * b[0];
+}
+
+double vector_dist(Vec2d& a, Vec2d& b) {
+    double dx = b[0] - a[0];
+    double dy = b[1] - a[1];
+    double comp = sqrt(dx*dx + dy*dy);
+
+    return comp;
+}
+
 class Ring {
-private:
+public:
     double spring_k;
     double spring_r;
 
-    double bend_k;
+    double k_bend;
+    double p0;
 
     double mobility;
     double relax_time;
@@ -31,7 +51,6 @@ private:
 
     double force_r_lim;
 
-public:
     vector<array<double, 2>> pos; // Posições das partículas
     vector<array<double, 2>> vel; // Velocidades das partículas
     vector<double> self_prop_angle; // Ângulo da direção da velocidade auto propulsora
@@ -45,15 +64,27 @@ public:
     vector<array<double, 2>> self_prop_vel; // Vetor unitário da velocidade propulsora
     vector<array<double, 2>> sum_forces_matrix; // Matrix com a soma das forças sobre cada partícula
 
+
+    //==
+    // Area Potencial
+    //==
+    vector<array<double, 2>> differences; // Vetor cujo i-ésimo elemento contém pos[i+1] - pos[i]
+    vector<array<double, 2>> pos_continuos; // Posições das partículas de forma contínua;
+    //=========//
+
+
+    //==
     // DEBUG
+    //==
     vector<array<double, 2>> total_forces;
     vector<array<double, 2>> spring_forces;
     vector<array<double, 2>> bend_forces;
     vector<array<double, 2>> vol_forces;
+    vector<array<double, 2>> area_forces;
 
-
-    vector<vector<double*>> pos_t = vector<vector<double*>>(2); // Posições das partículas transposta
+    vector<vector<double*>> pos_t = vector<vector<double*>>(2); // Transposta da posições das partículas
     
+
     // Pontos utilizados na renderização do anel, sua estrutura é a seguinte
     //
     // [p1, pm1_1, pm1_2, p2, pm2_1, pm2_2, p3, pm3_1, pm3_2, p4, ...]
@@ -67,7 +98,7 @@ public:
 
     int count_overlap = 0;
     int count_zero_speed = 0;
-    //
+    //=========//
 
     Ring(vector<array<double, 2>> &pos0, vector<array<double, 2>> &vel0, vector<double> self_prop_angle0,
         RingCfg dynamic_cfg, double size, double dt, int seed=-1) 
@@ -92,7 +123,8 @@ public:
         spring_k = dynamic_cfg.spring_k;
         spring_r = dynamic_cfg.spring_r;
         
-        bend_k = dynamic_cfg.bend_k;
+        k_bend = dynamic_cfg.k_bend;
+        p0 = dynamic_cfg.p0;
 
         mobility = dynamic_cfg.mobility;
         relax_time = dynamic_cfg.relax_time;
@@ -115,11 +147,15 @@ public:
         }
 
         sum_forces_matrix = vector<array<double, 2>>(n, {0., 0.});
+        
+        differences = vector<array<double, 2>>(n, {0., 0.});
+        pos_continuos = vector<array<double, 2>>(n, {0., 0.});
 
         #if DEBUG == 1
         spring_forces = vector<array<double, 2>>(n, {0., 0.});
         bend_forces = vector<array<double, 2>>(n, {0., 0.});
         vol_forces = vector<array<double, 2>>(n, {0., 0.});
+        area_forces = vector<array<double, 2>>(n, {0., 0.});
         total_forces = vector<array<double, 2>>(n, {0., 0.});
 
         for (int i=0; i < n; i ++) {
@@ -134,8 +170,15 @@ public:
     }
 
     double periodic_dist(double &dx, double &dy) {
-        // NOTE: Quando o espaço não for um quadrado, é necessário
-        // usar box_width para o dx e box_height para o dy.         
+        /**
+         * Retorna a distância, considerando as bordas periódicas, para a 
+         * diferença entre dois pontos (sem considerar as bordas periódicas) dados por "dx" e "dy".
+         * 
+         * OBS: Esse método atualiza 'dx' e 'dy' para ficarem de acordo com as bordas periódicas.
+         * 
+         * NOTE: Quando o espaço não for um quadrado, é necessário
+         * usar box_width para o dx e box_height para o dy.       
+        */
         if (abs(dx) > size * 0.5)
             dx -= copysign(size, dx);
 
@@ -194,6 +237,9 @@ public:
             calc_spring_force(p_id, id_left);
             calc_spring_force(p_id, id_right);
         }
+
+        // Bend
+        calc_bend_forces();
     }
 
     void calc_spring_force(int p_id, int other_id) {
@@ -217,6 +263,110 @@ public:
         spring_forces[p_id][0] += spring_fx;
         spring_forces[p_id][1] += spring_fy;
         #endif
+    }
+
+
+    double calc_differences() {
+        double perimeter = 0;
+
+        auto n = pos.size();
+        double dx, dy;
+        for (size_t i = 0; i < (n-1); i++)
+        {
+            dx = pos[i+1][0] - pos[i][0];
+            dy = pos[i+1][1] - pos[i][1];
+            perimeter += periodic_dist(dx, dy);
+            
+            differences[i] = {dx, dy};
+        }
+
+        dx = pos[0][0] - pos[n-1][0];
+        dy = pos[0][1] - pos[n-1][1];
+        perimeter += periodic_dist(dx, dy);
+
+        differences[n-1] = {dx, dy}; 
+
+        return perimeter;
+    }
+
+    double calc_area(PosArray& points) {
+        double area = 0.0;
+
+        for (size_t i = 0; i < points.size()-1; i++) {
+            auto& p1 = points[i];
+            auto& p2 = points[i+1];
+            area += cross_prod(p1, p2);
+        }
+        int i = points.size() - 1;
+        auto& p1 = points[i];
+        auto& p2 = points[0];
+        area += cross_prod(p1, p2);
+
+        return area / 2.0;
+    }
+
+    double calc_perimeter(PosArray& points) {
+        double perimeter = 0.0;
+
+        for (size_t i = 0; i < points.size()-1; i++)
+        {
+            perimeter += vector_dist(points[i], points[i+1]);
+        }
+        int i = points.size() - 1;
+        perimeter += vector_dist(points[i], points[0]);
+
+        return perimeter;
+    }
+
+    void calc_bend_force(int point_id, double area, double perimeter) {
+        int id = pos_continuos.size() - 1;
+        if (point_id != 0)
+            id = point_id - 1;
+        auto& v1 = pos_continuos[id];
+        
+        id = 0;
+        if (point_id != (pos_continuos.size() - 1))
+            id = point_id + 1;
+        auto& v2 = pos_continuos[id];
+
+        auto& point = pos_continuos[point_id]; 
+
+        double d1 = vector_dist(v1, pos_continuos[point_id]);
+        double d2 = vector_dist(v2, pos_continuos[point_id]);
+
+        double delta_area = area - (perimeter/p0) * (perimeter/p0);
+
+        double area_0_deriv_x =  2.0 * perimeter / (p0*p0) * ((v1[0] - point[0]) / d1 +  (v2[0] - point[0]) / d2);
+        double area_0_deriv_y =  2.0 * perimeter / (p0*p0) * ((v1[1] - point[1]) / d1 +  (v2[1] - point[1]) / d2);
+        
+        double gradient_x = k_bend * delta_area * ((v2[1] - v1[1])/2.0 + area_0_deriv_x);
+        double gradient_y = k_bend * delta_area * (-(v2[0] - v1[0])/2.0 + area_0_deriv_y);
+
+        #if DEBUG == 1
+        area_forces[point_id][0] = -gradient_x;
+        area_forces[point_id][1] = -gradient_y;
+        #endif
+
+        sum_forces_matrix[point_id][0] -= gradient_x;
+        sum_forces_matrix[point_id][1] -= gradient_y;
+    }
+
+    void calc_bend_forces() {
+        double perimeter = calc_differences();
+
+        pos_continuos[0] = pos[0];
+        for (size_t i = 0; i < (differences.size()-1); i++)
+        {
+            pos_continuos[i+1][0] = pos_continuos[i][0] + differences[i][0];
+            pos_continuos[i+1][1] = pos_continuos[i][1] + differences[i][1];
+        }
+
+        double area = calc_area(pos_continuos);
+        
+        for (size_t i = 0; i < pos_continuos.size(); i++)
+        {
+            calc_bend_force(i, area, perimeter);
+        }
     }
 
     void advance_time() {
@@ -279,6 +429,29 @@ public:
             sum_forces_matrix[i][1] = 0.f;
         }
     }
+
+    void update_normal() {
+        #if DEBUG == 1
+        rng_manager.update();
+        
+        for (int i = 0; i < n; i++)
+        {
+           spring_forces[i][0] = 0.;
+           spring_forces[i][1] = 0.;
+           
+           vol_forces[i][0] = 0.;
+           vol_forces[i][1] = 0.;
+        }
+        #endif
+
+        calc_forces_normal();
+        advance_time();
+
+        #if DEBUG == 1
+        update_graph_points();   
+        #endif
+    }
+   
 
     void calc_border_point(array<double, 2> &p1, array<double, 2> &p2, int mid_point_id, bool place_above_p2=false) {
         /**
@@ -350,7 +523,7 @@ public:
         graph_points[0][1] = pos[0][1];
         
         calc_border_point(pos[0], pos[n-1], 3*n - 1, true);
-        calc_border_point(pos[0], pos[1], 1, 0);
+        calc_border_point(pos[0], pos[1], 1, false);
         for (int p_id = 1; p_id < n; p_id++) {
             int p_graph_id = 3 * p_id;
             
@@ -370,28 +543,7 @@ public:
         }
     }
 
-    void update_normal() {
-        #if DEBUG == 1
-        rng_manager.update();
-        
-        for (int i = 0; i < n; i++)
-        {
-           spring_forces[i][0] = 0.;
-           spring_forces[i][1] = 0.;
-           
-           vol_forces[i][0] = 0.;
-           vol_forces[i][1] = 0.;
-        }
-        #endif
 
-        calc_forces_normal();
-        advance_time();
-
-        #if DEBUG == 1
-        update_graph_points();   
-        #endif
-    }
-   
     double mean_vel() {
         double sum_vel[2] = {0, 0};
         for (array<double, 2> vel_i: vel) {

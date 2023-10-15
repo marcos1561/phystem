@@ -29,7 +29,8 @@ public:
         spring_k = py::float_(values["spring_k"]);
         spring_r = py::float_(values["spring_r"]);
         
-        bend_k = py::float_(values["bend_k"]);
+        k_bend = py::float_(values["k_bend"]);
+        p0 = py::float_(values["p0"]);
 
         mobility = py::float_(values["mobility"]);
         relax_time = py::float_(values["relax_time"]);

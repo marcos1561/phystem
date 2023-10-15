@@ -99,6 +99,7 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def_readonly("vel", &Ring::vel, byref)
         .def_readonly("self_prop_vel", &Ring::self_prop_vel, byref)
         .def_readonly("self_prop_angle", &Ring::self_prop_angle, byref)
+        .def_readonly("pos_continuos", &Ring::pos_continuos, byref)
         .def_readonly("pos_t", &Ring::pos_t, byref)
         .def_readonly("graph_points", &Ring::graph_points, byref)
         .def_readonly("count_overlap", &Ring::count_overlap)
@@ -106,5 +107,6 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def_readonly("spring_forces", &Ring::spring_forces)
         .def_readonly("total_forces", &Ring::total_forces)
         .def_readonly("vol_forces", &Ring::vol_forces)
+        .def_readonly("area_forces", &Ring::area_forces)
         ;
 }
