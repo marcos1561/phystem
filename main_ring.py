@@ -7,26 +7,25 @@ from phystem.ring import collect_pipelines
 from phystem.core.run_config import UpdateType, SolverType, RunType
 from phystem.core.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, ReplayDataCfg
 
-enable_force = 1
 dynamic_cfg = RingCfg(
-    spring_k=enable_force*4,
-    spring_r=0.8,
+    spring_k=15,
+    spring_r=0.5,
     
     k_bend=1,
     # p0=4.828427, # Triângulo retângulo
-    p0=4.55901, # Triângulo equilátero
+    # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
-    # p0=3.5449077018, # Círculo
+    p0=3.5449077018, # Círculo
 
-    exclusion_vol=enable_force*1,
+    exclusion_vol=1,
     diameter=1,
     
     relax_time=1,
-    mobility=enable_force*1,
+    mobility=1,
     vo=10,
     
-    trans_diff=1*enable_force*0.1,
-    rot_diff=1*enable_force*0.1,
+    trans_diff=0.1,
+    rot_diff=0.1,
 )
 
 space_cfg = SpaceCfg(
@@ -34,7 +33,7 @@ space_cfg = SpaceCfg(
 )
 
 create_cfg = CreateCfg(
-    n = 20,
+    n = 30,
     r = space_cfg.size/4,
     vo = dynamic_cfg.vo,
     angle=3.1415/180 * 0,
@@ -46,14 +45,14 @@ seed=None
 run_type = RunType.REAL_TIME
 
 real_time_cfg = RealTimeCfg(
-    dt = 0.001,
-    num_steps_frame = 40,
+    dt = 0.0001,
+    num_steps_frame = 1000,
     fps = 60,
     graph_cfg = GraphCfg(
         show_circles  = False,
         show_f_spring = False,
         show_f_vol    = False,
-        show_f_area   = True,
+        show_f_area   = False,
         show_f_total  = False,
     )
 )

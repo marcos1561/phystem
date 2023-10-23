@@ -88,6 +88,19 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def_readonly("n", &SelfPropelling::n, byref)
         ;
     
+    py::class_<SpringDebug>(solvers, "SpringDebug")
+        .def_readonly("count_overlap", &SpringDebug::count_overlap)
+        ;      
+    py::class_<ExcludedVolDebug>(solvers, "ExcludedVolDebug")
+        .def_readonly("count_overlap", &ExcludedVolDebug::count_overlap)
+        ;      
+    py::class_<AreaDebug>(solvers, "AreaDebug")
+        .def_readonly("count_overlap", &AreaDebug::count_overlap)
+        ;      
+    py::class_<UpdateDebug>(solvers, "UpdateDebug")
+        .def_readonly("count_zero_speed", &UpdateDebug::count_zero_speed)
+        ;      
+
     py::class_<Ring>(solvers, "Ring")
         .def(py::init<VecList&, VecList&, vector<double>&, RingCfgPy, 
             double, double, int>(), py::arg("pos0"), py::arg("vel0"), py::arg("self_prop_angle0"), 
@@ -102,11 +115,14 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def_readonly("pos_continuos", &Ring::pos_continuos, byref)
         .def_readonly("pos_t", &Ring::pos_t, byref)
         .def_readonly("graph_points", &Ring::graph_points, byref)
-        .def_readonly("count_overlap", &Ring::count_overlap)
-        .def_readonly("count_zero_speed", &Ring::count_zero_speed)
+        .def_readonly("update_debug", &Ring::update_debug)
+        .def_readonly("spring_debug", &Ring::spring_debug)
+        .def_readonly("excluded_vol_debug", &Ring::excluded_vol_debug)
+        .def_readonly("area_debug", &Ring::area_debug)
         .def_readonly("spring_forces", &Ring::spring_forces)
         .def_readonly("total_forces", &Ring::total_forces)
         .def_readonly("vol_forces", &Ring::vol_forces)
         .def_readonly("area_forces", &Ring::area_forces)
+        .def_readonly("differences", &Ring::differences)
         ;
 }

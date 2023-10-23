@@ -56,14 +56,6 @@ class CppSolver:
         return self.cpp_solver.total_forces
     
     @property
-    def count_zero_speed(self):
-        return self.cpp_solver.count_zero_speed
-    
-    @property
-    def count_overlap(self):
-        return self.cpp_solver.count_overlap
-   
-    @property
     def spring_forces(self):
         return self.cpp_solver.spring_forces
     
@@ -78,6 +70,23 @@ class CppSolver:
     @property
     def total_forces(self):
         return self.cpp_solver.total_forces
+    
+    @property
+    def differences(self):
+        return self.cpp_solver.differences
+    
+    @property
+    def spring_debug(self):
+        return self.cpp_solver.spring_debug
+    @property
+    def excluded_vol_debug(self):
+        return self.cpp_solver.excluded_vol_debug
+    @property
+    def area_debug(self):
+        return self.cpp_solver.area_debug
+    @property
+    def update_debug(self):
+        return self.cpp_solver.update_debug
     
     def update(self):
         self.update_func()

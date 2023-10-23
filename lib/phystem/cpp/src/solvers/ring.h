@@ -29,6 +29,22 @@ double vector_dist(Vec2d& a, Vec2d& b) {
     return comp;
 }
 
+struct SpringDebug {
+    int count_overlap;
+};
+
+struct ExcludedVolDebug {
+    int count_overlap;
+};
+
+struct AreaDebug {
+    int count_overlap;
+};
+
+struct UpdateDebug {
+    int count_zero_speed;
+};
+
 class Ring {
 public:
     double spring_k;
@@ -58,6 +74,7 @@ public:
     RingCfg dynamic_cfg; // Configurações da dinâmica entre as partículas
     double size; // tamanho de uma dimensão do espaço
     double dt; 
+    double sim_time;
 
     int n; // Número de partículas no anel
     
@@ -96,8 +113,10 @@ public:
     RngManager rng_manager;
     IntersectionCalculator intersect;
 
-    int count_overlap = 0;
-    int count_zero_speed = 0;
+    UpdateDebug update_debug = {0};
+    SpringDebug spring_debug = {0};
+    ExcludedVolDebug excluded_vol_debug = {0};
+    AreaDebug area_debug = {0};
     //=========//
 
     Ring(vector<array<double, 2>> &pos0, vector<array<double, 2>> &vel0, vector<double> self_prop_angle0,
@@ -110,7 +129,8 @@ public:
             srand(time(0));
 
         n = pos0.size();
-        
+        sim_time = 0.0;
+
         initialize_dynamic();
         
         #if DEBUG == 1
@@ -209,7 +229,7 @@ public:
 
                 #if DEBUG == 1                
                 if (dist == 0.) {
-                    count_overlap += 1;
+                    excluded_vol_debug.count_overlap += 1;
                 }
                 #endif
 
@@ -250,6 +270,12 @@ public:
         double dy = other[1] - p[1];
 
         double dist = periodic_dist(dx, dy);
+
+        #if DEBUG == 1                
+        if (dist == 0.) {
+            spring_debug.count_overlap += 1;
+        }
+        #endif
 
         double force_intensity = spring_k * (dist - spring_r);         
 
@@ -334,6 +360,14 @@ public:
         double d1 = vector_dist(v1, pos_continuos[point_id]);
         double d2 = vector_dist(v2, pos_continuos[point_id]);
 
+        #if DEBUG == 1                
+        if (d1 == 0.)
+            area_debug.count_overlap += 1;
+        if (d2 == 0.) 
+            area_debug.count_overlap += 1;
+        #endif
+
+
         double delta_area = area - (perimeter/p0) * (perimeter/p0);
 
         double area_0_deriv_x =  2.0 * perimeter / (p0*p0) * ((v1[0] - point[0]) / d1 +  (v2[0] - point[0]) / d2);
@@ -374,6 +408,14 @@ public:
             pos[i][0] += dt * vel[i][0];
             pos[i][1] += dt * vel[i][1];
 
+            if (vel[i][0] > 1e6) {
+                std::cout << "merda" << std::endl;
+            }
+            
+            if (isnan(pos[i][0]) == true) {
+                std::cout << "merda" << std::endl;
+            }
+
             #if DEBUG == 1    
                 auto& rng_nums = rng_manager.get_random_num(i);
                 double rng_rot = (double)rng_nums[0]/(double)RAND_MAX * 2. - 1.;
@@ -392,10 +434,15 @@ public:
             
             double angle_derivate;
             if (speed == 0.) {
-                count_zero_speed += 1;
+                update_debug.count_zero_speed += 1;
                 angle_derivate = 0.;
             } else {
                 double cross_prod = self_prop_vel[i][0] * vel[i][1]/speed - self_prop_vel[i][1] * vel[i][0]/speed;
+                
+                if ((cross_prod > 1) | (cross_prod < -1)) {
+                    std::cout << "merda" << std::endl;
+                }
+
                 angle_derivate = 1. / relax_time * asin(cross_prod) + noise_rot;
             }
             
@@ -418,6 +465,10 @@ public:
                     pos[i][dim] -= size;
                 else if (pos[i][dim] < -size/2.f)
                     pos[i][dim] += size;
+            }
+
+            if (isnan(pos[i][0]) == true) {
+                std::cout << "merda" << std::endl;
             }
 
             #if DEBUG == 1
@@ -450,6 +501,8 @@ public:
         #if DEBUG == 1
         update_graph_points();   
         #endif
+
+        sim_time += dt;
     }
    
 

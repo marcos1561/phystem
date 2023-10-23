@@ -3,6 +3,7 @@ from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection, PathCollection, PatchCollection
 from matplotlib.patches import Circle
 from matplotlib.quiver import Quiver 
+from matplotlib import colors 
 
 from copy import deepcopy
 
@@ -80,18 +81,38 @@ class MainGraph:
         self.pos = solver.pos
         self.graph_points = solver.graph_points
 
-
     def get_segments(self) -> list:
         n = len(self.pos)
 
-        segments = [[self.graph_points[3*n - 1], self.graph_points[0]]]
-        segments.append([self.graph_points[0], self.graph_points[1]])
-        for id in range(1, n):
+        # segments = [[self.graph_points[3*n - 1], self.graph_points[0]]]
+        # segments.append([self.graph_points[0], self.graph_points[1]])
+        # for id in range(1, n):
+        #     g_id = 3 * id
+        #     segments.append([self.graph_points[g_id-1], self.graph_points[g_id]])
+        #     segments.append([self.graph_points[g_id], self.graph_points[g_id+1]])
+        
+        segments = []
+        for id in range(n-1):
             g_id = 3 * id
-            segments.append([self.graph_points[g_id-1], self.graph_points[g_id]])
             segments.append([self.graph_points[g_id], self.graph_points[g_id+1]])
+            segments.append([self.graph_points[g_id+2], self.graph_points[g_id+3]])
+        
+        g_id = 3 * (n - 1)
+        segments.append([self.graph_points[g_id], self.graph_points[g_id+1]])
+        segments.append([self.graph_points[g_id+2], self.graph_points[0]])
         
         return segments
+
+    def get_distances(self):
+        diff = np.array(self.solver.differences)
+        distances = np.sqrt(diff[:, 0]**2 + diff[:, 1]**2)
+
+        dist_to_colors = []
+        for d in distances:
+            dist_to_colors.append(d)
+            dist_to_colors.append(d)
+
+        return dist_to_colors
 
     def get_forces(self) -> dict[str, np.ndarray]:
         forces = {
@@ -124,7 +145,12 @@ class MainGraph:
 
         # self.gg_points = self.ax.scatter(*np.array(self.graph_points).T)
 
-        self.lines = LineCollection(self.get_segments())
+        dr = self.dynamic_cfg.spring_r/2
+        self.lines = LineCollection(self.get_segments(),
+            norm=colors.Normalize(self.dynamic_cfg.spring_r - dr , self.dynamic_cfg.spring_r + dr),
+            cmap=colors.LinearSegmentedColormap.from_list("spring_tension", ["blue", "black", "red"]),
+        )
+
         self.ax.add_collection(self.lines)
 
         #==
@@ -132,7 +158,7 @@ class MainGraph:
         #==
         self.circles = []
         for x_i, y_i in zip(self.pos_t[0], self.pos_t[1]):
-            self.circles.append(Circle((x_i, y_i), self.dynamic_cfg.diameter, fill=False))
+            self.circles.append(Circle((x_i, y_i), self.dynamic_cfg.diameter/2, fill=False))
         
         self.circles_col = PatchCollection(self.circles, match_original=True)
         if not self.graph_cfg.show_circles:
@@ -163,6 +189,8 @@ class MainGraph:
         #   Talvez criar os segmentos no c++ e apenas referenciar eles aqui.
         
         self.points.set_offsets(self.pos)
+        self.lines.set_segments(self.get_segments())
+        self.lines.set_array(self.get_distances())
 
         if self.graph_cfg.show_pos_cont:
             if not self.pos_cont_state:
@@ -174,9 +202,6 @@ class MainGraph:
             if self.pos_cont_state:
                 self.points_continuos.remove()
                 self.pos_cont_state = False
-
-
-        self.lines.set_segments(self.get_segments())
 
         #==
         # Circles
@@ -223,8 +248,10 @@ class Info(graph.Info):
             f"dt: {self.solver.dt:.3f}\n"
             f"<V> = {self.solver.mean_vel():.3f}\n"
             "\n"
-            f"overlap: {self.solver.count_overlap}\n"
-            f"zero_speed: {self.solver.count_zero_speed}\n"
+            f"spring_overlap: {self.solver.spring_debug.count_overlap}\n"
+            f"vol_overlap   : {self.solver.excluded_vol_debug.count_overlap}\n"
+            f"area_overlap  : {self.solver.area_debug.count_overlap}\n"
+            f"zero_speed    : {self.solver.update_debug.count_zero_speed}\n"
             "\n"
             f"{self.cfg_info}"
         )
