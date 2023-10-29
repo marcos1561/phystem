@@ -8,13 +8,18 @@
 
 using namespace std;
 
+PYBIND11_MAKE_OPAQUE(vector<vector<array<double, 2>>>);
 PYBIND11_MAKE_OPAQUE(vector<array<double, 2>>);
+PYBIND11_MAKE_OPAQUE(vector<vector<vector<double*>>>);
 PYBIND11_MAKE_OPAQUE(vector<vector<double*>>);
+PYBIND11_MAKE_OPAQUE(vector<vector<double>>);
 PYBIND11_MAKE_OPAQUE(vector<double>);
 
 using List = vector<double>;
+using List2d = vector<vector<double>>;
 using VecList = vector<array<double, 2>>;
 using PyVecList = vector<vector<double*>>;
+using PyVecList3d = vector<vector<vector<double*>>>;
 
 namespace py = pybind11;
 constexpr auto byref = py::return_value_policy::reference_internal;
@@ -28,9 +33,12 @@ PYBIND11_MODULE(cpp_lib, m) {
     //==
     // Data Types
     //==
-    py::bind_vector<PyVecList>(data_types, "PyVecList");
+    py::bind_vector<Vector3d>(data_types, "Vector3d");
     py::bind_vector<VecList>(data_types, "PosVec");
     py::bind_vector<List>(data_types, "List");
+    py::bind_vector<List2d>(data_types, "List2d");
+    py::bind_vector<PyVecList>(data_types, "PyVecList");
+    py::bind_vector<PyVecList3d>(data_types, "PyVecList3d");
 
     //==
     // Configs
@@ -102,12 +110,13 @@ PYBIND11_MODULE(cpp_lib, m) {
         ;      
 
     py::class_<Ring>(solvers, "Ring")
-        .def(py::init<VecList&, VecList&, vector<double>&, RingCfgPy, 
+        .def(py::init<Vector3d&, Vector3d&, vector<vector<double>>&, RingCfgPy, 
             double, double, int>(), py::arg("pos0"), py::arg("vel0"), py::arg("self_prop_angle0"), 
             py::arg("dynamic_cfg"), py::arg("size"), py::arg("dt"), py::arg("seed")=-1)
         .def("update_normal", &Ring::update_normal, py::call_guard<py::gil_scoped_release>())
         .def("mean_vel", &Ring::mean_vel)
         .def("mean_vel_vec", &Ring::mean_vel_vec)
+        .def_readonly("num_rings", &Ring::num_rings, byref)
         .def_readonly("pos", &Ring::pos, byref)
         .def_readonly("vel", &Ring::vel, byref)
         .def_readonly("self_prop_vel", &Ring::self_prop_vel, byref)

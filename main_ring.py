@@ -29,14 +29,24 @@ dynamic_cfg = RingCfg(
 )
 
 space_cfg = SpaceCfg(
-    size = 20,
+    size = 30,
 )
 
+from math import pi
+radius = 20/6
+a = 2
 create_cfg = CreateCfg(
-    n = 30,
-    r = space_cfg.size/4,
+    num_rings = 4,
+    num_p = 30,
+    r = radius,
     vo = dynamic_cfg.vo,
-    angle=3.1415/180 * 0,
+    angle=[pi/4, -3*pi/4, 3*pi/4, -pi/4],
+    center=[
+        [-a * radius, -a * radius], 
+        [a * radius, a * radius], 
+        [a * radius, -a * radius], 
+        [-a * radius, a * radius], 
+    ]
 )
 
 seed = 40028922
@@ -46,14 +56,15 @@ run_type = RunType.REAL_TIME
 
 real_time_cfg = RealTimeCfg(
     dt = 0.0001,
-    num_steps_frame = 1000,
+    num_steps_frame = 200,
     fps = 60,
     graph_cfg = GraphCfg(
-        show_circles  = False,
+        show_circles  = True,
         show_f_spring = False,
         show_f_vol    = False,
         show_f_area   = False,
         show_f_total  = False,
+        cpp_is_debug=True,
     )
 )
 
@@ -86,14 +97,18 @@ collect_data_cfg = CollectDataCfg(
 )
 
 save_cfg = SaveCfg(
-    path = "data/videos/teste.mp4",
-    speed=1,
-    fps=30, 
-    dt=0.001,
-    duration=5,
+    path = "data/videos/teste2.mp4",
+    speed=0.5,
+    fps=60, 
+    dt=0.0001,
+    duration=10,
     tf=None,
-    graph_cfg=GraphCfg(
-        show_f_spring=True
+    graph_cfg = GraphCfg(
+        show_circles  = True,
+        show_f_spring = False,
+        show_f_vol    = False,
+        show_f_area   = False,
+        show_f_total  = False,
     ),
 )
 

@@ -9,7 +9,7 @@ using namespace std;
 int main() {
     int n = 30;
     double size = 20;
-    double r = size/4.0;
+    double r = size/6.0;
     double dt = 0.0001;
 
     auto cfg = RingCfg();
@@ -29,7 +29,7 @@ int main() {
     cfg.exclusion_vol = 1.;
     cfg.diameter = 1.;
 
-    auto data = ring::init_cfg(n, r, cfg.vo);
+    auto data = ring::init_cfg(2, n, r, cfg.vo);
 
     auto solver = Ring(data.pos, data.vel, data.self_prop_angle, cfg, size, dt);
 
@@ -37,8 +37,8 @@ int main() {
     while (true)
     {
         solver.update_normal();
-        // auto pos = solver.vel[0];
-        // std::cout << pos[0] << ", " << pos[1] << std::endl;
+        auto pos = solver.pos[0][0];
+        std::cout << pos[0] << ", " << pos[1] << std::endl;
     }
     
     // for (auto pos: solver.pos) {

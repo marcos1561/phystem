@@ -11,7 +11,8 @@
 #include "../intersections.h"
 
 using Vec2d = std::array<double, 2>;
-using PosArray = std::vector<std::array<double, 2>>;
+using Vector2d = std::vector<std::array<double, 2>>;
+using Vector3d = std::vector<std::vector<std::array<double, 2>>>;
 
 double dot_prod(Vec2d &a, Vec2d& b) {
     return a[0] * b[0] + a[1] * b[1];
@@ -67,39 +68,40 @@ public:
 
     double force_r_lim;
 
-    vector<array<double, 2>> pos; // Posições das partículas
-    vector<array<double, 2>> vel; // Velocidades das partículas
-    vector<double> self_prop_angle; // Ângulo da direção da velocidade auto propulsora
+    Vector3d pos; // Posições das partículas
+    Vector3d vel; // Velocidades das partículas
+    vector<vector<double>> self_prop_angle; // Ângulo da direção da velocidade auto propulsora
 
     RingCfg dynamic_cfg; // Configurações da dinâmica entre as partículas
     double size; // tamanho de uma dimensão do espaço
     double dt; 
     double sim_time;
 
-    int n; // Número de partículas no anel
+    int num_particles; // Número de partículas no anel
+    int num_rings; 
     
-    vector<array<double, 2>> self_prop_vel; // Vetor unitário da velocidade propulsora
-    vector<array<double, 2>> sum_forces_matrix; // Matrix com a soma das forças sobre cada partícula
+    Vector3d self_prop_vel; // Vetor unitário da velocidade propulsora
+    Vector3d sum_forces_matrix; // Matrix com a soma das forças sobre cada partícula
 
 
     //==
     // Area Potencial
     //==
-    vector<array<double, 2>> differences; // Vetor cujo i-ésimo elemento contém pos[i+1] - pos[i]
-    vector<array<double, 2>> pos_continuos; // Posições das partículas de forma contínua;
+    Vector3d differences; // Vetor cujo i-ésimo elemento contém pos[i+1] - pos[i]
+    Vector3d pos_continuos; // Posições das partículas de forma contínua;
     //=========//
 
 
     //==
     // DEBUG
     //==
-    vector<array<double, 2>> total_forces;
-    vector<array<double, 2>> spring_forces;
-    vector<array<double, 2>> bend_forces;
-    vector<array<double, 2>> vol_forces;
-    vector<array<double, 2>> area_forces;
+    Vector3d total_forces;
+    Vector3d spring_forces;
+    Vector3d bend_forces;
+    Vector3d vol_forces;
+    Vector3d area_forces;
 
-    vector<vector<double*>> pos_t = vector<vector<double*>>(2); // Transposta da posições das partículas
+    vector<vector<vector<double*>>> pos_t; // Transposta da posições das partículas
     
 
     // Pontos utilizados na renderização do anel, sua estrutura é a seguinte
@@ -108,7 +110,7 @@ public:
     //
     // Em que p{i} é o i-ésimo ponto no anel e pm{i}_{1, 2} são os pontos médios entre
     // o i-ésimo e (i+1)-ésimo ponto do anel.
-    vector<array<double, 2>> graph_points;
+    Vector3d graph_points;
 
     RngManager rng_manager;
     IntersectionCalculator intersect;
@@ -119,7 +121,7 @@ public:
     AreaDebug area_debug = {0};
     //=========//
 
-    Ring(vector<array<double, 2>> &pos0, vector<array<double, 2>> &vel0, vector<double> self_prop_angle0,
+    Ring(Vector3d &pos0, Vector3d &vel0, vector<vector<double>> self_prop_angle0,
         RingCfg dynamic_cfg, double size, double dt, int seed=-1) 
     : pos(pos0), vel(vel0), self_prop_angle(self_prop_angle0), dynamic_cfg(dynamic_cfg), size(size), dt(dt)
     {
@@ -128,13 +130,14 @@ public:
         else
             srand(time(0));
 
-        n = pos0.size();
+        num_particles = pos0[0].size();
+        num_rings = pos0.size();
         sim_time = 0.0;
 
         initialize_dynamic();
         
         #if DEBUG == 1
-        rng_manager = RngManager(n, 3);
+        rng_manager = RngManager(num_particles, num_rings, 3);
         intersect = IntersectionCalculator(size);
         #endif
     }
@@ -160,30 +163,44 @@ public:
         diameter_twelve = pow(diameter, 12.); 
         force_r_lim = pow(2, 1./6.) * diameter;
 
-        for (double angle : self_prop_angle) {
-            double vx = cos(angle);
-            double vy = sin(angle);
-            self_prop_vel.push_back({vx, vy});
+        Vector2d ring_self_prop_vel;
+        for (auto vec_angle : self_prop_angle) {
+            ring_self_prop_vel = Vector2d(num_particles);
+            for (int i = 0; i < num_particles; i++)
+            {
+                auto angle = vec_angle[i];
+                double vx = cos(angle);
+                double vy = sin(angle);
+                ring_self_prop_vel[i] = {vx, vy};
+            }
+            self_prop_vel.push_back(ring_self_prop_vel);
         }
 
-        sum_forces_matrix = vector<array<double, 2>>(n, {0., 0.});
+        auto zero_vector_2d = vector<array<double, 2>>(num_particles, {0., 0.}); 
+        sum_forces_matrix = Vector3d(num_rings, zero_vector_2d);
         
-        differences = vector<array<double, 2>>(n, {0., 0.});
-        pos_continuos = vector<array<double, 2>>(n, {0., 0.});
+        differences = Vector3d(num_rings, zero_vector_2d);
+        pos_continuos = Vector3d(num_rings, zero_vector_2d);
 
         #if DEBUG == 1
-        spring_forces = vector<array<double, 2>>(n, {0., 0.});
-        bend_forces = vector<array<double, 2>>(n, {0., 0.});
-        vol_forces = vector<array<double, 2>>(n, {0., 0.});
-        area_forces = vector<array<double, 2>>(n, {0., 0.});
-        total_forces = vector<array<double, 2>>(n, {0., 0.});
+        spring_forces = Vector3d(num_rings, zero_vector_2d);
+        bend_forces = Vector3d(num_rings, zero_vector_2d);
+        vol_forces = Vector3d(num_rings, zero_vector_2d);
+        area_forces = Vector3d(num_rings, zero_vector_2d);
+        total_forces = Vector3d(num_rings, zero_vector_2d);
 
-        for (int i=0; i < n; i ++) {
-            pos_t[0].push_back(&pos[i][0]);
-            pos_t[1].push_back(&pos[i][1]);
+        // vector<vector<double*>> ring_pos_t;
+        pos_t = vector<vector<vector<double*>>>(num_rings, vector<vector<double*>>(2));
+        for (int i=0; i < num_rings; i ++) {
+            for (int j = 0; j < num_particles; j++)
+            {
+                pos_t[i][0].push_back(&pos[i][j][0]);
+                pos_t[i][1].push_back(&pos[i][j][1]);
+            }
         }
 
-        graph_points = vector<array<double, 2>>(3*n, {0., 0.});
+        // graph_points = vector<array<double, 2>>(3*num_particles, {0., 0.});
+        graph_points = Vector3d(num_rings, vector<array<double, 2>>(3*num_particles, {0., 0.}));
         
         update_graph_points();
         #endif
@@ -208,63 +225,85 @@ public:
         return sqrt(dx*dx + dy*dy);
     }
  
-    void calc_forces_normal() {
+    void calc_forces_normal(int ring_id) {
         // Excluded volume
-        for (int p_id = 0; p_id < n; p_id ++) {
-            auto &p = pos[p_id];
-            for (int other_id = 0; other_id < n; other_id ++) {
-                if (other_id == p_id) {
-                    continue;
+        for (int p_id = 0; p_id < num_particles; p_id ++) {
+            for (int other_ring_id = 0; other_ring_id < num_rings; other_ring_id++)
+            {
+                if (other_ring_id == ring_id) {
+                    for (int other_id = 0; other_id < num_particles; other_id ++) {
+                        if (other_id == p_id) {
+                            continue;
+                        }
+                        calc_excluded_vol_force(ring_id, ring_id, p_id, other_id);
+                    }
+                } else {
+                    for (int other_id = 0; other_id < num_particles; other_id++)
+                    {
+                        calc_excluded_vol_force(ring_id, other_ring_id, p_id, other_id);
+                    }
                 }
-                auto &other = pos[other_id];
-
-                double dx = p[0] - other[0];
-                double dy = p[1] - other[1];
-
-                double dist = periodic_dist(dx, dy);
-
-                if (dist > force_r_lim) { 
-                    continue; 
-                } 
-
-                #if DEBUG == 1                
-                if (dist == 0.) {
-                    excluded_vol_debug.count_overlap += 1;
-                }
-                #endif
-
-                double force_intensity = exclusion_vol * (0.5 * diameter_six / pow(dist, 7.) - diameter_twelve/pow(dist, 13.) );
-                force_intensity = abs(force_intensity);
-
-                double vol_fx = force_intensity/dist * dx;
-                double vol_fy = force_intensity/dist * dy;
-
-                sum_forces_matrix[p_id][0] += vol_fx;
-                sum_forces_matrix[p_id][1] += vol_fy;
-
-                #if DEBUG == 1
-                vol_forces[p_id][0] += vol_fx;
-                vol_forces[p_id][1] += vol_fy;
-                #endif
             }
         }
 
         // Bond
-        for (int p_id = 0; p_id < n; p_id ++) {
-            int id_left = (p_id == 0) ? n-1 : p_id-1;
-            int id_right = (p_id == n-1) ? 0 : p_id+1;
+        for (int p_id = 0; p_id < num_particles; p_id ++) {
+            int id_left = (p_id == 0) ? num_particles-1 : p_id-1;
+            int id_right = (p_id == num_particles-1) ? 0 : p_id+1;
 
-            calc_spring_force(p_id, id_left);
-            calc_spring_force(p_id, id_right);
+            calc_spring_force(ring_id, p_id, id_left);
+            calc_spring_force(ring_id, p_id, id_right);
         }
 
         // Bend
-        calc_bend_forces();
+        calc_bend_forces(ring_id);
     }
 
-    void calc_spring_force(int p_id, int other_id) {
-        auto& p = pos[p_id]; 
-        auto& other = pos[other_id]; 
+    void calc_excluded_vol_force(int ring_id, int other_ring_id, int p_id, int other_id) {
+        /**
+         * Calcula a força do potencial de volume exercida na partícula 'p_id' no anel 'ring_id', 
+         * pela partícula 'other_id' que está no anel 'other_ring_id'.
+         * 
+         * OBS: A força calculada é somada em 'sum_forces_matrix', e caso esteja no modo
+         * DEBUG, a forma também é somada em 'vol_forces'.
+        */
+
+        auto &p = pos[ring_id][p_id];
+        auto &other = pos[other_ring_id][other_id];
+
+        double dx = p[0] - other[0];
+        double dy = p[1] - other[1];
+
+        double dist = periodic_dist(dx, dy);
+
+        if (dist > force_r_lim) { 
+            return; 
+        } 
+
+        #if DEBUG == 1                
+        if (dist == 0.) {
+            excluded_vol_debug.count_overlap += 1;
+        }
+        #endif
+
+        double force_intensity = exclusion_vol * (0.5 * diameter_six / pow(dist, 7.) - diameter_twelve/pow(dist, 13.) );
+        force_intensity = abs(force_intensity);
+
+        double vol_fx = force_intensity/dist * dx;
+        double vol_fy = force_intensity/dist * dy;
+
+        sum_forces_matrix[ring_id][p_id][0] += vol_fx;
+        sum_forces_matrix[ring_id][p_id][1] += vol_fy;
+
+        #if DEBUG == 1
+        vol_forces[ring_id][p_id][0] += vol_fx;
+        vol_forces[ring_id][p_id][1] += vol_fy;
+        #endif
+    }
+
+    void calc_spring_force(int ring_id, int p_id, int other_id) {
+        auto& p = pos[ring_id][p_id]; 
+        auto& other = pos[ring_id][other_id]; 
 
         double dx = other[0] - p[0];         
         double dy = other[1] - p[1];
@@ -282,40 +321,39 @@ public:
         double spring_fx = dx/dist * force_intensity;
         double spring_fy = dy/dist * force_intensity;
 
-        sum_forces_matrix[p_id][0] += spring_fx;
-        sum_forces_matrix[p_id][1] += spring_fy;
+        sum_forces_matrix[ring_id][p_id][0] += spring_fx;
+        sum_forces_matrix[ring_id][p_id][1] += spring_fy;
 
         #if DEBUG == 1
-        spring_forces[p_id][0] += spring_fx;
-        spring_forces[p_id][1] += spring_fy;
+        spring_forces[ring_id][p_id][0] += spring_fx;
+        spring_forces[ring_id][p_id][1] += spring_fy;
         #endif
     }
 
 
-    double calc_differences() {
+    double calc_differences(int ring_id) {
         double perimeter = 0;
 
-        auto n = pos.size();
         double dx, dy;
-        for (size_t i = 0; i < (n-1); i++)
+        for (int i = 0; i < (num_particles-1); i++)
         {
-            dx = pos[i+1][0] - pos[i][0];
-            dy = pos[i+1][1] - pos[i][1];
+            dx = pos[ring_id][i+1][0] - pos[ring_id][i][0];
+            dy = pos[ring_id][i+1][1] - pos[ring_id][i][1];
             perimeter += periodic_dist(dx, dy);
             
-            differences[i] = {dx, dy};
+            differences[ring_id][i] = {dx, dy};
         }
 
-        dx = pos[0][0] - pos[n-1][0];
-        dy = pos[0][1] - pos[n-1][1];
+        dx = pos[ring_id][0][0] - pos[ring_id][num_particles-1][0];
+        dy = pos[ring_id][0][1] - pos[ring_id][num_particles-1][1];
         perimeter += periodic_dist(dx, dy);
 
-        differences[n-1] = {dx, dy}; 
+        differences[ring_id][num_particles-1] = {dx, dy}; 
 
         return perimeter;
     }
 
-    double calc_area(PosArray& points) {
+    double calc_area(Vector2d& points) const {
         double area = 0.0;
 
         for (size_t i = 0; i < points.size()-1; i++) {
@@ -331,7 +369,7 @@ public:
         return area / 2.0;
     }
 
-    double calc_perimeter(PosArray& points) {
+    double calc_perimeter(Vector2d& points) const {
         double perimeter = 0.0;
 
         for (size_t i = 0; i < points.size()-1; i++)
@@ -344,21 +382,21 @@ public:
         return perimeter;
     }
 
-    void calc_bend_force(int point_id, double area, double perimeter) {
-        int id = pos_continuos.size() - 1;
+    void calc_bend_force(int ring_id, int point_id, double area, double perimeter) {
+        int id = pos_continuos[ring_id].size() - 1;
         if (point_id != 0)
             id = point_id - 1;
-        auto& v1 = pos_continuos[id];
+        auto& v1 = pos_continuos[ring_id][id];
         
         id = 0;
-        if (point_id != (pos_continuos.size() - 1))
+        if (point_id != (pos_continuos[ring_id].size() - 1))
             id = point_id + 1;
-        auto& v2 = pos_continuos[id];
+        auto& v2 = pos_continuos[ring_id][id];
 
-        auto& point = pos_continuos[point_id]; 
+        auto& point = pos_continuos[ring_id][point_id]; 
 
-        double d1 = vector_dist(v1, pos_continuos[point_id]);
-        double d2 = vector_dist(v2, pos_continuos[point_id]);
+        double d1 = vector_dist(v1, pos_continuos[ring_id][point_id]);
+        double d2 = vector_dist(v2, pos_continuos[ring_id][point_id]);
 
         #if DEBUG == 1                
         if (d1 == 0.)
@@ -366,7 +404,6 @@ public:
         if (d2 == 0.) 
             area_debug.count_overlap += 1;
         #endif
-
 
         double delta_area = area - (perimeter/p0) * (perimeter/p0);
 
@@ -377,67 +414,68 @@ public:
         double gradient_y = k_bend * delta_area * (-(v2[0] - v1[0])/2.0 + area_0_deriv_y);
 
         #if DEBUG == 1
-        area_forces[point_id][0] = -gradient_x;
-        area_forces[point_id][1] = -gradient_y;
+        area_forces[ring_id][point_id][0] = -gradient_x;
+        area_forces[ring_id][point_id][1] = -gradient_y;
         #endif
 
-        sum_forces_matrix[point_id][0] -= gradient_x;
-        sum_forces_matrix[point_id][1] -= gradient_y;
+        sum_forces_matrix[ring_id][point_id][0] -= gradient_x;
+        sum_forces_matrix[ring_id][point_id][1] -= gradient_y;
     }
 
-    void calc_bend_forces() {
-        double perimeter = calc_differences();
+    void calc_bend_forces(int ring_id) {
+        double perimeter = calc_differences(ring_id);
 
-        pos_continuos[0] = pos[0];
-        for (size_t i = 0; i < (differences.size()-1); i++)
+        pos_continuos[ring_id][0] = pos[ring_id][0];
+        for (size_t i = 0; i < (differences[ring_id].size()-1); i++)
         {
-            pos_continuos[i+1][0] = pos_continuos[i][0] + differences[i][0];
-            pos_continuos[i+1][1] = pos_continuos[i][1] + differences[i][1];
+            pos_continuos[ring_id][i+1][0] = pos_continuos[ring_id][i][0] + differences[ring_id][i][0];
+            pos_continuos[ring_id][i+1][1] = pos_continuos[ring_id][i][1] + differences[ring_id][i][1];
         }
 
-        double area = calc_area(pos_continuos);
+        double area = calc_area(pos_continuos[ring_id]);
         
-        for (size_t i = 0; i < pos_continuos.size(); i++)
+        for (size_t i = 0; i < pos_continuos[ring_id].size(); i++)
         {
-            calc_bend_force(i, area, perimeter);
+            calc_bend_force(ring_id, i, area, perimeter);
         }
     }
 
-    void advance_time() {
-        for (int i=0; i < n; i++) {
-            pos[i][0] += dt * vel[i][0];
-            pos[i][1] += dt * vel[i][1];
+    void advance_time(int ring_id) {
+        for (int i=0; i < num_particles; i++) {
+            pos[ring_id][i][0] += dt * vel[ring_id][i][0];
+            pos[ring_id][i][1] += dt * vel[ring_id][i][1];
 
-            if (vel[i][0] > 1e6) {
+            if (vel[ring_id][i][0] > 1e6) {
                 std::cout << "merda" << std::endl;
             }
             
-            if (isnan(pos[i][0]) == true) {
+            if (isnan(pos[ring_id][i][0]) == true) {
                 std::cout << "merda" << std::endl;
             }
 
             #if DEBUG == 1    
-                auto& rng_nums = rng_manager.get_random_num(i);
+                auto& rng_nums = rng_manager.get_random_num(i, ring_id);
                 double rng_rot = (double)rng_nums[0]/(double)RAND_MAX * 2. - 1.;
                 double rng_trans_x = (double)rng_nums[1]/(double)RAND_MAX * 2. - 1.;
                 double rng_trans_y = (double)rng_nums[2]/(double)RAND_MAX * 2. - 1.;
             #else
                 double rng_rot = (double)rand()/(double)RAND_MAX * 2. - 1.;
-                double rng_trans = (double)rand()/(double)RAND_MAX * 2. - 1.;
+                double rng_trans_x = (double)rand()/(double)RAND_MAX * 2. - 1.;
+                double rng_trans_y = (double)rand()/(double)RAND_MAX * 2. - 1.;
             #endif
 
             double noise_rot = rng_rot * sqrt(2. * rot_diff) / sqrt(dt); 
             double noise_trans_x = rng_trans_x * sqrt(2. * trans_diff) / sqrt(dt); 
             double noise_trans_y = rng_trans_y * sqrt(2. * trans_diff) / sqrt(dt); 
 
-            double speed = sqrt(vel[i][0]*vel[i][0] + vel[i][1]*vel[i][1]);
+            double speed = sqrt(vel[ring_id][i][0]*vel[ring_id][i][0] + vel[ring_id][i][1]*vel[ring_id][i][1]);
             
             double angle_derivate;
             if (speed == 0.) {
                 update_debug.count_zero_speed += 1;
                 angle_derivate = 0.;
             } else {
-                double cross_prod = self_prop_vel[i][0] * vel[i][1]/speed - self_prop_vel[i][1] * vel[i][0]/speed;
+                double cross_prod = self_prop_vel[ring_id][i][0] * vel[ring_id][i][1]/speed - self_prop_vel[ring_id][i][1] * vel[ring_id][i][0]/speed;
                 
                 if ((cross_prod > 1) | (cross_prod < -1)) {
                     std::cout << "merda" << std::endl;
@@ -446,57 +484,58 @@ public:
                 angle_derivate = 1. / relax_time * asin(cross_prod) + noise_rot;
             }
             
-            self_prop_angle[i] += angle_derivate * dt;
+            self_prop_angle[ring_id][i] += angle_derivate * dt;
 
-            vel[i][0] = vo * self_prop_vel[i][0] + mobility * sum_forces_matrix[i][0] + noise_trans_x;
-            vel[i][1] = vo * self_prop_vel[i][1] + mobility * sum_forces_matrix[i][1] + noise_trans_y;
+            vel[ring_id][i][0] = vo * self_prop_vel[ring_id][i][0] + mobility * sum_forces_matrix[ring_id][i][0] + noise_trans_x;
+            vel[ring_id][i][1] = vo * self_prop_vel[ring_id][i][1] + mobility * sum_forces_matrix[ring_id][i][1] + noise_trans_y;
 
-            self_prop_vel[i][0] = cos(self_prop_angle[i]);
-            self_prop_vel[i][1] = sin(self_prop_angle[i]);
+            self_prop_vel[ring_id][i][0] = cos(self_prop_angle[ring_id][i]);
+            self_prop_vel[ring_id][i][1] = sin(self_prop_angle[ring_id][i]);
 
-            // for (int i = 0; i < n; i++)
+            // for (int i = 0; i < num_particles; i++)
             // {
             //     pos[i][0] = remainder(pos[i][0] + size/2., size) + size/2.; 
             //     pos[i][1] = remainder(pos[i][1] + size/2., size) + size/2.; 
             // }
             
             for (int dim = 0; dim < 2.f; dim ++) {
-                if (pos[i][dim] > size/2.f)
-                    pos[i][dim] -= size;
-                else if (pos[i][dim] < -size/2.f)
-                    pos[i][dim] += size;
+                if (pos[ring_id][i][dim] > size/2.f)
+                    pos[ring_id][i][dim] -= size;
+                else if (pos[ring_id][i][dim] < -size/2.f)
+                    pos[ring_id][i][dim] += size;
             }
 
-            if (isnan(pos[i][0]) == true) {
+            if (isnan(pos[ring_id][i][0]) == true) {
                 std::cout << "merda" << std::endl;
             }
 
             #if DEBUG == 1
-            total_forces[i][0] = sum_forces_matrix[i][0];
-            total_forces[i][1] = sum_forces_matrix[i][1];
+            total_forces[ring_id][i][0] = sum_forces_matrix[ring_id][i][0];
+            total_forces[ring_id][i][1] = sum_forces_matrix[ring_id][i][1];
             #endif
 
-            sum_forces_matrix[i][0] = 0.f;
-            sum_forces_matrix[i][1] = 0.f;
+            sum_forces_matrix[ring_id][i][0] = 0.f;
+            sum_forces_matrix[ring_id][i][1] = 0.f;
         }
     }
 
     void update_normal() {
-        #if DEBUG == 1
-        rng_manager.update();
-        
-        for (int i = 0; i < n; i++)
-        {
-           spring_forces[i][0] = 0.;
-           spring_forces[i][1] = 0.;
-           
-           vol_forces[i][0] = 0.;
-           vol_forces[i][1] = 0.;
-        }
-        #endif
+        for (int ring_id = 0; ring_id < num_rings; ring_id++) {
+            #if DEBUG == 1
+            rng_manager.update();
+            
+            for (int i = 0; i < num_particles; i++) {
+                spring_forces[ring_id][i][0] = 0.;
+                spring_forces[ring_id][i][1] = 0.;
+                
+                vol_forces[ring_id][i][0] = 0.;
+                vol_forces[ring_id][i][1] = 0.;
+            }
+            #endif
 
-        calc_forces_normal();
-        advance_time();
+            calc_forces_normal(ring_id);
+            advance_time(ring_id);
+        }
 
         #if DEBUG == 1
         update_graph_points();   
@@ -506,10 +545,10 @@ public:
     }
    
 
-    void calc_border_point(array<double, 2> &p1, array<double, 2> &p2, int mid_point_id, bool place_above_p2=false) {
+    void calc_border_point(int ring_id, array<double, 2> &p1, array<double, 2> &p2, int mid_point_id, bool place_above_p2=false) {
         /**
          * Calcula a posição do ponto médio entre 'p1' e 'p2' utilizado para renderização correta do anel. 
-         * Tal ponto é necessário quando a menor reta que linha 'p1' a 'p2' passa pelas bordas periódicas.
+         * Tal ponto é necessário quando a menor reta que conecta 'p1' a 'p2' passa pelas bordas periódicas.
          * 
          * Se 'p1' e 'p2' não estiverem no caso especial, o ponto médio é colocado sobre 'p1' ou 'p2',
          * dependendo do valor de 'place_above-p2'.
@@ -558,48 +597,50 @@ public:
                 correct_id = (intersect_p[0][0] - p1[0])/dx > 0 ? 0 : 1;
             }
 
-            graph_points[mid_point_id][0] = intersect_p[correct_id][0];
-            graph_points[mid_point_id][1] = intersect_p[correct_id][1];
+            graph_points[ring_id][mid_point_id][0] = intersect_p[correct_id][0];
+            graph_points[ring_id][mid_point_id][1] = intersect_p[correct_id][1];
         } else {
             if (place_above_p2) {
-                graph_points[mid_point_id][0] = p2[0];
-                graph_points[mid_point_id][1] = p2[1];
+                graph_points[ring_id][mid_point_id][0] = p2[0];
+                graph_points[ring_id][mid_point_id][1] = p2[1];
             } else {
-                graph_points[mid_point_id][0] = p1[0];
-                graph_points[mid_point_id][1] = p1[1];
+                graph_points[ring_id][mid_point_id][0] = p1[0];
+                graph_points[ring_id][mid_point_id][1] = p1[1];
             }
         }
     }
 
     void update_graph_points() {
-        graph_points[0][0] = pos[0][0];
-        graph_points[0][1] = pos[0][1];
-        
-        calc_border_point(pos[0], pos[n-1], 3*n - 1, true);
-        calc_border_point(pos[0], pos[1], 1, false);
-        for (int p_id = 1; p_id < n; p_id++) {
-            int p_graph_id = 3 * p_id;
+        for (int ring_id = 0; ring_id < num_rings; ring_id++) {
+            graph_points[ring_id][0][0] = pos[ring_id][0][0];
+            graph_points[ring_id][0][1] = pos[ring_id][0][1];
             
-            graph_points[p_graph_id][0] = pos[p_id][0];
-            graph_points[p_graph_id][1] = pos[p_id][1];
-            
-            int p2_id = p_id + 1;
-            if (p_id == (n-1))
-                p2_id = 0;
-            
-            array<double, 2> & p_before = pos[p_id-1];
-            array<double, 2> & p = pos[p_id];
-            array<double, 2> & p_after = pos[p2_id];
-            
-            calc_border_point(p, p_before, p_graph_id - 1, true);
-            calc_border_point(p, p_after, p_graph_id + 1);
+            calc_border_point(ring_id, pos[ring_id][0], pos[ring_id][num_particles-1], 3*num_particles - 1, true);
+            calc_border_point(ring_id, pos[ring_id][0], pos[ring_id][1], 1, false);
+            for (int p_id = 1; p_id < num_particles; p_id++) {
+                int p_graph_id = 3 * p_id;
+                
+                graph_points[ring_id][p_graph_id][0] = pos[ring_id][p_id][0];
+                graph_points[ring_id][p_graph_id][1] = pos[ring_id][p_id][1];
+                
+                int p2_id = p_id + 1;
+                if (p_id == (num_particles-1))
+                    p2_id = 0;
+                
+                array<double, 2> & p_before = pos[ring_id][p_id-1];
+                array<double, 2> & p = pos[ring_id][p_id];
+                array<double, 2> & p_after = pos[ring_id][p2_id];
+                
+                calc_border_point(ring_id, p, p_before, p_graph_id - 1, true);
+                calc_border_point(ring_id, p, p_after, p_graph_id + 1);
+            }
         }
     }
 
 
-    double mean_vel() {
+    double mean_vel(int ring_id) {
         double sum_vel[2] = {0, 0};
-        for (array<double, 2> vel_i: vel) {
+        for (array<double, 2> vel_i: vel[ring_id]) {
             double speed = sqrt(vel_i[0]*vel_i[0] + vel_i[1]*vel_i[1]);
             
             if (speed == 0)
@@ -609,12 +650,12 @@ public:
             sum_vel[1] += vel_i[1]/speed;
         }
         double speed_total = sqrt(sum_vel[0]*sum_vel[0] + sum_vel[1]*sum_vel[1]);
-        return speed_total / n;
+        return speed_total / num_particles;
     }
 
-    array<double, 2> mean_vel_vec() {
+    array<double, 2> mean_vel_vec(int ring_id) {
         array<double, 2> sum_vel = {0., 0.};
-        for (array<double, 2> vel_i: vel) {
+        for (array<double, 2> vel_i: vel[ring_id]) {
             double speed = sqrt(vel_i[0]*vel_i[0] + vel_i[1]*vel_i[1]);
             if (speed == 0)
                 continue;
@@ -622,8 +663,8 @@ public:
             sum_vel[0] += vel_i[0]/speed;
             sum_vel[1] += vel_i[1]/speed;
         }
-        sum_vel[0] /= (double)n;
-        sum_vel[1] /= (double)n;
+        sum_vel[0] /= (double)num_particles;
+        sum_vel[1] /= (double)num_particles;
         return sum_vel;
     }
 };

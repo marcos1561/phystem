@@ -69,24 +69,40 @@ class CreateCfg:
     '''
     Configurações passada ao construtor de configuração inicial.
     '''
-    def __init__(self, n: int, r: float, vo: float, angle: float) -> None:
-        self.r = r
-        self.n = n
-        self.vo = vo
-        self.angle = angle
+    def __init__(self, num_rings: int,  num_p: int, r: list[float], vo: list[float], angle: list[float],
+        center: list[list[float]]) -> None:
+        self.num_rings = num_rings
+        self.num_p = num_p
+    
+        self.r = self.process_scalar_input(r)
+        self.vo = self.process_scalar_input(vo)
+        self.angle = self.process_scalar_input(angle)
+        
+        self.center = center
+
+    def process_scalar_input(self, input):
+        if type(input) in (float, int):
+            return [input] * self.num_rings
+        else:
+            return input
+        
 
     def set(self, other):
         self.r = other.r
-        self.n = other.n
+        self.num_rings = other.num_rings
+        self.num_p = other.num_p
         self.vo = other.vo
         self.angle = other.angle
+        self.center = other.center
 
     def get_pars(self):
         return {
-            "n": self.n,
+            "num_rings": self.num_rings,
+            "num_p": self.num_p,
             "r": self.r,
             "vo": self.vo,
             "angle": self.angle,
+            "center": self.center,
         }
 
 class SpaceCfg:

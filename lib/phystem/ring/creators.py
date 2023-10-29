@@ -10,13 +10,13 @@ class InitData:
 
         Parameters:
         -----------
-            pos: ndarray (2, n)
+            pos: ndarray (num_rings, 2, num_particles)
                     Posição inicial das partículas (x, y)
                 
-            vel: ndarray (2, n)
+            vel: ndarray (num_rings, 2, num_particles)
                 Velocidade inicial das partículas (vx, vy).
                 
-            self_prop_angle: ndarray (n)
+            self_prop_angle: ndarray (num_rings, n)
                 Ângulo inicial da direção da velocidade auto propulsora
         '''
 
@@ -36,16 +36,19 @@ class CreateType:
     NORMAL = auto()
 
 class Creator(CreatorCore):
-    def __init__(self, n: int, r: float, vo: float, angle: float, rng_seed: int = None) -> None:
+    def __init__(self, num_rings: int, num_p: int, r: list[float], vo: list[float], angle: list[float], center: list, rng_seed: int = None) -> None:
         '''
         Cria a configuração inicial do anel em formato de círculo com as velocidades
         coincidindo com as velocidades autopropulsoras.
 
-        A função `create` é responsável por gerar a configuração inicial. 
+        OBS: A função `create` é responsável por gerar a configuração inicial. 
         
         Parameters:
         -----------
-            n:
+            num_rings:
+                Número de anéis.
+            
+            num_p:
                 Número de partículas no anel.
         
             r:
@@ -56,6 +59,9 @@ class Creator(CreatorCore):
 
             angle:
                 Ângulo inicial da velocidade auto propulsora.
+
+            center:
+                Centro da posição inicial do anel.
             
             rng_seed:
                 Seed utilizada na geração de número aleatório. Se for `None` é
@@ -63,10 +69,12 @@ class Creator(CreatorCore):
         '''
         super().__init__(rng_seed)
 
-        self.n = n
+        self.num_rings = num_rings
+        self.num_p = num_p
         self.r = r
         self.vo = vo
         self.angle = angle
+        self.center = center
 
     # def create(self) -> InitData:
     #     trig_angle = np.pi/180*60
@@ -96,18 +104,30 @@ class Creator(CreatorCore):
             : InitData
                 Dados da configuração inicial
         '''
-        pos_angles = np.arange(0, np.pi*2, np.pi*2/self.n)
-        
-        if pos_angles.size != self.n:
-            raise Exception(f"'pos_angle' tem tamanho '{pos_angles.size}', mas deveria ter '{self.n}'")
+        pos = []
+        vel = []
+        self_prop_angle = []
 
-        pos = np.array([np.cos(pos_angles), np.sin(pos_angles)]) * self.r
+        for ring_id in range(self.num_rings):
+            ring_pos_angles = np.arange(0, np.pi*2, np.pi*2/self.num_p)
+            
+            if ring_pos_angles.size != self.num_p:
+                raise Exception(f"'pos_angle' tem tamanho '{ring_pos_angles.size}', mas deveria ter '{self.num_p}'")
 
-        self_prop_angle = self.angle * np.ones(self.n, dtype=np.float64)
+            ring_pos = np.array([np.cos(ring_pos_angles), np.sin(ring_pos_angles)]) * self.r[ring_id]
 
-        vel = self.vo * np.array([np.cos(self_prop_angle.copy()), np.sin(self_prop_angle.copy())])
+            ring_pos[0] += self.center[ring_id][0]
+            ring_pos[1] += self.center[ring_id][1]
 
-        return InitData(pos, vel, self_prop_angle)
+            ring_self_prop_angle = self.angle[ring_id] * np.ones(self.num_p, dtype=np.float64)
+
+            ring_vel = self.vo[ring_id] * np.array([np.cos(ring_self_prop_angle.copy()), np.sin(ring_self_prop_angle.copy())])
+
+            pos.append(ring_pos)
+            vel.append(ring_vel)
+            self_prop_angle.append(ring_self_prop_angle)
+
+        return InitData(np.array(pos), np.array(vel), np.array(self_prop_angle))
 
 class CreatorRD(CreatorCore):
     def create(self) -> None:

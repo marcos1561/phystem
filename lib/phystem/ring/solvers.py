@@ -12,9 +12,13 @@ class CppSolver:
 
         dynamic_cfg = cpp_lib.configs.RingCfg(dynamic_cfg.cpp_constructor_args())
         
-        pos = cpp_lib.data_types.PosVec(pos.T)
-        vel = cpp_lib.data_types.PosVec(vel.T)
-        self_prop_angle = cpp_lib.data_types.List(self_prop_angle)
+        pos_in = [cpp_lib.data_types.PosVec(ring_pos.T) for ring_pos in pos]
+        vel_in = [cpp_lib.data_types.PosVec(ring_vel.T) for ring_vel in vel]
+        angle_in = [cpp_lib.data_types.List(ring_angle) for ring_angle in self_prop_angle]
+
+        pos = cpp_lib.data_types.Vector3d(pos_in)
+        vel = cpp_lib.data_types.Vector3d(vel_in)
+        self_prop_angle = cpp_lib.data_types.List2d(angle_in)
 
         self.cpp_solver = cpp_lib.solvers.Ring(pos, vel, self_prop_angle, dynamic_cfg, size, dt, rng_seed)
         self.update_func = self.cpp_solver.update_normal
@@ -23,6 +27,10 @@ class CppSolver:
         self.dt = dt
         self.n = len(self_prop_angle)
 
+    @property
+    def num_rings(self):
+        return self.cpp_solver.num_rings
+    
     @property
     def pos_t(self):
         return self.cpp_solver.pos_t
@@ -92,11 +100,11 @@ class CppSolver:
         self.update_func()
         self.time += self.dt
     
-    def mean_vel_vec(self):
-        return self.cpp_solver.mean_vel_vec()
+    def mean_vel_vec(self, ring_id: int):
+        return self.cpp_solver.mean_vel_vec(ring_id)
 
-    def mean_vel(self):
-        return self.cpp_solver.mean_vel()
+    def mean_vel(self, ring_id: int):
+        return self.cpp_solver.mean_vel(ring_id)
 
 class SolverRD:
     '''
@@ -132,7 +140,7 @@ class SolverRD:
     def time(self):
         return self.time_arr[self.id]    
 
-    def mean_vel(self):
+    def mean_vel(self, ring_id: int):
         return -1
 
     def update(self):

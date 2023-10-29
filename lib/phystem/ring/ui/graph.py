@@ -15,7 +15,7 @@ from phystem.ring.configs import RingCfg, SpaceCfg, CreateCfg, RingCfg
 
 class GraphCfg:
     def __init__(self, show_circles=False, show_f_spring=False, show_f_vol=False, show_f_area=False, 
-        show_f_total=False, force_to_color=None) -> None:
+        show_f_total=False, force_to_color=None, cpp_is_debug=True) -> None:
         self.show_circles = show_circles
         self.show_f_spring = show_f_spring
         self.show_f_vol = show_f_vol
@@ -23,6 +23,8 @@ class GraphCfg:
         self.show_f_total = show_f_total
 
         self.show_pos_cont = False
+
+        self.cpp_is_debug = cpp_is_debug
 
         self.force_to_color = force_to_color
         if force_to_color is None:
@@ -58,6 +60,8 @@ class MainGraph:
         '''
         Gráfico das partículas com a opção de desenhar os círculos dos raios de interação.
         '''
+        self.num_rings = solver.num_rings
+
         self.ax = ax
         self.space_cfg = space_cfg
         self.dynamic_cfg = dynamic_cfg
@@ -68,21 +72,31 @@ class MainGraph:
         self.forces_state = deepcopy(self.graph_cfg.f_name_to_show)
         self.pos_cont_state = self.graph_cfg.show_pos_cont
 
-        self.circles: list[Circle] = None
-        self.circles_col: PatchCollection = None
+        self.circles: list[list[Circle]] = None
+        self.circles_col: list[PatchCollection] = None
 
-        self.arrows: dict[str, Quiver] = {}
+        self.arrows: list[dict[str, Quiver]] = []
 
-        self.lines: LineCollection = None
-        self.points: PathCollection = None
-        self.points_continuos: PathCollection = None
+        self.lines: list[LineCollection] = None
+        self.points: list[PathCollection] = None
+        self.points_continuos: list[PathCollection] = None
         
-        self.pos_t = solver.pos_t
+        self.pos_t_ref = solver.pos_t
+
         self.pos = solver.pos
         self.graph_points = solver.graph_points
 
-    def get_segments(self) -> list:
-        n = len(self.pos)
+        self.cpp_is_debug = self.graph_cfg.cpp_is_debug
+
+    @property
+    def pos_t(self):
+        if self.cpp_is_debug:
+            return self.pos_t_ref
+        else:
+            return np.array([np.array(p).T for  p in self.pos]) 
+
+    def get_segments(self, ring_id: int) -> list:
+        n = len(self.pos[ring_id])
 
         # segments = [[self.graph_points[3*n - 1], self.graph_points[0]]]
         # segments.append([self.graph_points[0], self.graph_points[1]])
@@ -94,17 +108,17 @@ class MainGraph:
         segments = []
         for id in range(n-1):
             g_id = 3 * id
-            segments.append([self.graph_points[g_id], self.graph_points[g_id+1]])
-            segments.append([self.graph_points[g_id+2], self.graph_points[g_id+3]])
+            segments.append([self.graph_points[ring_id][g_id], self.graph_points[ring_id][g_id+1]])
+            segments.append([self.graph_points[ring_id][g_id+2], self.graph_points[ring_id][g_id+3]])
         
         g_id = 3 * (n - 1)
-        segments.append([self.graph_points[g_id], self.graph_points[g_id+1]])
-        segments.append([self.graph_points[g_id+2], self.graph_points[0]])
+        segments.append([self.graph_points[ring_id][g_id], self.graph_points[ring_id][g_id+1]])
+        segments.append([self.graph_points[ring_id][g_id+2], self.graph_points[ring_id][0]])
         
         return segments
 
-    def get_distances(self):
-        diff = np.array(self.solver.differences)
+    def get_distances(self, ring_id: int):
+        diff = np.array(self.solver.differences[ring_id])
         distances = np.sqrt(diff[:, 0]**2 + diff[:, 1]**2)
 
         dist_to_colors = []
@@ -114,14 +128,26 @@ class MainGraph:
 
         return dist_to_colors
 
-    def get_forces(self) -> dict[str, np.ndarray]:
+    def get_forces(self, ring_id: int) -> dict[str, np.ndarray]:
         forces = {
-            "spring": np.array(self.solver.spring_forces).T,
-            "vol": np.array(self.solver.vol_forces).T,
-            "area": np.array(self.solver.area_forces).T,
-            "total": np.array(self.solver.total_forces).T,
+            "spring": np.array(self.solver.spring_forces[ring_id]).T,
+            "vol": np.array(self.solver.vol_forces[ring_id]).T,
+            "area": np.array(self.solver.area_forces[ring_id]).T,
+            "total": np.array(self.solver.total_forces[ring_id]).T,
         }
         return forces
+    
+    def get_force(self, ring_id: int, f_name: str) -> np.ndarray:
+        if f_name == "spring":
+            force_cpp = self.solver.spring_forces[ring_id]
+        if f_name == "vol":
+            force_cpp = self.solver.vol_forces[ring_id]
+        if f_name == "area":
+            force_cpp = self.solver.area_forces[ring_id]
+        if f_name == "total":
+            force_cpp = self.solver.total_forces[ring_id]
+            
+        return np.array(force_cpp).T
 
 
     def init(self):
@@ -137,98 +163,145 @@ class MainGraph:
         self.ax.plot([r, r], [-r, r], color="black")
         self.ax.plot([-r, -r], [-r, r], color="black")
 
-        self.points = self.ax.scatter(*self.pos_t)
+        self.points = [self.ax.scatter(*ring_pos_t) for ring_pos_t in self.pos_t]
        
-        self.points_continuos = self.ax.scatter(*(np.array(self.solver.pos_continuos).T))
+        self.points_continuos = [self.ax.scatter(*(np.array(self.solver.pos_continuos[ring_id]).T)) for ring_id in range(self.num_rings)]
         if not self.graph_cfg.show_pos_cont:
-            self.points_continuos.remove()
+            [artist.remove() for artist in self.points_continuos]
 
         # self.gg_points = self.ax.scatter(*np.array(self.graph_points).T)
 
-        dr = self.dynamic_cfg.spring_r/2
-        self.lines = LineCollection(self.get_segments(),
-            norm=colors.Normalize(self.dynamic_cfg.spring_r - dr , self.dynamic_cfg.spring_r + dr),
-            cmap=colors.LinearSegmentedColormap.from_list("spring_tension", ["blue", "black", "red"]),
-        )
+        if self.cpp_is_debug:
+            dr = self.dynamic_cfg.spring_r/2
+            self.lines = []
+            for ring_id in range(self.num_rings):
+                ring_lines = LineCollection(self.get_segments(ring_id),
+                    norm=colors.Normalize(self.dynamic_cfg.spring_r - dr , self.dynamic_cfg.spring_r + dr),
+                    cmap=colors.LinearSegmentedColormap.from_list("spring_tension", ["blue", "black", "red"]),
+                )
+                self.lines.append(ring_lines)
 
-        self.ax.add_collection(self.lines)
+                self.ax.add_collection(ring_lines)
 
         #==
         # Circles
         #==
         self.circles = []
-        for x_i, y_i in zip(self.pos_t[0], self.pos_t[1]):
-            self.circles.append(Circle((x_i, y_i), self.dynamic_cfg.diameter/2, fill=False))
-        
-        self.circles_col = PatchCollection(self.circles, match_original=True)
-        if not self.graph_cfg.show_circles:
-            self.circles_col.set_paths([])
-        
-        self.ax.add_collection(self.circles_col)
+        self.circles_col = []
+        for ring_id in range(self.num_rings):
+            ring_circles = []
+            for x_i, y_i in zip(self.pos_t[ring_id][0], self.pos_t[ring_id][1]):
+                ring_circles.append(Circle((x_i, y_i), self.dynamic_cfg.diameter/2, fill=False))
+            
+            self.circles.append(ring_circles)
+            self.circles_col.append(PatchCollection(ring_circles, match_original=True))
+            if not self.graph_cfg.show_circles:
+                self.circles_col[-1].set_paths([])
+            
+            self.ax.add_collection(self.circles_col[-1])
 
         #==
         # Forces
         #==
-        forces = self.get_forces()
-        for f_name, f_value in forces.items():
-            self.arrows[f_name] = self.ax.quiver(
-                self.pos_t[0],
-                self.pos_t[1],
-                f_value[0],    
-                f_value[1],   
-                scale=8, 
-                color=self.graph_cfg.force_to_color[f_name],
-            )
-        
-        for f_name, show_force in self.graph_cfg.f_name_to_show.items():
-            if not show_force:
-                self.arrows[f_name].remove()
+        if self.cpp_is_debug:
+            for ring_id in range(self.num_rings):
+                forces = self.get_forces(ring_id)
+                ring_arrows = {}
+                for f_name, f_value in forces.items():
+                    ring_arrows[f_name] = self.ax.quiver(
+                        self.pos_t[ring_id][0],
+                        self.pos_t[ring_id][1],
+                        f_value[0],    
+                        f_value[1],   
+                        scale=8, 
+                        color=self.graph_cfg.force_to_color[f_name],
+                    )
+                
+                self.arrows.append(ring_arrows)
+                
+                for f_name, show_force in self.graph_cfg.f_name_to_show.items():
+                    if not show_force:
+                        self.arrows[-1][f_name].remove()
+                
 
     def update(self):
         # TODO: Setar os segmentos sem reconstruir os mesmos.
         #   Talvez criar os segmentos no c++ e apenas referenciar eles aqui.
         
-        self.points.set_offsets(self.pos)
-        self.lines.set_segments(self.get_segments())
-        self.lines.set_array(self.get_distances())
+        for ring_id in range(self.num_rings):
+            self.points[ring_id].set_offsets(self.pos[ring_id])
+            
+            if self.cpp_is_debug:
+                self.lines[ring_id].set_segments(self.get_segments(ring_id))
+                self.lines[ring_id].set_array(self.get_distances(ring_id))
 
+        #==
+        # Pos Continuos
+        #==
         if self.graph_cfg.show_pos_cont:
             if not self.pos_cont_state:
-                self.ax.add_artist(self.points_continuos)
+                for ring_id in range(self.num_rings):
+                    self.ax.add_artist(self.points_continuos[ring_id])
                 self.pos_cont_state = True
 
-            self.points_continuos.set_offsets(self.solver.pos_continuos)
+            for ring_id in range(self.num_rings):
+                self.points_continuos[ring_id].set_offsets(self.solver.pos_continuos[ring_id])
         else:
             if self.pos_cont_state:
-                self.points_continuos.remove()
+                for ring_id in range(self.num_rings):
+                    self.points_continuos[ring_id].remove()
                 self.pos_cont_state = False
 
         #==
         # Circles
         #==
         if self.graph_cfg.show_circles:
-            for id in range(len(self.pos_t[0])):
-                self.circles[id].center = (self.pos_t[0][id], self.pos_t[1][id])
-            self.circles_col.set_paths(self.circles)
+            for ring_id in range(self.num_rings):
+                for id in range(len(self.pos_t[ring_id][0])):
+                    self.circles[ring_id][id].center = (self.pos_t[ring_id][0][id], self.pos_t[ring_id][1][id])
+                self.circles_col[ring_id].set_paths(self.circles[ring_id])
         else:
-            self.circles_col.set_paths([])
+            for ring_id in range(self.num_rings):
+                self.circles_col[ring_id].set_paths([])
 
         #==
         # Arrows
         #==
-        for name, forces in self.get_forces().items():
-            show_force = self.graph_cfg.get_show_force(name) 
-            if show_force:
-                if self.forces_state[name] != show_force:
-                    self.forces_state[name] = show_force
-                    self.ax.add_artist(self.arrows[name])
+        if self.cpp_is_debug:
+            forces_names = self.graph_cfg.f_name_to_show.keys()
+            for f_name in forces_names:
+                show_force = self.graph_cfg.get_show_force(f_name) 
+                if show_force:
+                    if self.forces_state[f_name] != show_force:
+                        self.forces_state[f_name] = show_force
+                        for ring_id in range(self.num_rings):
+                            self.ax.add_artist(self.arrows[ring_id][f_name])
+                    
+                    for ring_id in range(self.num_rings):
+                        forces = self.get_force(ring_id, f_name)
+                        self.arrows[ring_id][f_name].set_UVC(U=forces[0], V=forces[1])
+                        self.arrows[ring_id][f_name].set_offsets(self.pos[ring_id])
+                else:
+                    if self.forces_state[f_name] != show_force:
+                        self.forces_state[f_name] = show_force
+                        for ring_id in range(self.num_rings):
+                            self.arrows[ring_id][f_name].remove()
 
-                self.arrows[name].set_UVC(U=forces[0], V=forces[1])
-                self.arrows[name].set_offsets(self.pos)
-            else:
-                if self.forces_state[name] != show_force:
-                    self.forces_state[name] = show_force
-                    self.arrows[name].remove()
+        # if self.cpp_is_debug:
+        #     for ring_id in range(self.num_rings):
+        #         for name, forces in self.get_forces(ring_id).items():
+        #             show_force = self.graph_cfg.get_show_force(name) 
+        #             if show_force:
+        #                 if self.forces_state[name] != show_force:
+        #                     self.forces_state[name] = show_force
+        #                     self.ax.add_artist(self.arrows[ring_id][name])
+
+        #                 self.arrows[ring_id][name].set_UVC(U=forces[0], V=forces[1])
+        #                 self.arrows[ring_id][name].set_offsets(self.pos[ring_id])
+        #             else:
+        #                 if self.forces_state[name] != show_force:
+        #                     self.forces_state[name] = show_force
+        #                     self.arrows[ring_id][name].remove()
 
         # return (self.lines, self.points, self.circles_col) + tuple(self.arrows.values())
         return
@@ -239,14 +312,14 @@ class Info(graph.Info):
         super().__init__(ax)
         self.solver = solver
         self.time_it = time_it
-        self.cfg_info = dynamic_cfg.info() + "\n" f"N = {create_cfg.n}\nL = {space_cfg.size}\n" 
+        self.cfg_info = dynamic_cfg.info() + "\n" f"N = {create_cfg.num_p}\nL = {space_cfg.size}\n" 
 
     def get_info(self):
         sim_info = (
             f"$\Delta$T (ms): {self.time_it.mean_time():.3f}\n\n"
             f"t : {self.solver.time:.3f}\n"
             f"dt: {self.solver.dt:.3f}\n"
-            f"<V> = {self.solver.mean_vel():.3f}\n"
+            f"<V> = {self.solver.mean_vel(0):.3f}\n"
             "\n"
             f"spring_overlap: {self.solver.spring_debug.count_overlap}\n"
             f"vol_overlap   : {self.solver.excluded_vol_debug.count_overlap}\n"
