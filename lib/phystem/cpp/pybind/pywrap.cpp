@@ -104,6 +104,7 @@ PYBIND11_MODULE(cpp_lib, m) {
         ;      
     py::class_<AreaDebug>(solvers, "AreaDebug")
         .def_readonly("count_overlap", &AreaDebug::count_overlap)
+        .def_readonly("area", &AreaDebug::area, byref)
         ;      
     py::class_<UpdateDebug>(solvers, "UpdateDebug")
         .def_readonly("count_zero_speed", &UpdateDebug::count_zero_speed)
@@ -111,9 +112,10 @@ PYBIND11_MODULE(cpp_lib, m) {
 
     py::class_<Ring>(solvers, "Ring")
         .def(py::init<Vector3d&, Vector3d&, vector<vector<double>>&, RingCfgPy, 
-            double, double, int>(), py::arg("pos0"), py::arg("vel0"), py::arg("self_prop_angle0"), 
-            py::arg("dynamic_cfg"), py::arg("size"), py::arg("dt"), py::arg("seed")=-1)
+            double, double, int, int>(), py::arg("pos0"), py::arg("vel0"), py::arg("self_prop_angle0"), 
+            py::arg("dynamic_cfg"), py::arg("size"), py::arg("dt"), py::arg("num_col_windows"), py::arg("seed")=-1)
         .def("update_normal", &Ring::update_normal, py::call_guard<py::gil_scoped_release>())
+        .def("update_windows", &Ring::update_windows, py::call_guard<py::gil_scoped_release>())
         .def("mean_vel", &Ring::mean_vel)
         .def("mean_vel_vec", &Ring::mean_vel_vec)
         .def_readonly("num_rings", &Ring::num_rings, byref)

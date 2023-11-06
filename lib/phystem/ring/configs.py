@@ -8,13 +8,15 @@ class RingCfg:
     args_names = ("spring_k", "spring_r", "k_bend", "mobility", "relax_time",
         "vo", "trans_diff", "rot_diff", "exclusion_vol", "diameter", "p0")
 
-    def __init__(self,  spring_k, spring_r, k_bend, p0, mobility, relax_time,
+    def __init__(self,  spring_k, spring_r, area_potencial, k_bend, p0, area0, mobility, relax_time,
         vo, trans_diff, rot_diff, exclusion_vol, diameter) -> None:
         self.spring_k = spring_k
         self.spring_r = spring_r
         
+        self.area_potencial = area_potencial
         self.k_bend = k_bend
         self.p0 = p0
+        self.area0 = area0
 
         self.mobility = mobility
         self.relax_time = relax_time
@@ -27,6 +29,8 @@ class RingCfg:
         self.diameter = diameter
       
     def set(self, other):
+        raise Exception("Pensei que não tava usando isso >:( ")
+        
         self.spring_k = other.spring_k
         self.spring_r = other.spring_r
         
@@ -48,7 +52,9 @@ class RingCfg:
             "spring_k": self.spring_k,
             "spring_r": self.spring_r,
             "k_bend": self.k_bend,
+            "area_potencial": self.area_potencial,
             "p0": self.p0,
+            "area0": self.area0,
             "mobility": self.mobility,
             "relax_time": self.relax_time,
             "vo": self.vo,

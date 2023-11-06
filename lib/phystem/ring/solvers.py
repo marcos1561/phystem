@@ -1,14 +1,16 @@
 import numpy as np
 
-from phystem.core.run_config import ReplayDataCfg   
+from phystem.core.run_config import ReplayDataCfg, UpdateType
 from phystem.ring.configs import RingCfg
 from phystem import cpp_lib
 
 class CppSolver:
     def __init__(self, pos: np.ndarray, vel: np.ndarray, self_prop_angle: np.ndarray, 
-        dynamic_cfg: RingCfg, size: float, dt: float, rng_seed=None) -> None:
+        dynamic_cfg: RingCfg, size: float, dt: float, num_col_windows: int, update_type: UpdateType, rng_seed=None) -> None:
         if rng_seed is None:
             rng_seed = -1
+        if num_col_windows is None:
+            num_col_windows = 1
 
         dynamic_cfg = cpp_lib.configs.RingCfg(dynamic_cfg.cpp_constructor_args())
         
@@ -20,8 +22,13 @@ class CppSolver:
         vel = cpp_lib.data_types.Vector3d(vel_in)
         self_prop_angle = cpp_lib.data_types.List2d(angle_in)
 
-        self.cpp_solver = cpp_lib.solvers.Ring(pos, vel, self_prop_angle, dynamic_cfg, size, dt, rng_seed)
-        self.update_func = self.cpp_solver.update_normal
+        self.cpp_solver = cpp_lib.solvers.Ring(pos, vel, self_prop_angle, dynamic_cfg, size, dt, num_col_windows, rng_seed)
+        
+        update_type_to_func = {
+            UpdateType.NORMAL: self.cpp_solver.update_normal,
+            UpdateType.WINDOWS: self.cpp_solver.update_windows,
+        }
+        self.update_func = update_type_to_func[update_type]
 
         self.time = 0
         self.dt = dt

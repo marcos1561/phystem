@@ -6,6 +6,7 @@
 
 #include "../configs/ring.h"
 #include "../rng_manager.h"
+#include "../windows_manager.h"
 #include "../macros_defs.h"
 
 #include "../intersections.h"
@@ -30,6 +31,11 @@ double vector_dist(Vec2d& a, Vec2d& b) {
     return comp;
 }
 
+double vector_mod(Vec2d& a) {
+    return sqrt(a[0]*a[0] + a[1]*a[1]);
+
+}
+
 struct SpringDebug {
     int count_overlap;
 };
@@ -40,6 +46,8 @@ struct ExcludedVolDebug {
 
 struct AreaDebug {
     int count_overlap;
+
+    vector<double> area;
 };
 
 struct UpdateDebug {
@@ -53,6 +61,8 @@ public:
 
     double k_bend;
     double p0;
+    double area0;
+    double p_target;
 
     double mobility;
     double relax_time;
@@ -82,6 +92,8 @@ public:
     
     Vector3d self_prop_vel; // Vetor unitário da velocidade propulsora
     Vector3d sum_forces_matrix; // Matrix com a soma das forças sobre cada partícula
+
+    WindowsManagerRing windows_manager;
 
 
     //==
@@ -122,7 +134,7 @@ public:
     //=========//
 
     Ring(Vector3d &pos0, Vector3d &vel0, vector<vector<double>> self_prop_angle0,
-        RingCfg dynamic_cfg, double size, double dt, int seed=-1) 
+        RingCfg dynamic_cfg, double size, double dt, int num_col_windows, int seed=-1) 
     : pos(pos0), vel(vel0), self_prop_angle(self_prop_angle0), dynamic_cfg(dynamic_cfg), size(size), dt(dt)
     {
         if (seed != -1.)
@@ -133,6 +145,8 @@ public:
         num_particles = pos0[0].size();
         num_rings = pos0.size();
         sim_time = 0.0;
+
+        windows_manager = WindowsManagerRing(&pos, num_col_windows, num_col_windows, size);
 
         initialize_dynamic();
         
@@ -148,6 +162,10 @@ public:
         
         k_bend = dynamic_cfg.k_bend;
         p0 = dynamic_cfg.p0;
+        area0 = dynamic_cfg.area0;
+        p_target = p0 * sqrt(area0);
+
+        // area0 = calc_area(pos[0]);
 
         mobility = dynamic_cfg.mobility;
         relax_time = dynamic_cfg.relax_time;
@@ -188,6 +206,8 @@ public:
         vol_forces = Vector3d(num_rings, zero_vector_2d);
         area_forces = Vector3d(num_rings, zero_vector_2d);
         total_forces = Vector3d(num_rings, zero_vector_2d);
+
+        area_debug.area = vector<double>(num_rings);
 
         // vector<vector<double*>> ring_pos_t;
         pos_t = vector<vector<vector<double*>>>(num_rings, vector<vector<double*>>(2));
@@ -246,7 +266,7 @@ public:
             }
         }
 
-        // Bond
+        // Springs
         for (int p_id = 0; p_id < num_particles; p_id ++) {
             int id_left = (p_id == 0) ? num_particles-1 : p_id-1;
             int id_right = (p_id == num_particles-1) ? 0 : p_id+1;
@@ -256,10 +276,21 @@ public:
         }
 
         // Bend
-        calc_bend_forces(ring_id);
+        switch (dynamic_cfg.area_potencial)
+        {
+        case AreaPotencialType::format:
+            format_forces(ring_id);
+            break;
+        case AreaPotencialType::target_perimeter:
+            target_perimeter_forces(ring_id);
+            break;
+        case AreaPotencialType::target_area:
+            target_area_forces(ring_id);
+            break;
+        }
     }
 
-    void calc_excluded_vol_force(int ring_id, int other_ring_id, int p_id, int other_id) {
+    void calc_excluded_vol_force(int ring_id, int other_ring_id, int p_id, int other_id, bool use_third_law=false) {
         /**
          * Calcula a força do potencial de volume exercida na partícula 'p_id' no anel 'ring_id', 
          * pela partícula 'other_id' que está no anel 'other_ring_id'.
@@ -294,10 +325,20 @@ public:
 
         sum_forces_matrix[ring_id][p_id][0] += vol_fx;
         sum_forces_matrix[ring_id][p_id][1] += vol_fy;
+        
+        if (use_third_law) {
+            sum_forces_matrix[other_ring_id][other_id][0] -= vol_fx;
+            sum_forces_matrix[other_ring_id][other_id][1] -= vol_fy;
+        }
 
         #if DEBUG == 1
         vol_forces[ring_id][p_id][0] += vol_fx;
         vol_forces[ring_id][p_id][1] += vol_fy;
+        
+        if (use_third_law) {
+            vol_forces[other_ring_id][other_id][0] -= vol_fx;
+            vol_forces[other_ring_id][other_id][1] -= vol_fy;
+        }
         #endif
     }
 
@@ -382,7 +423,7 @@ public:
         return perimeter;
     }
 
-    void calc_bend_force(int ring_id, int point_id, double area, double perimeter) {
+    void format_force(int ring_id, int point_id, double area, double perimeter) {
         int id = pos_continuos[ring_id].size() - 1;
         if (point_id != 0)
             id = point_id - 1;
@@ -422,7 +463,7 @@ public:
         sum_forces_matrix[ring_id][point_id][1] -= gradient_y;
     }
 
-    void calc_bend_forces(int ring_id) {
+    void format_forces(int ring_id) {
         double perimeter = calc_differences(ring_id);
 
         pos_continuos[ring_id][0] = pos[ring_id][0];
@@ -434,9 +475,123 @@ public:
 
         double area = calc_area(pos_continuos[ring_id]);
         
+        #if DEBUG
+        area_debug.area[ring_id] = area;
+        #endif
+
         for (size_t i = 0; i < pos_continuos[ring_id].size(); i++)
         {
-            calc_bend_force(ring_id, i, area, perimeter);
+            format_force(ring_id, i, area, perimeter);
+        }
+    }
+
+    void target_perimeter_forces(int ring_id) {
+        double perimeter = calc_differences(ring_id);
+
+        pos_continuos[ring_id][0] = pos[ring_id][0];
+        for (size_t i = 0; i < (differences[ring_id].size()-1); i++)
+        {
+            pos_continuos[ring_id][i+1][0] = pos_continuos[ring_id][i][0] + differences[ring_id][i][0];
+            pos_continuos[ring_id][i+1][1] = pos_continuos[ring_id][i][1] + differences[ring_id][i][1];
+        }
+
+        double area = calc_area(pos_continuos[ring_id]);
+        #if DEBUG
+        area_debug.area[ring_id] = area;
+        #endif
+
+        auto& ring_pos = pos[ring_id];
+        for (int i = 0; i < num_particles; i++)
+        {
+            double d1 = vector_mod(differences[ring_id][i]);
+            
+            int id2 = i-1;
+            if (i == 0)
+                id2 = num_particles - 1;
+            double d2 = vector_mod(differences[ring_id][id2]);
+            
+            double  force_k = k_bend * (perimeter - p_target);
+
+            // int id1 = i - 1;
+            // if (id1 == -1)
+            //     id1 = num_particles - 1;
+
+            // id2 = i;
+
+            // int id3 = i + 1;
+            // if (id3 == num_particles)
+            //     id3 = 0;
+
+            // double p_deriv_x = (ring_pos[id2][0] - ring_pos[id1][0])/d1 + (ring_pos[id2][0] - ring_pos[id3][0])/d2;
+            // double p_deriv_y = (ring_pos[id2][1] - ring_pos[id1][1])/d1 + (ring_pos[id2][1] - ring_pos[id3][1])/d2;
+
+
+
+            double p_deriv_x = (-differences[ring_id][i][0])/d1 + (differences[ring_id][id2][0])/d2;
+            double p_deriv_y = (-differences[ring_id][i][1])/d1 + (differences[ring_id][id2][1])/d2;
+            
+            double fx = -force_k * p_deriv_x;
+            double fy = -force_k * p_deriv_y;
+
+            #if DEBUG == 1
+            area_forces[ring_id][i][0] = fx;
+            area_forces[ring_id][i][1] = fy;
+            #endif
+
+
+            sum_forces_matrix[ring_id][i][0] += fx;
+            sum_forces_matrix[ring_id][i][1] += fy;
+        }
+    }
+
+    void target_area_forces(int ring_id) {
+        double perimeter = calc_differences(ring_id);
+
+        pos_continuos[ring_id][0] = pos[ring_id][0];
+        for (size_t i = 0; i < (differences[ring_id].size()-1); i++)
+        {
+            pos_continuos[ring_id][i+1][0] = pos_continuos[ring_id][i][0] + differences[ring_id][i][0];
+            pos_continuos[ring_id][i+1][1] = pos_continuos[ring_id][i][1] + differences[ring_id][i][1];
+        }
+
+        double area = calc_area(pos_continuos[ring_id]);
+        #if DEBUG
+        area_debug.area[ring_id] = area;
+        #endif
+
+        auto& ring_pos = pos[ring_id];
+        int id1, id2;
+        for (int i = 0; i < num_particles; i++)
+        {
+            double force_k = k_bend * (area - area0);
+
+            id1 = i - 1;
+            if (id1 == -1)
+                id1 = num_particles - 1;
+            
+            id2 = i + 1;
+            if (id2 == num_particles)
+                id2 = 0;
+
+            
+            double dx = ring_pos[id2][0] - ring_pos[id1][0];
+            double dy = ring_pos[id2][1] - ring_pos[id1][1];
+            periodic_dist(dx, dy);
+
+            double a_deriv_x = 1.0/2.0 * (dy);
+            double a_deriv_y = 1.0/2.0 * (-dx);
+            
+            double fx = -force_k * a_deriv_x;
+            double fy = -force_k * a_deriv_y;
+
+            #if DEBUG == 1
+            area_forces[ring_id][i][0] = fx;
+            area_forces[ring_id][i][1] = fy;
+            #endif
+
+
+            sum_forces_matrix[ring_id][i][0] += fx;
+            sum_forces_matrix[ring_id][i][1] += fy;
         }
     }
 
@@ -446,11 +601,11 @@ public:
             pos[ring_id][i][1] += dt * vel[ring_id][i][1];
 
             if (vel[ring_id][i][0] > 1e6) {
-                std::cout << "merda" << std::endl;
+                std::cout << "Error: High velocity" << std::endl;
             }
             
             if (isnan(pos[ring_id][i][0]) == true) {
-                std::cout << "merda" << std::endl;
+                std::cout << "Erro: pos nan 1" << std::endl;
             }
 
             #if DEBUG == 1    
@@ -478,7 +633,7 @@ public:
                 double cross_prod = self_prop_vel[ring_id][i][0] * vel[ring_id][i][1]/speed - self_prop_vel[ring_id][i][1] * vel[ring_id][i][0]/speed;
                 
                 if ((cross_prod > 1) | (cross_prod < -1)) {
-                    std::cout << "merda" << std::endl;
+                    std::cout << "Error: cross_prod" << std::endl;
                 }
 
                 angle_derivate = 1. / relax_time * asin(cross_prod) + noise_rot;
@@ -506,7 +661,7 @@ public:
             }
 
             if (isnan(pos[ring_id][i][0]) == true) {
-                std::cout << "merda" << std::endl;
+                std::cout << "Error: pos_nan 2" << std::endl;
             }
 
             #if DEBUG == 1
@@ -520,10 +675,12 @@ public:
     }
 
     void update_normal() {
+        #if DEBUG == 1
+        rng_manager.update();
+        #endif
+
         for (int ring_id = 0; ring_id < num_rings; ring_id++) {
             #if DEBUG == 1
-            rng_manager.update();
-            
             for (int i = 0; i < num_particles; i++) {
                 spring_forces[ring_id][i][0] = 0.;
                 spring_forces[ring_id][i][1] = 0.;
@@ -534,6 +691,99 @@ public:
             #endif
 
             calc_forces_normal(ring_id);
+        }
+
+        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        {
+            advance_time(ring_id);
+        }
+        
+        
+        #if DEBUG == 1
+        update_graph_points();   
+        #endif
+
+        sim_time += dt;
+    }
+   
+    void calc_forces_windows() {
+        #if DEBUG == 1
+        for (int ring_id = 0; ring_id < num_rings; ring_id++) {
+            for (int i = 0; i < num_particles; i++) {
+                spring_forces[ring_id][i][0] = 0.;
+                spring_forces[ring_id][i][1] = 0.;
+                
+                vol_forces[ring_id][i][0] = 0.;
+                vol_forces[ring_id][i][1] = 0.;
+            }
+        }
+        #endif
+
+        // Excluded volume
+        for (auto win_id: windows_manager.windows_ids) {
+            auto & window = windows_manager.windows[win_id[0]][win_id[1]];
+            auto & neighbors = windows_manager.window_neighbor[win_id[0]][win_id[1]];
+            int windows_cap = windows_manager.capacity[win_id[0]][win_id[1]];
+            
+            for (int i=0; i < windows_cap; i++) {
+                auto ring_id = window[i][0];
+                auto p_id = window[i][1];
+
+                for (int j = i+1; j < windows_cap; j ++) {
+                    auto other_id = window[j];
+                    calc_excluded_vol_force(ring_id, other_id[0], p_id, other_id[1], true);
+                }
+
+                for (auto neigh_id : neighbors) {
+                    auto & neigh_window = windows_manager.windows[neigh_id[0]][neigh_id[1]];
+                    int neigh_window_cap = windows_manager.capacity[neigh_id[0]][neigh_id[1]];
+
+                    for (int j = 0; j < neigh_window_cap; j ++) {
+                        auto other_id = neigh_window[j];
+                        calc_excluded_vol_force(ring_id, other_id[0], p_id, other_id[1], true);
+                    }
+                }
+            }
+        }
+
+        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        {
+            // Springs
+            for (int p_id = 0; p_id < num_particles; p_id ++) {
+                int id_left = (p_id == 0) ? num_particles-1 : p_id-1;
+                int id_right = (p_id == num_particles-1) ? 0 : p_id+1;
+
+                calc_spring_force(ring_id, p_id, id_left);
+                calc_spring_force(ring_id, p_id, id_right);
+            }
+
+            // Bend
+            switch (dynamic_cfg.area_potencial)
+            {
+            case AreaPotencialType::format:
+                format_forces(ring_id);
+                break;
+            case AreaPotencialType::target_perimeter:
+                target_perimeter_forces(ring_id);
+                break;
+            case AreaPotencialType::target_area:
+                target_area_forces(ring_id);
+                break;
+            }
+        }
+    }
+
+   void update_windows() {
+        #if DEBUG == 1
+        rng_manager.update();
+        #endif
+
+        windows_manager.update_window_members();
+
+        calc_forces_windows();
+
+        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        {
             advance_time(ring_id);
         }
 
@@ -542,8 +792,7 @@ public:
         #endif
 
         sim_time += dt;
-    }
-   
+   }
 
     void calc_border_point(int ring_id, array<double, 2> &p1, array<double, 2> &p2, int mid_point_id, bool place_above_p2=false) {
         /**
@@ -636,7 +885,6 @@ public:
             }
         }
     }
-
 
     double mean_vel(int ring_id) {
         double sum_vel[2] = {0, 0};

@@ -40,7 +40,7 @@ class State(Collector):
             num_points:
                 Número de pontos a serem coletados.
         '''
-        super().__init__(path, configs)
+        super().__init__(solver, path, configs)
 
         collect_all_steps = num_points is None
 

@@ -5,6 +5,9 @@ tests/data_test/all_run
 *cpp_lib.cpython*
 */ui/deps
 
+user/ring/area_test/data
+user/ring/stress
+
 lib/phystem/cpp/tests_ui/build
 lib/phystem/cpp/tests_ui/ui/build
 lib/phystem/cpp/tests_ui/ui/deps

@@ -1,0 +1,57 @@
+create_cfg: !!python/object:phystem.ring.configs.CreateCfg
+  angle:
+  - 0.7853981633974483
+  - -2.356194490192345
+  - 2.356194490192345
+  - -0.7853981633974483
+  center:
+  - - -7.333333333333334
+    - -7.333333333333334
+  - - 7.333333333333334
+    - 7.333333333333334
+  - - 7.333333333333334
+    - -7.333333333333334
+  - - -7.333333333333334
+    - 7.333333333333334
+  num_p: 30
+  num_rings: 4
+  r:
+  - 3.666666666666667
+  - 3.666666666666667
+  - 3.666666666666667
+  - 3.666666666666667
+  vo:
+  - 1
+  - 1
+  - 1
+  - 1
+dynamic_cfg: !!python/object:phystem.ring.configs.RingCfg
+  area0: 40
+  area_potencial: format
+  diameter: 1
+  exclusion_vol: 1
+  k_bend: 5
+  mobility: 1
+  p0: 3.5449077018
+  relax_time: 1
+  rot_diff: 0.1
+  spring_k: 10
+  spring_r: 0.3
+  trans_diff: 0.1
+  vo: 1
+rng_seed: 40028922
+run_cfg: !!python/object:phystem.ring.run_config.CollectDataCfg
+  dt: 0.0005
+  folder_path: /home/marcos/Documents/Programacao/IC/active-matter/tests/data_test/ring/test
+  func: nao salvo
+  func_cfg: null
+  func_id: !!python/object/apply:phystem.ring.collect_pipelines.FuncID
+  - 1
+  num_col_windows: 20
+  solver_type: !!python/object/apply:phystem.core.run_config.SolverType
+  - 2
+  tf: 100
+  update_type: !!python/object/apply:phystem.core.run_config.UpdateType
+  - 2
+space_cfg: !!python/object:phystem.ring.configs.SpaceCfg
+  size: 30

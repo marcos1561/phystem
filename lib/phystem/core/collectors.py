@@ -8,12 +8,14 @@ class Collector(ABC):
     '''
     Responsável pela coleta de dados gerados pelo solver.
     '''
-    def __init__(self, path: str, configs: list) -> None:
+    def __init__(self, solver: SolverCore, path: str, configs: list) -> None:
         '''
         $\pi = 3.14$
 
         Parameters:
         -----------
+            solver:
+                Auto explicativo.
             path:
                 Caminho da pasta que vai conter os dados coletados.
             
@@ -22,8 +24,12 @@ class Collector(ABC):
                 Apenas utilizado para salver as configurações no fim da coleta,
                 na mesma pasta dos dados com o nome 'config.yaml'.
         '''
+        self.solver = solver
         self.configs = configs
         self.path = path
+        
+        if not os.path.exists(path):
+            raise ValueError(f"O caminho {path} não existe.")
 
     @abstractmethod
     def collect(self, count: int) -> None:
@@ -45,7 +51,7 @@ class Collector(ABC):
         config_path = os.path.join(self.path, "config.yaml")
         with open(config_path, "w") as f:
             yaml.dump(self.configs, f)
-
+    
 class State(Collector):
     def __init__(self, solver: SolverCore, path: str, configs: list, tf: float, dt: float, to=0.0, 
         num_points:int=None) -> None:
@@ -79,7 +85,7 @@ class State(Collector):
             num_points:
                 Número de pontos a serem coletados.
         '''
-        super().__init__(path, configs)
+        super().__init__(solver, path, configs)
 
         collect_all_steps = num_points is None
 
@@ -103,8 +109,6 @@ class State(Collector):
         self.to = to
         self.tf = tf
         self.freq = freq
-
-        self.solver = solver
 
         self.data_count = 0
 

@@ -15,7 +15,7 @@ from phystem.ring.configs import RingCfg, SpaceCfg, CreateCfg, RingCfg
 
 class GraphCfg:
     def __init__(self, show_circles=False, show_f_spring=False, show_f_vol=False, show_f_area=False, 
-        show_f_total=False, force_to_color=None, cpp_is_debug=True) -> None:
+        show_f_total=False, force_to_color=None, begin_paused=False, cpp_is_debug=True) -> None:
         self.show_circles = show_circles
         self.show_f_spring = show_f_spring
         self.show_f_vol = show_f_vol
@@ -24,6 +24,7 @@ class GraphCfg:
 
         self.show_pos_cont = False
 
+        self.begin_paused = begin_paused
         self.cpp_is_debug = cpp_is_debug
 
         self.force_to_color = force_to_color
@@ -149,6 +150,13 @@ class MainGraph:
             
         return np.array(force_cpp).T
 
+    def get_ith_points(self):
+        x, y = [], []
+        id = len(self.pos[0]) - 1
+        for ring_pos in self.pos:
+            x.append(ring_pos[id][0])
+            y.append(ring_pos[id][1])
+        return x, y
 
     def init(self):
         r = self.space_cfg.size/2
@@ -163,7 +171,8 @@ class MainGraph:
         self.ax.plot([r, r], [-r, r], color="black")
         self.ax.plot([-r, -r], [-r, r], color="black")
 
-        self.points = [self.ax.scatter(*ring_pos_t) for ring_pos_t in self.pos_t]
+        self.points = [self.ax.scatter(*ring_pos_t, s=1, zorder=2) for ring_pos_t in self.pos_t]
+        self.ith_points = self.ax.scatter(*self.get_ith_points(), c="black", s=22, zorder=2)
        
         self.points_continuos = [self.ax.scatter(*(np.array(self.solver.pos_continuos[ring_id]).T)) for ring_id in range(self.num_rings)]
         if not self.graph_cfg.show_pos_cont:
@@ -178,6 +187,8 @@ class MainGraph:
                 ring_lines = LineCollection(self.get_segments(ring_id),
                     norm=colors.Normalize(self.dynamic_cfg.spring_r - dr , self.dynamic_cfg.spring_r + dr),
                     cmap=colors.LinearSegmentedColormap.from_list("spring_tension", ["blue", "black", "red"]),
+                    linewidths=3,
+                    zorder=1,
                 )
                 self.lines.append(ring_lines)
 
@@ -228,6 +239,9 @@ class MainGraph:
         # TODO: Setar os segmentos sem reconstruir os mesmos.
         #   Talvez criar os segmentos no c++ e apenas referenciar eles aqui.
         
+        ith_points = np.array(self.get_ith_points()).T
+        self.ith_points.set_offsets(ith_points)
+
         for ring_id in range(self.num_rings):
             self.points[ring_id].set_offsets(self.pos[ring_id])
             
@@ -320,6 +334,7 @@ class Info(graph.Info):
             f"t : {self.solver.time:.3f}\n"
             f"dt: {self.solver.dt:.3f}\n"
             f"<V> = {self.solver.mean_vel(0):.3f}\n"
+            f"Area = {self.solver.cpp_solver.area_debug.area[0]:.3f}\n"
             "\n"
             f"spring_overlap: {self.solver.spring_debug.count_overlap}\n"
             f"vol_overlap   : {self.solver.excluded_vol_debug.count_overlap}\n"

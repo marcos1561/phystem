@@ -9,7 +9,7 @@ from phystem.core.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, Replay
 
 dynamic_cfg = RingCfg(
     spring_k=15,
-    spring_r=0.5,
+    spring_r=0.7,
     
     k_bend=1,
     # p0=4.828427, # Triângulo retângulo
@@ -22,7 +22,7 @@ dynamic_cfg = RingCfg(
     
     relax_time=1,
     mobility=1,
-    vo=10,
+    vo=1,
     
     trans_diff=0.1,
     rot_diff=0.1,
@@ -33,8 +33,8 @@ space_cfg = SpaceCfg(
 )
 
 from math import pi
-radius = 20/6
-a = 2
+radius = 1.1*dynamic_cfg.diameter/(2*pi/30)
+a = 1.6
 create_cfg = CreateCfg(
     num_rings = 4,
     num_p = 30,
@@ -52,11 +52,11 @@ create_cfg = CreateCfg(
 seed = 40028922
 seed=None
 
-run_type = RunType.REAL_TIME
+run_type = RunType.COLLECT_DATA
 
 real_time_cfg = RealTimeCfg(
-    dt = 0.0001,
-    num_steps_frame = 200,
+    dt = 0.001,
+    num_steps_frame = 1000,
     fps = 60,
     graph_cfg = GraphCfg(
         show_circles  = True,
@@ -83,10 +83,10 @@ if run_type is RunType.REPLAY_DATA:
     )
 
 collect_data_cfg = CollectDataCfg(
-    tf = 100,
+    tf = 200,
     dt = 0.001,
-    folder_path="data/ring/teste",
-    func = collect_pipelines.state,
+    folder_path="data",
+    func = collect_pipelines.area,
     # func_id = collect_pipelines.FuncID.state,
     # get_func= collect_pipelines.get_func,
     func_cfg = collect_pipelines.CollectPlCfg(

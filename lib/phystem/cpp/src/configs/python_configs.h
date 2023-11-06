@@ -31,6 +31,7 @@ public:
         
         k_bend = py::float_(values["k_bend"]);
         p0 = py::float_(values["p0"]);
+        area0 = py::float_(values["area0"]);
 
         mobility = py::float_(values["mobility"]);
         relax_time = py::float_(values["relax_time"]);
@@ -41,5 +42,16 @@ public:
 
         exclusion_vol = py::float_(values["exclusion_vol"]);
         diameter = py::float_(values["diameter"]);
+
+        std::string area_potencial_name = py::str(values["area_potencial"]);
+
+        if (area_potencial_name == "format")
+            area_potencial = AreaPotencialType::format;
+        else if (area_potencial_name == "target_perimeter")
+            area_potencial = AreaPotencialType::target_perimeter;
+        else if (area_potencial_name == "target_area")
+            area_potencial = AreaPotencialType::target_area;
+        else
+            throw std::invalid_argument("Nome do potencial de area incorreto.");
     };
 };

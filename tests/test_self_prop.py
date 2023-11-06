@@ -78,6 +78,7 @@ class TestSelfPropelling(unittest.TestCase):
         self.assertTrue(((pos_test[1] - pos_truth[1])**2).sum() < 1e-5)
         self.assertTrue(((vel_test[1] - vel_truth[1])**2).sum() < 1e-5)
 
+
 class TestWindows(unittest.TestCase):
     def test_neighbor_ids(self):
         import phystem.cpp_lib as cpp_lib
