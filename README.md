@@ -11,7 +11,6 @@ Cada uma dessas componentes devem ser implementadas pelo usuário. Explicações
 
 Caso você esteja interessado em utilizar os sistemas físicos já implementados, clique em [Como utilizar os sistemas físicos já implementados com o phystem?](#como-utilizar-os-sistemas-físicos-já-implementados-com-o-phystem)
 
-## Very noice
 ## Como utilizar o Phystem?
 Para demonstrar sua utilização, vamos implementar um único caminhante aleatório. Os requisitos do nosso sistema são os seguintes:
 
@@ -124,9 +123,9 @@ class Solver(SolverCore):
         self.time += self.dt
 ```
 
-> 📘
+> ℹ️
 >
-> Caso você esteja implementando uma sistema físico que necessita de muito poder computacional, implementar o solver puramente no python não é uma ótima escolha. Uma possível solução é realizar a construção do solver em uma linguagem que apresenta ótimo desempenho, e chamá-la no solver do python. Uma das formas de fazer isso é utilizando o [pybind11](https://pybind11.readthedocs.io/en/stable/index.html#), uma biblioteca que permite criar módulos do python que chamam códigos do c++. 
+> Caso você esteja implementando um sistema físico que necessita de muito poder computacional, implementar o solver puramente no python não é uma ótima escolha. Uma possível solução é realizar a construção do solver em uma linguagem que apresenta ótimo desempenho, e chamá-la no solver do python. Uma das formas de fazer isso é utilizando o [pybind11](https://pybind11.readthedocs.io/en/stable/index.html#), uma biblioteca que permite criar módulos do python que chamam códigos do c++. 
 
 ### 3. Configurações
 Normalmente existem diversas configuração utilizadas para explorar um sistema físico, então para facilitar seu gerenciando, o phystem espera que elas estejam encapsuladas em classes. Por padrão, existem 4 tipos de configurações que uma aplicação de simulação espera receber
@@ -387,12 +386,12 @@ Poderíamos continuar com a nossa implementação adicionando muitas outras func
 5. Colocar múltiplos caminhantes (Talvez adicionar uma dinâmica de interação entre os caminhantes?)
 
 
-Enfim, as possibilidades são infinitas! Mas esse tutorial termina por aqui, espero que ele tenha sido esclarecedor e que ele proporcione muitas horas de diversão implementado seu sistema físico. 
+Enfim, as possibilidades são infinitas! Mas esse tutorial termina por aqui, espero que ele tenha sido esclarecedor e que proporcione muitas horas de diversão implementado seus sistemas físicos. 
 
 ## Como utilizar os sistemas físicos já implementados com o phystem?
 O sub-pacote `phystem.systems` contém os sistemas físicos já implementados com o phystem. 
 
-Em geral, para utilizá-los é necessário criar uma instância de `Simulation`, que está no módulo `simulation.py` do respectivo sistema, e rodar o método `run`. `Simulation` requer qeu sejam passadas as seguintes configurações
+Em geral, para utilizá-los é necessário criar uma instância de `Simulation`, que está no módulo `simulation.py` do respectivo sistema, e rodar o método `run`. `Simulation` requer que sejam passadas as seguintes configurações
 
 1. creator_cfg: Configurações da criação da configuração inicial do sistema.
 2. dynamic_cfg: Configurações da dinâmica do sistema.
