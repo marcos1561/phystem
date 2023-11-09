@@ -7,7 +7,7 @@ Phystem é uma estrutura para auxiliar na construção e exploração de sistema
 - Collector: Responsável pela coleta de dados do sistema.
 - Simulation: Aplicação que irá rodar a simulação.
 
-Cada uma dessas componentes devem ser implementadas pelo usuário. Explicações mais detalhadas para cada sistema do phystem são dadas no decorrer desse documento.
+Cada componente deve ser implementado pelo usuário. Explicações mais detalhadas para cada sistema do phystem são dadas no decorrer desse documento.
 
 Caso você esteja interessado em utilizar os sistemas físicos já implementados, clique em [Como utilizar os sistemas físicos já implementados com o phystem?](#como-utilizar-os-sistemas-físicos-já-implementados-com-o-phystem)
 
