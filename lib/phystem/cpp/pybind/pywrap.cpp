@@ -119,6 +119,7 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def("mean_vel", &Ring::mean_vel)
         .def("mean_vel_vec", &Ring::mean_vel_vec)
         .def_readonly("num_rings", &Ring::num_rings, byref)
+        .def_readonly("num_particles", &Ring::num_particles, byref)
         .def_readonly("pos", &Ring::pos, byref)
         .def_readonly("vel", &Ring::vel, byref)
         .def_readonly("self_prop_vel", &Ring::self_prop_vel, byref)

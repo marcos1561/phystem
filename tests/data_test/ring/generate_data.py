@@ -1,9 +1,9 @@
-from phystem.ring.simulation import Simulation
+from phystem.systems.ring.simulation import Simulation
 
-from phystem.ring.configs import RingCfg, CreateCfg, SpaceCfg
-from phystem.ring import collect_pipelines
+from phystem.systems.ring.configs import RingCfg, CreatorCfg, SpaceCfg
+from phystem.systems.ring import collect_pipelines
 
-from phystem.ring.run_config import CollectDataCfg
+from phystem.systems.ring.run_config import CollectDataCfg
 from phystem.core.run_config import UpdateType, SolverType
 
 
@@ -38,7 +38,7 @@ def generate_normal_data():
     from math import pi
     radius = 20/6 * 1.1
     a = 2
-    create_cfg = CreateCfg(
+    creator_cfg = CreatorCfg(
         num_rings = 4,
         num_p = 30,
         r = radius,
@@ -64,7 +64,7 @@ def generate_normal_data():
         update_type=UpdateType.NORMAL,
     )
 
-    sim = Simulation(create_cfg, dynamic_cfg, space_cfg, run_cfg=collect_data_cfg, rng_seed=seed)
+    sim = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=collect_data_cfg, rng_seed=seed)
     sim.run()
 
 generate_normal_data()

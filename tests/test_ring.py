@@ -1,10 +1,10 @@
 import unittest
 import os, yaml
 
-from phystem.ring.simulation import Simulation
-from phystem.ring import collect_pipelines
-from phystem.ring.configs import *
-from phystem.ring.run_config import CollectDataCfg
+from phystem.systems.ring.simulation import Simulation
+from phystem.systems.ring import collect_pipelines
+from phystem.systems.ring.configs import *
+from phystem.systems.ring.run_config import CollectDataCfg
 from phystem.core.run_config import UpdateType
 
 current_folder = os.path.dirname(__file__)

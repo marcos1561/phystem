@@ -1,11 +1,11 @@
-from phystem.ring.simulation import Simulation
+from phystem.systems.ring.simulation import Simulation
 
-from phystem.ring.configs import *
-from phystem.ring.ui.graph import GraphCfg
-from phystem.ring import collect_pipelines
+from phystem.systems.ring.configs import *
+from phystem.systems.ring.ui.graph import GraphCfg
+from phystem.systems.ring import collect_pipelines
 
 from phystem.core.run_config import UpdateType, SolverType, RunType, ReplayDataCfg
-from phystem.ring.run_config import RealTimeCfg, CollectDataCfg, SaveCfg
+from phystem.systems.ring.run_config import RealTimeCfg, CollectDataCfg, SaveCfg
 
 dynamic_cfg = RingCfg(
     spring_k=8,
@@ -50,7 +50,7 @@ for j in range(n):
         x = k * radius + i * l - space_cfg.size/2
         centers.append([x, y])
 
-create_cfg = CreateCfg(
+creator_cfg = CreatorCfg(
     num_rings = num_rings,
     num_p = 30,
     r = radius,
@@ -62,8 +62,9 @@ create_cfg = CreateCfg(
 seed = 40028922
 seed=None
 
-run_type = RunType.SAVE_VIDEO
+run_type = RunType.REAL_TIME
 
+num_windows = int(ceil(space_cfg.size/(dynamic_cfg.diameter*3)))
 real_time_cfg = RealTimeCfg(
     dt = 0.001/2,
     num_steps_frame = 400,
@@ -77,7 +78,7 @@ real_time_cfg = RealTimeCfg(
         begin_paused=False,
         cpp_is_debug=True,
     ),
-    num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*3))),
+    num_col_windows=num_windows,
     update_type=UpdateType.WINDOWS,
 )
 print(real_time_cfg.num_col_windows)
@@ -105,5 +106,5 @@ run_type_to_cfg = {
     RunType.SAVE_VIDEO: save_cfg,
 }
 
-sim = Simulation(create_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type], rng_seed=seed)
+sim = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type], rng_seed=seed)
 sim.run()

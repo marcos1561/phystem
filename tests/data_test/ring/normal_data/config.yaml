@@ -1,4 +1,4 @@
-create_cfg: !!python/object:phystem.ring.configs.CreateCfg
+creator_cfg: !!python/object:phystem.systems.ring.configs.CreatorCfg
   angle:
   - 0.7853981633974483
   - -2.356194490192345
@@ -25,7 +25,7 @@ create_cfg: !!python/object:phystem.ring.configs.CreateCfg
   - 1
   - 1
   - 1
-dynamic_cfg: !!python/object:phystem.ring.configs.RingCfg
+dynamic_cfg: !!python/object:phystem.systems.ring.configs.RingCfg
   area0: 40
   area_potencial: format
   diameter: 1
@@ -40,12 +40,12 @@ dynamic_cfg: !!python/object:phystem.ring.configs.RingCfg
   trans_diff: 0.1
   vo: 1
 rng_seed: 40028922
-run_cfg: !!python/object:phystem.ring.run_config.CollectDataCfg
+run_cfg: !!python/object:phystem.systems.ring.run_config.CollectDataCfg
   dt: 0.0005
   folder_path: normal_data
   func: nao salvo
   func_cfg: null
-  func_id: !!python/object/apply:phystem.ring.collect_pipelines.FuncID
+  func_id: !!python/object/apply:phystem.systems.ring.collect_pipelines.FuncID
   - 1
   num_col_windows: null
   solver_type: !!python/object/apply:phystem.core.run_config.SolverType
@@ -53,5 +53,5 @@ run_cfg: !!python/object:phystem.ring.run_config.CollectDataCfg
   tf: 100
   update_type: !!python/object/apply:phystem.core.run_config.UpdateType
   - 1
-space_cfg: !!python/object:phystem.ring.configs.SpaceCfg
+space_cfg: !!python/object:phystem.systems.ring.configs.SpaceCfg
   size: 30

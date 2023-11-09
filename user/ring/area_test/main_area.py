@@ -1,8 +1,8 @@
-from phystem.ring.simulation import Simulation
+from phystem.systems.ring.simulation import Simulation
 
-from phystem.ring.configs import *
-from phystem.ring.ui.graph import GraphCfg
-from phystem.ring import collect_pipelines
+from phystem.systems.ring.configs import *
+from phystem.systems.ring.ui.graph import GraphCfg
+from phystem.systems.ring import collect_pipelines
 
 from phystem.core.run_config import UpdateType, SolverType, RunType
 from phystem.core.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, ReplayDataCfg
@@ -35,7 +35,7 @@ space_cfg = SpaceCfg(
 from math import pi
 radius = 1.1*dynamic_cfg.diameter/(2*pi/30)
 a = 1.6
-create_cfg = CreateCfg(
+creator_cfg = CreatorCfg(
     num_rings = 4,
     num_p = 30,
     r = radius,
@@ -76,7 +76,7 @@ if run_type is RunType.REPLAY_DATA:
         frequency=0,
         graph_cfg=GraphCfg(),
         system_cfg = {
-            "create_cfg": create_cfg,
+            "creator_cfg": creator_cfg,
             "dynamic_cfg": dynamic_cfg,
             "space_cfg": space_cfg
         },
@@ -115,5 +115,5 @@ save_cfg = SaveCfg(
 run_type_to_cfg = {RunType.COLLECT_DATA: collect_data_cfg, RunType.REAL_TIME: real_time_cfg, 
     RunType.SAVE_VIDEO: save_cfg, RunType.REPLAY_DATA: replay_data_cfg}
 
-sim = Simulation(create_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type], rng_seed=seed)
+sim = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type], rng_seed=seed)
 sim.run()

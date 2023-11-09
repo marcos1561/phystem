@@ -1,10 +1,10 @@
 import unittest
 import os, yaml
 
-from phystem.self_propelling.simulation import Simulation
-from phystem.self_propelling import collect_pipelines
-from phystem.self_propelling.configs import *
-from phystem.self_propelling.run_config import CollectDataCfg
+from phystem.systems.szabo.simulation import Simulation
+from phystem.systems.szabo import collect_pipelines
+from phystem.systems.szabo.configs import *
+from phystem.systems.szabo.run_config import CollectDataCfg
 from phystem.core.run_config import UpdateType
 
 current_folder = os.path.dirname(__file__)

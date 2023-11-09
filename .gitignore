@@ -6,6 +6,7 @@ tests/data_test/all_run
 */ui/deps
 
 user/ring/area_test/data
+user/ring/checkpoint
 user/ring/stress
 
 lib/phystem/cpp/tests_ui/build

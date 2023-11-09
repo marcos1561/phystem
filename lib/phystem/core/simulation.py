@@ -1,7 +1,7 @@
 from copy import deepcopy
 from abc import ABC, abstractmethod
 
-from ic_utils.timer import TimeIt
+from phystem.utils.timer import TimeIt
 from phystem.core.run_config import RunType, RunCfg, CollectDataCfg
 from phystem.core.creators import CreatorCore
 from phystem.core.solvers import SolverCore
@@ -10,11 +10,11 @@ class SimulationCore(ABC):
     '''
     Sistema base que controla a simulação do sistema físico para todos os modos de execução.
     '''
-    def __init__(self, create_cfg, dynamic_cfg, space_cfg, run_cfg: RunCfg, rng_seed: float=None) -> None:
+    def __init__(self, creator_cfg, dynamic_cfg, space_cfg, run_cfg: RunCfg, rng_seed: float=None) -> None:
         '''
         Parameters:
         -----------
-            create_cfg:
+            creator_cfg:
                 Configurações relacionadas a criação da configuração inicial.
             
             dynamic_cfg:
@@ -29,7 +29,7 @@ class SimulationCore(ABC):
             rng_seed:
                 Seed para os geradores de números aleatórios.
         '''
-        self.create_cfg = create_cfg
+        self.creator_cfg = creator_cfg
         self.space_cfg = space_cfg
         self.dynamic_cfg = dynamic_cfg
         self.run_cfg = run_cfg
@@ -40,7 +40,7 @@ class SimulationCore(ABC):
 
         # Coleção contendo as configurações utilizadas para salvá-las.
         self.configs = {
-            "create_cfg": deepcopy(create_cfg),
+            "creator_cfg": deepcopy(creator_cfg),
             "dynamic_cfg": deepcopy(dynamic_cfg),
             "space_cfg": deepcopy(space_cfg),
             "run_cfg": deepcopy(run_cfg),

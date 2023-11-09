@@ -203,7 +203,7 @@ class ReplayDataCfg(RealTimeCfg):
                 Lista das configurações relativas ao sistema que vão ser atualizadas com as 
                 configurações utilizadas nos dados salvos. As configurações são as seguintes:\n
             
-                -> create_cfg\n
+                -> creator_cfg\n
                 -> dynamic_cfg\n
                 -> space_cfg
                 
@@ -230,7 +230,7 @@ class ReplayDataCfg(RealTimeCfg):
         super().__init__(dt=dt, num_steps_frame=num_steps_frame, fps=fps, graph_cfg=graph_cfg)
 
         # Seta as configurações da simulação com aquelas salvas nos dados.
-        cfg_names = ("create_cfg", "dynamic_cfg", "space_cfg")
+        cfg_names = ("creator_cfg", "dynamic_cfg", "space_cfg")
         for name in cfg_names:
             system_cfg[name].set(cfg[name])
         

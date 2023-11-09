@@ -1,11 +1,11 @@
 import os
 
-from phystem.self_propelling.configs import *
-from phystem.self_propelling.run_config import CollectDataCfg
+from phystem.systems.szabo.configs import *
+from phystem.systems.szabo.run_config import CollectDataCfg
 from phystem.core.run_config import SolverType, UpdateType
-from phystem.self_propelling.simulation import Simulation
-from phystem.self_propelling.collect_pipelines import CollectPlCfg
-from phystem.self_propelling import collect_pipelines
+from phystem.systems.szabo.simulation import Simulation
+from phystem.systems.szabo.collect_pipelines import CollectPlCfg
+from phystem.systems.szabo import collect_pipelines
 
 current_folder = os.path.dirname(__file__)
 
@@ -25,7 +25,7 @@ def generate_final_run_data_1():
             size = 30,
         )
 
-        create_cfg = CreateCfg(
+        creator_cfg = CreatorCfg(
             n = 200,
             r = space_cfg.size/2,
             type = CreateType.SQUARE,
@@ -45,7 +45,7 @@ def generate_final_run_data_1():
             update_type=UpdateType.NORMAL,
         )
 
-        sim = Simulation(create_cfg, self_propelling_cfg, space_cfg, run_cfg, seed)
+        sim = Simulation(creator_cfg, self_propelling_cfg, space_cfg, run_cfg, seed)
         sim.run()
 
 def generate_final_run_data_2():
@@ -64,7 +64,7 @@ def generate_final_run_data_2():
             size = 11,
         )
 
-        create_cfg = CreateCfg(
+        creator_cfg = CreatorCfg(
             n = 10,
             r = space_cfg.size/2,
             type = CreateType.SQUARE,
@@ -84,7 +84,7 @@ def generate_final_run_data_2():
             update_type=UpdateType.NORMAL,
         )
 
-        sim = Simulation(create_cfg, self_propelling_cfg, space_cfg, run_cfg, seed)
+        sim = Simulation(creator_cfg, self_propelling_cfg, space_cfg, run_cfg, seed)
         sim.run()
 
 generate_final_run_data_1()

@@ -1,11 +1,11 @@
-from phystem.ring.simulation import Simulation
+from phystem.systems.ring.simulation import Simulation
 
-from phystem.ring.configs import *
-from phystem.ring.ui.graph import GraphCfg
-from phystem.ring import collect_pipelines
+from phystem.systems.ring.configs import *
+from phystem.systems.ring.ui.graph import GraphCfg
+from phystem.systems.ring import collect_pipelines
 
 from phystem.core.run_config import UpdateType, SolverType, RunType, ReplayDataCfg
-from phystem.ring.run_config import RealTimeCfg, CollectDataCfg, SaveCfg
+from phystem.systems.ring.run_config import RealTimeCfg, CollectDataCfg, SaveCfg
 
 dynamic_cfg = RingCfg(
     spring_k=8,
@@ -37,7 +37,7 @@ space_cfg = SpaceCfg(
 from math import pi
 radius = 20/6 * 1.1
 a = 2
-create_cfg = CreateCfg(
+creator_cfg = CreatorCfg(
     num_rings = 4,
     num_p = 30,
     r = radius,
@@ -59,18 +59,18 @@ run_type = RunType.REAL_TIME
 real_time_cfg = RealTimeCfg(
     dt = 0.001/2,
     num_steps_frame = 1000,
+    num_col_windows=8,
     fps = 60,
     graph_cfg = GraphCfg(
         show_circles  = True,
         show_f_spring = False,
         show_f_vol    = False,
-        show_f_area   = True,
+        show_f_area   = False,
         show_f_total  = False,
         begin_paused=False,
         cpp_is_debug=True,
     ),
-    num_col_windows=30,
-    update_type=UpdateType.NORMAL,
+    update_type=UpdateType.WINDOWS,
 )
 
 replay_data_cfg = None
@@ -81,7 +81,7 @@ if run_type is RunType.REPLAY_DATA:
         frequency=0,
         graph_cfg=GraphCfg(),
         system_cfg = {
-            "create_cfg": create_cfg,
+            "creator_cfg": creator_cfg,
             "dynamic_cfg": dynamic_cfg,
             "space_cfg": space_cfg
         },
@@ -89,16 +89,17 @@ if run_type is RunType.REPLAY_DATA:
 
 collect_data_cfg = CollectDataCfg(
     tf = 100,
-    dt = 0.001,
-    folder_path="data/ring/teste",
-    func = collect_pipelines.state,
+    dt = 0.001/2,
+    num_col_windows=8,
+    folder_path="checkpoint",
+    func = collect_pipelines.checkpoints,
     # func_id = collect_pipelines.FuncID.state,
     # get_func= collect_pipelines.get_func,
-    func_cfg = collect_pipelines.CollectPlCfg(
-        only_last=False, 
-    ),
+    # func_cfg = collect_pipelines.CollectPlCfg(
+    #     only_last=False, 
+    # ),
     solver_type=SolverType.CPP,
-    update_type=UpdateType.NORMAL,
+    update_type=UpdateType.WINDOWS,
 )
 
 save_cfg = SaveCfg(
@@ -120,5 +121,5 @@ save_cfg = SaveCfg(
 run_type_to_cfg = {RunType.COLLECT_DATA: collect_data_cfg, RunType.REAL_TIME: real_time_cfg, 
     RunType.SAVE_VIDEO: save_cfg, RunType.REPLAY_DATA: replay_data_cfg}
 
-sim = Simulation(create_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type], rng_seed=seed)
+sim = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type], rng_seed=seed)
 sim.run()
