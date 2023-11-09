@@ -1,9 +1,7 @@
 *pycache*
+*cpp_lib.cpython*
 data
 random_stuff
-tests/data_test/all_run
-*cpp_lib.cpython*
-*/ui/deps
 
 user/ring/area_test/data
 user/ring/checkpoint
