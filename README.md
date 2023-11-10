@@ -21,7 +21,7 @@ Para demonstrar sua utilização, vamos implementar um único caminhante aleató
 Cada sistema do phystem possui uma classe base, que contém seu esqueleto. Para realizar sua implementação precisamos herdar de tal base. 
 > ⚠️ 
 >
-> 1. Daqui em diante vou assumir que você clonou o phystem e tem o caminho da pasta "lib" adicionado ao PATH.
+> 1. Daqui em diante vou assumir que você clonou o phystem e tem o caminho da pasta "lib" adicionado ao PYTHONPATH.
 > 2. Em blocos de código, o primeiro comentário contém o nome do arquivo onde o código deveria estar.
 
 ### 0. Organização dos arquivos
