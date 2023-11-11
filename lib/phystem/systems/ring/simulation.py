@@ -7,7 +7,7 @@ from phystem.core.run_config import RunType
 from phystem.core.simulation import SimulationCore
 from phystem.core.solvers import SolverCore
 from phystem.systems.ring.configs import CreatorCfg
-from phystem.systems.ring.creators import Creator, InitData, CreatorRD
+from phystem.systems.ring.creators import CreatorRD, Creator
 from phystem.systems.ring.solvers import CppSolver, SolverRD
 
 from phystem.systems.ring.ui.graph import Info, MainGraph
@@ -16,7 +16,8 @@ from phystem.gui_phystem.widget import WidgetType
 
 class Simulation(SimulationCore):
     creator_cfg: CreatorCfg
-    
+    creator: Creator
+
     def get_creator(self) -> Creator:
 
         if self.run_cfg.id is RunType.REPLAY_DATA:
@@ -27,11 +28,19 @@ class Simulation(SimulationCore):
     def get_solver(self) -> SolverCore:
         if self.run_cfg.id is RunType.REPLAY_DATA:
             return SolverRD(self.run_cfg)
-        
-        init_data: InitData = self.creator.create()
+
+        num_skip_steps = 0        
+        if self.run_cfg.checkpoint:
+            from phystem.systems.ring.collectors import StateCheckpoint
+            
+            init_data, metadata = StateCheckpoint.load(self.run_cfg.checkpoint.folder_path)
+            num_skip_steps = metadata["num_time_steps"]
+        else:
+            init_data = self.creator.create()
         
         solver = CppSolver(**init_data.get_data(), dynamic_cfg=self.dynamic_cfg, size=self.space_cfg.size,
-            dt=self.run_cfg.dt, update_type=self.run_cfg.update_type, num_col_windows=self.run_cfg.num_col_windows, rng_seed=self.rng_seed)
+            dt=self.run_cfg.dt, update_type=self.run_cfg.update_type, num_col_windows=self.run_cfg.num_col_windows, 
+            rng_seed=self.rng_seed, num_skip_steps=num_skip_steps)
         
         return solver
 

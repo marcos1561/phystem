@@ -10,7 +10,7 @@ class SimulationCore(ABC):
     '''
     Sistema base que controla a simulação do sistema físico para todos os modos de execução.
     '''
-    def __init__(self, creator_cfg, dynamic_cfg, space_cfg, run_cfg: RunCfg, rng_seed: float=None) -> None:
+    def __init__(self, creator_cfg, dynamic_cfg, space_cfg, run_cfg: RunCfg, other_cfgs: dict=None, rng_seed: float=None) -> None:
         '''
         Parameters:
         -----------
@@ -33,22 +33,43 @@ class SimulationCore(ABC):
         self.space_cfg = space_cfg
         self.dynamic_cfg = dynamic_cfg
         self.run_cfg = run_cfg
-
-        self.time_it = TimeIt(num_samples=200)
-
+        self.other_cfgs = other_cfgs
         self.rng_seed = rng_seed
+        
+        if self.run_cfg.checkpoint:
+            if not self.run_cfg.checkpoint.override_cfgs:
+                checkpoint_cfgs = self.run_cfg.checkpoint.configs
+                self.creator_cfg = checkpoint_cfgs["creator_cfg"]
+                self.space_cfg = checkpoint_cfgs["space_cfg"]
+                self.dynamic_cfg = checkpoint_cfgs["dynamic_cfg"]
+                self.other_cfgs = checkpoint_cfgs["other_cfgs"]
+                self.rng_seed = checkpoint_cfgs["rng_seed"]
+
+        self.configs_container = {
+            "creator_cfg": self.creator_cfg,
+            "dynamic_cfg": self.dynamic_cfg,
+            "space_cfg": self.space_cfg,
+            "run_cfg": self.run_cfg,
+            "other_cfgs": self.other_cfgs,
+            "rng_seed": self.rng_seed,
+        }
+
 
         # Coleção contendo as configurações utilizadas para salvá-las.
-        self.configs = {
-            "creator_cfg": deepcopy(creator_cfg),
-            "dynamic_cfg": deepcopy(dynamic_cfg),
-            "space_cfg": deepcopy(space_cfg),
-            "run_cfg": deepcopy(run_cfg),
-            "rng_seed": deepcopy(rng_seed),
-        }
+        self.configs = {name: deepcopy(cfg) for name, cfg in self.configs_container.items()}
+        # self.configs = {
+        #     "creator_cfg": deepcopy(creator_cfg),
+        #     "dynamic_cfg": deepcopy(dynamic_cfg),
+        #     "space_cfg": deepcopy(space_cfg),
+        #     "run_cfg": deepcopy(run_cfg),
+        #     "rng_seed": deepcopy(rng_seed),
+        # }
+
         if run_cfg.id is RunType.COLLECT_DATA:
             # Como a configuração 'func' é uma função, ela não é salva.
             self.configs["run_cfg"].func = "nao salvo"
+
+        self.time_it = TimeIt(num_samples=200)
 
         self.init_sim()    
 
@@ -67,8 +88,6 @@ class SimulationCore(ABC):
         * Instanciar o `solver`.
         '''
         self.creator = self.get_creator()
-        self.creator.create()
-
         self.solver = self.get_solver()
 
     def run(self):

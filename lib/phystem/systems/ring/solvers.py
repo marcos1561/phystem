@@ -6,7 +6,8 @@ from phystem import cpp_lib
 
 class CppSolver:
     def __init__(self, pos: np.ndarray, vel: np.ndarray, self_prop_angle: np.ndarray, 
-        dynamic_cfg: RingCfg, size: float, dt: float, num_col_windows: int, update_type: UpdateType, rng_seed=None) -> None:
+        dynamic_cfg: RingCfg, size: float, dt: float, num_col_windows: int, update_type: UpdateType, 
+        rng_seed=None, num_skip_steps=0) -> None:
         if rng_seed is None:
             rng_seed = -1
         if num_col_windows is None:
@@ -14,16 +15,17 @@ class CppSolver:
 
         dynamic_cfg = cpp_lib.configs.RingCfg(dynamic_cfg.cpp_constructor_args())
         
-        pos_in = [cpp_lib.data_types.PosVec(ring_pos.T) for ring_pos in pos]
-        vel_in = [cpp_lib.data_types.PosVec(ring_vel.T) for ring_vel in vel]
+        pos_in = [cpp_lib.data_types.PosVec(ring_pos) for ring_pos in pos]
+        vel_in = [cpp_lib.data_types.PosVec(ring_vel) for ring_vel in vel]
         angle_in = [cpp_lib.data_types.List(ring_angle) for ring_angle in self_prop_angle]
 
         pos = cpp_lib.data_types.Vector3d(pos_in)
         vel = cpp_lib.data_types.Vector3d(vel_in)
         self_prop_angle = cpp_lib.data_types.List2d(angle_in)
 
-        self.cpp_solver = cpp_lib.solvers.Ring(pos, vel, self_prop_angle, dynamic_cfg, size, dt, num_col_windows, rng_seed)
-        
+        self.cpp_solver = cpp_lib.solvers.Ring(pos, vel, self_prop_angle, dynamic_cfg, size, dt, num_col_windows, 
+            rng_seed, num_skip_steps)
+
         update_type_to_func = {
             UpdateType.NORMAL: self.cpp_solver.update_normal,
             UpdateType.WINDOWS: self.cpp_solver.update_windows,
@@ -41,6 +43,10 @@ class CppSolver:
     @property
     def num_particles(self):
         return self.cpp_solver.num_particles
+    
+    @property
+    def num_time_steps(self):
+        return self.cpp_solver.num_time_steps
     
     @property
     def pos_t(self):

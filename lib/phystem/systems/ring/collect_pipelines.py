@@ -19,6 +19,13 @@ class CollectPlCfg:
         '''
         self.only_last = only_last
 
+class CheckPointCfg:
+    '''
+    Configurações para a pipeline de coleta de dados.
+    '''
+    def __init__(self, num_checkpoints: int) -> None:
+        self.num_checkpoints = num_checkpoints
+
 def state(sim: Simulation, collect_cfg: CollectPlCfg):
     solver: SolverCore = sim.solver
     run_cfg: CollectDataCfg = sim.run_cfg
@@ -88,23 +95,23 @@ def last_pos(sim: Simulation, collect_cfg):
     
     collector.save()
 
-def checkpoints(sim: Simulation, collect_cfg):
+def checkpoints(sim: Simulation, collect_cfg: CheckPointCfg):
     solver: SolverCore = sim.solver
     run_cfg: CollectDataCfg = sim.run_cfg
 
     prog = progress.Continuos(run_cfg.tf)
 
     collector = collectors.StateCheckpoint(solver, run_cfg.folder_path, sim.configs,
-        num_checkpoints=100, tf=run_cfg.tf)
+        num_checkpoints=collect_cfg.num_checkpoints, tf=run_cfg.tf)
 
-    count = 0
+    count = 1
     while solver.time < run_cfg.tf:
         solver.update()
         collector.collect(count)
-        prog.update(solver.time)
+        # prog.update(solver.time)
         count += 1
     
-    # collector.save()
+    print("num saves:", collector.num_saves)
 
 from enum import Enum, auto
 class FuncID(Enum):

@@ -2,9 +2,8 @@ from phystem.systems.ring.simulation import Simulation
 
 from phystem.systems.ring.configs import *
 from phystem.systems.ring.ui.graph import GraphCfg
-from phystem.systems.ring import collect_pipelines
 
-from phystem.core.run_config import UpdateType, SolverType, RunType, ReplayDataCfg, CheckpointCfg
+from phystem.core.run_config import UpdateType, SolverType, RunType, ReplayDataCfg
 from phystem.systems.ring.run_config import RealTimeCfg, CollectDataCfg, SaveCfg
 
 dynamic_cfg = RingCfg(
@@ -33,7 +32,7 @@ dynamic_cfg = RingCfg(
 
 from math import pi, ceil
 import numpy as np
-n = 10
+n = 5
 k = 1.4
 radius = 20/6 * 1.5
 num_rings = n**2
@@ -65,8 +64,9 @@ seed=None
 run_type = RunType.REAL_TIME
 
 num_windows = int(ceil(space_cfg.size/(dynamic_cfg.diameter*3)))
+# num_windows = 2
 real_time_cfg = RealTimeCfg(
-    dt = 0.001,
+    dt = 0.001/2,
     num_steps_frame = 400,
     fps = 60,
     graph_cfg = GraphCfg(
@@ -80,47 +80,19 @@ real_time_cfg = RealTimeCfg(
     ),
     num_col_windows=num_windows,
     update_type=UpdateType.WINDOWS,
-    # checkpoint=CheckpointCfg(
-    #     folder_path="stress/checkpoint",
-    #     override_cfgs=True,
-    # ),
 )
+print(real_time_cfg.num_col_windows)
 
-save_cfg = SaveCfg(
-    path = "stress/stress_test.mp4",
-    speed=8,
-    fps=30, 
-    dt=0.001/2,
-    duration=10,
-    tf=None,
-    update_type=UpdateType.WINDOWS,
-    num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*3))),
-    graph_cfg = GraphCfg(
-        show_circles  = False,
-        show_f_spring = False,
-        show_f_vol    = False,
-        show_f_area   = False,
-        show_f_total  = False,
-    ),
-)
-
-collect_cfg = CollectDataCfg(
-    tf = 10,
-    dt = 0.001,
-    folder_path= "stress/checkpoint",
-    num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*3))),
-    func=collect_pipelines.checkpoints,
-    func_cfg=collect_pipelines.CheckPointCfg(
-        num_checkpoints=10
-    ),
-    update_type=UpdateType.WINDOWS,
-)
 
 run_type_to_cfg = {
     RunType.REAL_TIME: real_time_cfg, 
-    RunType.SAVE_VIDEO: save_cfg,
-    RunType.COLLECT_DATA: collect_cfg,
 }
 
-sim = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type], rng_seed=seed)
-sim.run()
+
+from pipeline import Pipeline
+
+Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type], rng_seed=seed).run()
+
+# configs = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type], rng_seed=seed).configs 
+# pipeline = Pipeline(configs)
+# pipeline.run()

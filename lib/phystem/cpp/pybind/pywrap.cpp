@@ -112,14 +112,16 @@ PYBIND11_MODULE(cpp_lib, m) {
 
     py::class_<Ring>(solvers, "Ring")
         .def(py::init<Vector3d&, Vector3d&, vector<vector<double>>&, RingCfgPy, 
-            double, double, int, int>(), py::arg("pos0"), py::arg("vel0"), py::arg("self_prop_angle0"), 
-            py::arg("dynamic_cfg"), py::arg("size"), py::arg("dt"), py::arg("num_col_windows"), py::arg("seed")=-1)
+            double, double, int, int, int>(), py::arg("pos0"), py::arg("vel0"), py::arg("self_prop_angle0"), 
+            py::arg("dynamic_cfg"), py::arg("size"), py::arg("dt"), py::arg("num_col_windows"), py::arg("seed")=-1,
+            py::arg("num_skip_steps")=0)
         .def("update_normal", &Ring::update_normal, py::call_guard<py::gil_scoped_release>())
         .def("update_windows", &Ring::update_windows, py::call_guard<py::gil_scoped_release>())
         .def("mean_vel", &Ring::mean_vel)
         .def("mean_vel_vec", &Ring::mean_vel_vec)
         .def_readonly("num_rings", &Ring::num_rings, byref)
         .def_readonly("num_particles", &Ring::num_particles, byref)
+        .def_readonly("num_time_steps", &Ring::num_time_steps, byref)
         .def_readonly("pos", &Ring::pos, byref)
         .def_readonly("vel", &Ring::vel, byref)
         .def_readonly("self_prop_vel", &Ring::self_prop_vel, byref)

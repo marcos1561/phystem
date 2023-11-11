@@ -8,7 +8,7 @@ class Collector(ABC):
     '''
     Responsável pela coleta de dados gerados pelo solver.
     '''
-    def __init__(self, solver: SolverCore, path: str, configs: list) -> None:
+    def __init__(self, solver: SolverCore, path: str, configs: dict) -> None:
         '''
         $\pi = 3.14$
 
@@ -53,7 +53,7 @@ class Collector(ABC):
             yaml.dump(self.configs, f)
     
 class State(Collector):
-    def __init__(self, solver: SolverCore, path: str, configs: list, tf: float, dt: float, to=0.0, 
+    def __init__(self, solver: SolverCore, path: str, configs: dict, tf: float, dt: float, to=0.0, 
         num_points:int=None) -> None:
         '''
         Coleta todas as informações do estado do sistema. A coleta começa em t=to e vai até
@@ -168,3 +168,66 @@ class State(Collector):
         com `num_particles` partículas.
         '''
         raise Exception("Não implementado.")
+
+# TODO: Esse checkpoint aqui não tá uma porra. 
+class Checkpoint(Collector, ABC):
+    file_names: list[str] = None
+
+    def __init__(self, solver: SolverCore, path: str, configs: dict, num_checkpoints: int, tf: float, to: float = 0) -> None:
+        super().__init__(solver, path, configs)
+        raise Exception("Não use o checkpoint agora.")
+
+        self.check_file_names()
+
+        freq = int(((tf-to)/solver.dt)/num_checkpoints)
+        if freq == 0:
+            freq = 1
+        self.freq = freq
+
+        self.file_paths = self.get_file_paths(self.path)
+        self.data = {f_name: np.array([]) for f_name in Checkpoint.file_names}
+
+        self.save()
+
+    @staticmethod
+    def check_file_names():
+        if Checkpoint.file_names is None:
+            raise Exception("A super classe de Checkpoint deve sobrescrever o campo 'file_names'")
+
+    @staticmethod
+    def get_file_paths(path):
+        Checkpoint.check_file_names()
+        return {f_name: os.path.join(path, f_name + ".npy") for f_name in Checkpoint.file_names}
+    
+    @abstractmethod
+    def collect_checkpoint(self):
+        pass
+
+    def collect(self, count: int) -> None:
+        if count % self.freq == 0:
+            self.collect_checkpoint()
+
+            for f_name in Checkpoint.file_names:
+                np.save(self.file_paths[f_name], self.data[f_name])
+            
+    @staticmethod
+    def load(path: str):
+        file_paths = Checkpoint.get_file_paths(path)
+        return {name: np.load(path) for name, path in file_paths.items()}
+        
+if __name__ == "__main__":
+    class CpTeste(Checkpoint):
+        Checkpoint.file_names = ["opa", "Noice"]
+        # file_names = ["opa", "Noice"]
+        
+        def collect_checkpoint(self):
+            pass
+    
+    class CpTeste2(Checkpoint):
+        Checkpoint.file_names = ["opa2", "Noice2"]
+        # file_names = ["opa", "Noice"]
+        
+        def collect_checkpoint(self):
+            pass
+
+    print(CpTeste.get_file_paths("caraio"))

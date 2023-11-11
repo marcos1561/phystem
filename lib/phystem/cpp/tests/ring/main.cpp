@@ -34,16 +34,26 @@ int main() {
 
     auto data = ring::init_cfg(2, n, r, cfg.vo);
 
-    auto solver = Ring(data.pos, data.vel, data.self_prop_angle, cfg, size, dt, num_cols_windows);
+    // auto solver = Ring(data.pos, data.vel, data.self_prop_angle, cfg, size, dt, num_cols_windows);
+
+    double a = -1.0000001;
+    
+    // if (abs(a) > 1) {
+    //     a = copysign(1, a);
+    // }
+
+    double b = asin(a);
+    std::cout << a << std::endl;
+    std::cout << b/M_PI * 180.0 << std::endl;
 
     // for (size_t i = 0; i < 1000; i++)
-    while (true)
-    {
-        // solver.update_normal();
-        solver.update_windows();
-        auto pos = solver.pos[0][10];
-        std::cout << pos[0] << ", " << pos[1] << std::endl;
-    }
+    // while (true)
+    // {
+    //     // solver.update_normal();
+    //     solver.update_windows();
+    //     auto pos = solver.pos[0][10];
+    //     std::cout << pos[0] << ", " << pos[1] << std::endl;
+    // }
     
     // for (auto pos: solver.pos) {
     //     std::cout << pos[0] << ", " << pos[1] << std::endl;

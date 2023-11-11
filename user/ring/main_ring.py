@@ -54,7 +54,7 @@ creator_cfg = CreatorCfg(
 seed = 40028922
 seed=None
 
-run_type = RunType.REAL_TIME
+run_type = RunType.COLLECT_DATA
 
 real_time_cfg = RealTimeCfg(
     dt = 0.001/2,
@@ -88,7 +88,7 @@ if run_type is RunType.REPLAY_DATA:
     )
 
 collect_data_cfg = CollectDataCfg(
-    tf = 100,
+    tf = 30,
     dt = 0.001/2,
     num_col_windows=8,
     folder_path="checkpoint",
@@ -98,6 +98,9 @@ collect_data_cfg = CollectDataCfg(
     # func_cfg = collect_pipelines.CollectPlCfg(
     #     only_last=False, 
     # ),
+    func_cfg = collect_pipelines.CheckPointCfg(
+        num_checkpoints=20, 
+    ),
     solver_type=SolverType.CPP,
     update_type=UpdateType.WINDOWS,
 )

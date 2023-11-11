@@ -60,7 +60,7 @@ class Info(ABC):
         self.text: Text = None
 
     @abstractmethod    
-    def get_info(self):
+    def get_info(self) -> str:
         pass
 
     def init(self):

@@ -39,10 +39,12 @@ dynamic_cfg: !!python/object:phystem.systems.ring.configs.RingCfg
   spring_r: 0.3
   trans_diff: 0.1
   vo: 1
+other_cfgs: null
 rng_seed: 40028922
 run_cfg: !!python/object:phystem.systems.ring.run_config.CollectDataCfg
+  checkpoint: null
   dt: 0.0005
-  folder_path: /home/marcos/Documents/Programacao/IC/active-matter/tests/data_test/ring/test
+  folder_path: /home/marcos/Documents/Programacao/IC/phystem/tests/data_test/ring/test
   func: nao salvo
   func_cfg: null
   func_id: !!python/object/apply:phystem.systems.ring.collect_pipelines.FuncID

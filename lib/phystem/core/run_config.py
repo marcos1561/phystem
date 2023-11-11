@@ -31,11 +31,24 @@ Enumerações
     UpdateType:
         Tipo de atualização a ser utilizado pelo solver.
 
-Outras configurações
---------------------
-    CollectPlCfg:
+        
+TODO: No momento atual configurações que modificam como o sistema é integrado (tipo 1) (como o passo temporal 
+    e tipo do solver) estão misturadas com configuração que não interferem como o sistema evolui com 
+    o tempo (tipo 2) (como fps e número de passos por frame).
+
+    Proposta de Solução: Encapsular as configurações do tipo 1 em uma classe e criar um argumento nas configurações
+    de execução para recebe-lá. Dessa forma, sistemas que adicionarem configurações desse tipo (como o número de 
+    janelas em rings) apenas vão necessitar expandir essa classe e não vão precisar expandir as configurações 
+    de execução em si. Ainda, o carregamento do checkpoint apenas vai necessitar sobrescrever essa classe.
+
+    Problemas com a solução: 
+        * Impossibilidade de carregar arquivos de configurações antigos, pois a estrutura das
+        configurações de execução mudou.
+        
+        * Todas as referências antigas das configurações do tipo 1 não mais vão funcionar.
 '''
 from enum import Flag, Enum, auto
+import yaml, os
 
 class RunType(Flag):
     COLLECT_DATA = auto()
@@ -66,6 +79,13 @@ class UpdateType(Enum):
     NORMAL = auto()
     WINDOWS = auto()
 
+class CheckpointCfg:
+    def __init__(self, folder_path: str, override_cfgs: bool = False) -> None:
+        self.override_cfgs = override_cfgs
+        self.folder_path = folder_path
+
+        self.configs: dict = None
+
 class RunCfg:
     '''
     Base para as configurações do mode de execução.
@@ -76,7 +96,8 @@ class RunCfg:
             Id identificando qual é o mode de execução .
     '''
     id: RunType
-    def __init__(self, dt: float, solver_type = SolverType.CPP, update_type = UpdateType.NORMAL) -> None:
+    def __init__(self, dt: float, solver_type = SolverType.CPP, update_type = UpdateType.NORMAL,
+        checkpoint: CheckpointCfg = None) -> None:
         '''
         Parameters:
         -----------
@@ -92,7 +113,13 @@ class RunCfg:
         self.dt = dt
         self.solver_type = solver_type
         self.update_type = update_type
-
+        self.checkpoint = checkpoint
+        
+        if checkpoint:
+            # Carrega as configurações utilizadas nos dados salvos.
+            with open(os.path.join(checkpoint.folder_path, "config.yaml"), "r") as f:
+                self.checkpoint.configs = yaml.unsafe_load(f)
+                
 class CollectDataCfg(RunCfg):
     '''
     Modo de coleta de dados sem renderização ou informações
@@ -100,7 +127,7 @@ class CollectDataCfg(RunCfg):
     '''
     id = RunType.COLLECT_DATA
     def __init__(self, tf: float, dt: float, folder_path: str, func_cfg=None, func: callable=None, func_id=None, 
-        get_func: callable=None, solver_type=SolverType.CPP, update_type=UpdateType.NORMAL) -> None:
+        get_func: callable=None, solver_type=SolverType.CPP, update_type=UpdateType.NORMAL, checkpoint: CheckpointCfg = None) -> None:
         '''
         Configurações da coleta de dados de acordo com um pipeline. A pipeline pode ser especificada de duas formas.
 
@@ -143,7 +170,7 @@ class CollectDataCfg(RunCfg):
         if func_id is None and func is None:
             raise ValueError("'func_id' e 'func' não podem ser ambos nulos.")
         
-        super().__init__(dt, solver_type, update_type)
+        super().__init__(dt, solver_type, update_type, checkpoint)
         self.tf = tf
         self.folder_path = folder_path
         
@@ -160,7 +187,7 @@ class RealTimeCfg(RunCfg):
     '''
     id = RunType.REAL_TIME
     def __init__(self, dt: float, num_steps_frame: int, fps: int, graph_cfg=None,
-        solver_type=SolverType.CPP, update_type=UpdateType.NORMAL) -> None:
+        solver_type=SolverType.CPP, update_type=UpdateType.NORMAL, checkpoint: CheckpointCfg=None) -> None:
         '''
         Parameters:
             dt:
@@ -181,7 +208,7 @@ class RealTimeCfg(RunCfg):
             update_type:
                 Tipo de integração a ser utilizado pelo solver.
         '''
-        super().__init__(dt, solver_type, update_type)
+        super().__init__(dt, solver_type, update_type, checkpoint)
         self.num_steps_frame = num_steps_frame
         self.fps = fps
         self.graph_cfg = graph_cfg
@@ -219,8 +246,6 @@ class ReplayDataCfg(RealTimeCfg):
             graph_cfg:
                 Configurações passadas para o gerenciador do gráfico da simulação.
         '''
-        import yaml, os
-
         # Carrega as configurações utilizadas nos dados salvos.
         with open(os.path.join(directory, "config.yaml"), "r") as f:
             cfg = yaml.unsafe_load(f)
@@ -236,6 +261,8 @@ class ReplayDataCfg(RealTimeCfg):
         
         self.frequency = frequency
         self.directory = directory
+
+
         
 class SaveCfg(RunCfg):
     '''

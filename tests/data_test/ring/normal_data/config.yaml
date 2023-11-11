@@ -53,5 +53,6 @@ run_cfg: !!python/object:phystem.systems.ring.run_config.CollectDataCfg
   tf: 100
   update_type: !!python/object/apply:phystem.core.run_config.UpdateType
   - 1
+  checkpoint: null
 space_cfg: !!python/object:phystem.systems.ring.configs.SpaceCfg
   size: 30

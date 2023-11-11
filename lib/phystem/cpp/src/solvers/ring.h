@@ -33,7 +33,6 @@ double vector_dist(Vec2d& a, Vec2d& b) {
 
 double vector_mod(Vec2d& a) {
     return sqrt(a[0]*a[0] + a[1]*a[1]);
-
 }
 
 struct SpringDebug {
@@ -85,7 +84,10 @@ public:
     RingCfg dynamic_cfg; // Configurações da dinâmica entre as partículas
     double size; // tamanho de uma dimensão do espaço
     double dt; 
+    int num_skip_steps;
+    
     double sim_time;
+    int num_time_steps;
 
     int num_particles; // Número de partículas no anel
     int num_rings; 
@@ -100,7 +102,7 @@ public:
     // Area Potencial
     //==
     Vector3d differences; // Vetor cujo i-ésimo elemento contém pos[i+1] - pos[i]
-    Vector3d pos_continuos; // Posições das partículas de forma contínua;
+    Vector3d pos_continuos; // Posições das partículas de forma contínua
     //=========//
 
 
@@ -134,9 +136,12 @@ public:
     //=========//
 
     Ring(Vector3d &pos0, Vector3d &vel0, vector<vector<double>> self_prop_angle0,
-        RingCfg dynamic_cfg, double size, double dt, int num_col_windows, int seed=-1) 
-    : pos(pos0), vel(vel0), self_prop_angle(self_prop_angle0), dynamic_cfg(dynamic_cfg), size(size), dt(dt)
+        RingCfg dynamic_cfg, double size, double dt, int num_col_windows, int seed=-1, int num_skip_steps=0) 
+    : pos(pos0), vel(vel0), self_prop_angle(self_prop_angle0), dynamic_cfg(dynamic_cfg), size(size), dt(dt),
+    num_skip_steps(num_skip_steps)
     {
+        std::cout << "Inicializando" << std::endl;
+
         if (seed != -1.)
             srand(seed);
         else
@@ -145,6 +150,7 @@ public:
         num_particles = pos0[0].size();
         num_rings = pos0.size();
         sim_time = 0.0;
+        num_time_steps = 0;
 
         windows_manager = WindowsManagerRing(&pos, num_col_windows, num_col_windows, size);
 
@@ -154,9 +160,12 @@ public:
         rng_manager = RngManager(num_particles, num_rings, 3);
         intersect = IntersectionCalculator(size);
         #endif
+
+        std::cout << "Instância completa" << std::endl;
     }
 
     void initialize_dynamic() {
+        std::cout << "Criando dynamic aliases" << std::endl;
         spring_k = dynamic_cfg.spring_k;
         spring_r = dynamic_cfg.spring_r;
         
@@ -181,6 +190,7 @@ public:
         diameter_twelve = pow(diameter, 12.); 
         force_r_lim = pow(2, 1./6.) * diameter;
 
+        std::cout << "Inicializando a velocidade auto propulsora" << std::endl;
         Vector2d ring_self_prop_vel;
         for (auto vec_angle : self_prop_angle) {
             ring_self_prop_vel = Vector2d(num_particles);
@@ -194,13 +204,25 @@ public:
             self_prop_vel.push_back(ring_self_prop_vel);
         }
 
+
+        std::cout << "Inicializando a matrix das forças" << std::endl;
         auto zero_vector_2d = vector<array<double, 2>>(num_particles, {0., 0.}); 
         sum_forces_matrix = Vector3d(num_rings, zero_vector_2d);
         
         differences = Vector3d(num_rings, zero_vector_2d);
         pos_continuos = Vector3d(num_rings, zero_vector_2d);
 
+        std::cout << "Inicializando variáveis de depuração" << std::endl;
         #if DEBUG == 1
+        std::cout << "Avançando os números aleatórios" << std::endl;
+        std::cout << num_skip_steps << std::endl;
+        // for (int i = 0; i < num_skip_steps; i++)
+        // {
+        //     rng_manager.update();
+        // }
+
+
+        std::cout << "Setando as matrizes das forças dos potencias" << std::endl;
         spring_forces = Vector3d(num_rings, zero_vector_2d);
         bend_forces = Vector3d(num_rings, zero_vector_2d);
         vol_forces = Vector3d(num_rings, zero_vector_2d);
@@ -209,6 +231,7 @@ public:
 
         area_debug.area = vector<double>(num_rings);
 
+        std::cout << "Setando posição transposta utilizada pelo python" << std::endl;
         // vector<vector<double*>> ring_pos_t;
         pos_t = vector<vector<vector<double*>>>(num_rings, vector<vector<double*>>(2));
         for (int i=0; i < num_rings; i ++) {
@@ -219,11 +242,13 @@ public:
             }
         }
 
+        std::cout << "Setando os pontos das linhas do gráfico principal" << std::endl;
         // graph_points = vector<array<double, 2>>(3*num_particles, {0., 0.});
         graph_points = Vector3d(num_rings, vector<array<double, 2>>(3*num_particles, {0., 0.}));
         
         update_graph_points();
         #endif
+        std::cout << "Inicialização completa" << std::endl;
     }
 
     double periodic_dist(double &dx, double &dy) {
@@ -600,13 +625,15 @@ public:
             pos[ring_id][i][0] += dt * vel[ring_id][i][0];
             pos[ring_id][i][1] += dt * vel[ring_id][i][1];
 
+            #if DEBUG == 1
             if (vel[ring_id][i][0] > 1e6) {
                 std::cout << "Error: High velocity" << std::endl;
             }
             
             if (isnan(pos[ring_id][i][0]) == true) {
-                std::cout << "Erro: pos nan 1" << std::endl;
+                std::cout << "Error: pos nan 1" << std::endl;
             }
+            #endif
 
             #if DEBUG == 1    
                 auto& rng_nums = rng_manager.get_random_num(i, ring_id);
@@ -632,8 +659,11 @@ public:
             } else {
                 double cross_prod = self_prop_vel[ring_id][i][0] * vel[ring_id][i][1]/speed - self_prop_vel[ring_id][i][1] * vel[ring_id][i][0]/speed;
                 
-                if ((cross_prod > 1) | (cross_prod < -1)) {
-                    std::cout << "Error: cross_prod" << std::endl;
+                if (abs(cross_prod) > 1) {
+                    #if DEBUG == 1
+                    std::cout << "Error: cross_prod | " << cross_prod << std::endl;
+                    #endif
+                    cross_prod = copysign(1, cross_prod);
                 }
 
                 angle_derivate = 1. / relax_time * asin(cross_prod) + noise_rot;
@@ -660,18 +690,17 @@ public:
                     pos[ring_id][i][dim] += size;
             }
 
-            if (isnan(pos[ring_id][i][0]) == true) {
-                std::cout << "Error: pos_nan 2" << std::endl;
-            }
-
             #if DEBUG == 1
+            if (isnan(pos[ring_id][i][0]) == true)
+                std::cout << "Error: pos_nan 2" << std::endl;
+
             total_forces[ring_id][i][0] = sum_forces_matrix[ring_id][i][0];
             total_forces[ring_id][i][1] = sum_forces_matrix[ring_id][i][1];
             #endif
 
             sum_forces_matrix[ring_id][i][0] = 0.f;
             sum_forces_matrix[ring_id][i][1] = 0.f;
-        }
+        }        
     }
 
     void update_normal() {
@@ -704,6 +733,7 @@ public:
         #endif
 
         sim_time += dt;
+        num_time_steps += 1;
     }
    
     void calc_forces_windows() {
@@ -792,6 +822,7 @@ public:
         #endif
 
         sim_time += dt;
+        num_time_steps += 1;
    }
 
     void calc_border_point(int ring_id, array<double, 2> &p1, array<double, 2> &p2, int mid_point_id, bool place_above_p2=false) {
@@ -800,7 +831,7 @@ public:
          * Tal ponto é necessário quando a menor reta que conecta 'p1' a 'p2' passa pelas bordas periódicas.
          * 
          * Se 'p1' e 'p2' não estiverem no caso especial, o ponto médio é colocado sobre 'p1' ou 'p2',
-         * dependendo do valor de 'place_above-p2'.
+         * dependendo do valor de 'place_above_p2'.
          * 
          * Parameters
          * ----------

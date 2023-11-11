@@ -10,14 +10,14 @@ class InitData:
 
         Parameters:
         -----------
-            pos: ndarray (num_rings, 2, num_particles)
-                    Posição inicial das partículas (x, y)
+            pos: ndarray (num_rings, num_particles, 2)
+                    Posição inicial das partículas em cada anel.
                 
-            vel: ndarray (num_rings, 2, num_particles)
-                Velocidade inicial das partículas (vx, vy).
+            vel: ndarray (num_rings, num_particles, 2)
+                Velocidade inicial das partículas em cada anel.
                 
             self_prop_angle: ndarray (num_rings, n)
-                Ângulo inicial da direção da velocidade auto propulsora
+                Ângulo inicial da direção da velocidade auto propulsora em cada anel.
         '''
 
         self.pos = pos
@@ -132,8 +132,8 @@ class Creator(CreatorCore):
 
             ring_vel = self.vo[ring_id] * np.array([np.cos(ring_self_prop_angle.copy()), np.sin(ring_self_prop_angle.copy())])
 
-            pos.append(ring_pos)
-            vel.append(ring_vel)
+            pos.append(ring_pos.T)
+            vel.append(ring_vel.T)
             self_prop_angle.append(ring_self_prop_angle)
 
         return InitData(np.array(pos), np.array(vel), np.array(self_prop_angle))

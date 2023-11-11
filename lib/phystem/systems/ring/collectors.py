@@ -1,5 +1,5 @@
 import numpy as np
-import os, yaml
+import os, yaml, pickle
 from phystem.core.solvers import SolverCore
 
 from phystem.systems.ring.solvers import CppSolver
@@ -60,6 +60,9 @@ class StateCheckpoint(collectors.Collector):
         if freq == 0:
             freq = 1
         self.freq = freq
+        print("save freq:", self.freq)
+        
+        self.num_saves = 0
 
         num_rings = self.solver.num_rings
         num_particles = self.solver.num_particles
@@ -67,8 +70,13 @@ class StateCheckpoint(collectors.Collector):
         self.pos = np.zeros((num_rings, num_particles, 2), dtype=np.float64),
         self.vel = np.zeros((num_rings, num_particles, 2), dtype=np.float64),
         self.angle = np.zeros((num_rings, num_particles), dtype=np.float64),
+        self.metadata = {
+            "num_time_steps": 0,
+            "time": 0,
+        }
 
         self.file_path = self.get_file_path(self.path)
+        self.save()
     
     @staticmethod
     def get_file_path(path):
@@ -76,6 +84,7 @@ class StateCheckpoint(collectors.Collector):
             os.path.join(path, "pos.npy"),
             os.path.join(path, "vel.npy"),
             os.path.join(path, "angle.npy"),
+            os.path.join(path, "check_point_metadata.pickle"),
         ]
 
     def collect(self, count: int) -> None:
@@ -83,14 +92,34 @@ class StateCheckpoint(collectors.Collector):
             self.pos = np.array(self.solver.pos)
             self.vel = np.array(self.solver.vel)
             self.angle = np.array(self.solver.self_prop_angle)
+            self.metadata["num_time_steps"] = self.solver.num_time_steps
+            self.metadata["time"] = self.solver.time
             
+            print(f"Saving | t = {self.solver.time} | count = {count} | count/f = {count/self.freq}")
+            self.num_saves += 1
+
             np.save(self.file_path[0], self.pos)
             np.save(self.file_path[1], self.vel)
             np.save(self.file_path[2], self.angle)
-    
-    def load(self, path: str):
-        file_path = self.get_file_path(path)
-        return np.load(file_path[0]), np.load(file_path[1]), np.load(file_path[2]) 
+            
+            with open(self.file_path[3], "wb") as f:
+                pickle.dump(self.metadata, f)                
+
+    @staticmethod
+    def load(path: str):
+        from phystem.systems.ring.creators import InitData
+
+        file_path = StateCheckpoint.get_file_path(path)
+        pos = np.load(file_path[0]) 
+        vel =np.load(file_path[1])
+        angle = np.load(file_path[2])
+        
+        with open(file_path[3], "rb") as f:
+            metadata = pickle.load(f)
+        
+        init_data = InitData(pos, vel, angle)
+        return init_data, metadata
+
 
 
 class LastPos(collectors.Collector):

@@ -23,6 +23,8 @@ class Simulation(SimulationCore):
         return creators.Particles(**self.creator_cfg.get_pars(), rng_seed=self.rng_seed)
             
     def get_solver(self):
+        self.creator.create()
+
         if self.run_cfg.id is RunType.REPLAY_DATA:
             return solvers.SolverRD(self.run_cfg)
         
