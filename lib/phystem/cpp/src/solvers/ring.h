@@ -88,7 +88,7 @@ public:
     RingCfg dynamic_cfg; // Configurações da dinâmica entre as partículas
     double size; // tamanho de uma dimensão do espaço
     double dt; 
-    int num_skip_steps; // Passa passa pular no gerenciador de número aleatórios (não funciona no momento)
+    int windows_update_freq; 
     int integration_type;
 
     double sim_time;
@@ -137,22 +137,24 @@ public:
     //=========//
 
     Ring(Vector3d &pos0, vector<vector<double>> self_prop_angle0, RingCfg dynamic_cfg, 
-        double size, double dt, int num_col_windows, int seed=-1, int num_skip_steps=0,
+        double size, double dt, int num_col_windows, int seed=-1, int windows_update_freq=1,
         int integration_type=0) 
     : pos(pos0), self_prop_angle(self_prop_angle0), dynamic_cfg(dynamic_cfg), size(size), dt(dt),
-    num_skip_steps(num_skip_steps), integration_type(integration_type)
+    windows_update_freq(windows_update_freq), integration_type(integration_type)
     {
         if (seed != -1.)
             srand(seed);
         else
             srand(time(0));
 
+        std::cout << "Update freq: " << windows_update_freq << std::endl;
+
         num_particles = pos0[0].size();
         num_rings = pos0.size();
         sim_time = 0.0;
         num_time_steps = 0;
 
-        windows_manager = WindowsManagerRing(&pos, num_col_windows, num_col_windows, size);
+        windows_manager = WindowsManagerRing(&pos, num_col_windows, num_col_windows, size, windows_update_freq);
 
         initialize_dynamic();
         

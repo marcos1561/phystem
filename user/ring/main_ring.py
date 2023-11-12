@@ -1,3 +1,5 @@
+from math import ceil
+
 from phystem.systems.ring.simulation import Simulation
 
 from phystem.systems.ring.configs import *
@@ -16,7 +18,7 @@ dynamic_cfg = RingCfg(
     # p0=4.828427, # Triângulo retângulo
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
-    p0=3.5449077018, # Círculo
+    p0=3.5449077018*1.1, # Círculo
     # area0=53,
 
     exclusion_vol=1,
@@ -53,11 +55,12 @@ creator_cfg = CreatorCfg(
 seed = 40028922
 seed = None
 
-run_type = RunType.COLLECT_DATA
+run_type = RunType.REAL_TIME
 
 real_time_cfg = RealTimeCfg(
-    dt = 0.001*1.5,
-    num_col_windows=8,
+    dt = 0.001,
+    num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6) ,
+    windows_update_freq=1,
     num_steps_frame=200,
     fps = 60,
     graph_cfg = GraphCfg(

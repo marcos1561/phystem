@@ -8,7 +8,7 @@ from phystem.core.run_config import UpdateType, SolverType, RunType, ReplayDataC
 from phystem.systems.ring.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, IntegrationType
 
 dynamic_cfg = RingCfg(
-    spring_k=10,
+    spring_k=8,
     spring_r=0.7,
     
     area_potencial="target_area",
@@ -16,7 +16,8 @@ dynamic_cfg = RingCfg(
     # p0=4.828427, # Triângulo retângulo
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
-    p0=3.5449077018, # Círculo
+    # p0=3.5449077018, # Círculo
+    p0=3.65, # Círculo
     # area0=53,
 
     exclusion_vol=1,
@@ -54,20 +55,19 @@ creator_cfg = CreatorCfg(
     num_rings = num_rings,
     num_p = 30,
     r = radius,
-    vo = dynamic_cfg.vo,
     angle=np.random.random(num_rings)*2*pi,
     center= centers,
 )
 
 seed = 40028922
-seed=None
+seed = None
 
 run_type = RunType.REAL_TIME
 
-num_windows = int(ceil(space_cfg.size/(dynamic_cfg.diameter*3)))
+num_windows = int(0.72 * ceil(space_cfg.size/(dynamic_cfg.diameter*3)))
 real_time_cfg = RealTimeCfg(
-    dt = 0.001*4,
-    num_steps_frame = 400,
+    dt = 0.001,
+    num_steps_frame = 4*400,
     fps = 60,
     graph_cfg = GraphCfg(
         show_circles  = False,

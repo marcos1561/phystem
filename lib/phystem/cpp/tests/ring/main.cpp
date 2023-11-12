@@ -34,7 +34,8 @@ int main() {
 
     auto data = ring::init_cfg(2, n, r, cfg.vo);
 
-    auto solver = Ring(data.pos, data.vel, data.self_prop_angle, cfg, size, dt, num_cols_windows);
+    num_cols_windows=8;
+    auto solver = Ring(data.pos, data.self_prop_angle, cfg, size, dt, num_cols_windows, 12415, 10);
 
     for (size_t i = 0; i < 1000; i++)
     while (true)

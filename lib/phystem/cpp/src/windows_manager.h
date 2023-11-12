@@ -1,3 +1,8 @@
+/**
+ * TODO: O sistema apenas funciona se o número de colunas (n) é maior ou igual a 3.
+ *      Problema: Geração dos vizinhos, pois nos caso n < 3, ocorre intersecção de vizinhos.
+*/
+
 #pragma once
 
 #include <array>
@@ -20,6 +25,9 @@ public:
     int num_rows;
     int num_points;
     double space_size;
+    int update_freq;
+
+    int counter;
 
 public:
     WindowsManager() {};
@@ -29,6 +37,8 @@ public:
         num_points = point_pos->size();
         col_size = space_size/(double)num_cols;
         row_size = space_size/(double)num_rows;
+
+        counter = 0;
 
         int average_num_points = num_points/(num_cols*num_rows);
         auto row = vector<vector<int>>(num_cols, vector<int>(average_num_points));
@@ -105,16 +115,22 @@ public:
     int num_entitys;
     int num_points;
     double space_size;
+    int update_freq;
+
+    int counter;
 
 public:
     WindowsManagerRing() {};
 
-    WindowsManagerRing(vector<vector<array<double, 2>>> *p_pos, int num_cols, int num_rows, double space_size) : 
-    point_pos(p_pos), num_cols(num_cols), num_rows(num_rows), space_size(space_size) {
+    WindowsManagerRing(vector<vector<array<double, 2>>> *p_pos, int num_cols, int num_rows, double space_size,
+        int update_freq=1) : point_pos(p_pos), num_cols(num_cols), num_rows(num_rows), space_size(space_size),
+        update_freq(update_freq) {
         num_entitys = point_pos->size();
         num_points = (*point_pos)[0].size();
         col_size = space_size/(double)num_cols;
         row_size = space_size/(double)num_rows;
+
+        counter = 0;
 
         int average_num_points = num_points/(num_cols*num_rows);
         auto row = vector<vector<array<int, 2>>>(num_cols, vector<array<int, 2>>(average_num_points));
@@ -128,8 +144,9 @@ public:
             }
         }
         
-        window_neighbor = vector<vector<vector<array<int, 2>>>>(num_rows, vector<vector<array<int, 2>>>(num_cols));
 
+        
+        window_neighbor = vector<vector<vector<array<int, 2>>>>(num_rows, vector<vector<array<int, 2>>>(num_cols));
         for (int i = 0; i < num_rows; i++) {
             for (int j = 0; j < num_cols; j++) {
                 window_neighbor[i][j].push_back({i, (j+1)%num_cols});
@@ -144,9 +161,40 @@ public:
                 }
             }
         }
+        
+        // window_neighbor = vector<vector<vector<array<int, 2>>>>(num_rows, vector<vector<array<int, 2>>>(num_cols));
+        // for (int i = 0; i < num_rows; i++) {
+        //     auto possible_neighbors = vector<array<int, 2>>();
+        //     for (int j = 0; j < num_cols; j++) {
+        //         possible_neighbors.push_back({i, (j+1)%num_cols});
+        //         possible_neighbors.push_back({(i+1)%num_rows, j});
+        //         possible_neighbors.push_back({(i+1)%num_rows, (j+1)%num_cols});
+
+        //         if ((j-1) == -1) {
+        //             possible_neighbors.push_back({(i+1)%num_rows, num_cols-1});
+        //         }
+        //         else {
+        //             possible_neighbors.push_back({(i+1)%num_rows, (j-1)});
+        //         }
+
+        //         for (auto neighbor: possible_neighbors) {
+        //             if ((neighbor[0] == i) & (neighbor[1] == j)) {
+        //                 continue;
+        //             }
+        //             window_neighbor[i][j].push_back(neighbor);
+        //         }
+        //     }
+        // }
     }
 
     void update_window_members() {
+         if ((counter % update_freq) != 0) {
+            counter ++;
+            return;
+        } else {
+            counter = 1;
+        }
+
         for (int i = 0; i < num_rows; i ++) {
             for (int j = 0; j < num_cols; j ++) {
                 capacity[i][j] = 0;

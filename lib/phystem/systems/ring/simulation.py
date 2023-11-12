@@ -40,14 +40,12 @@ class Simulation(SimulationCore):
             from phystem.systems.ring.collectors import StateCheckpoint
             
             init_data, metadata = StateCheckpoint.load(self.run_cfg.checkpoint.folder_path)
-            num_skip_steps = metadata["num_time_steps"]
         else:
             init_data = self.creator.create()
-            num_skip_steps = 0        
         
         solver = CppSolver(**init_data.get_data(), dynamic_cfg=self.dynamic_cfg, size=self.space_cfg.size,
             dt=self.run_cfg.dt, update_type=self.run_cfg.update_type, num_col_windows=self.run_cfg.num_col_windows, 
-            rng_seed=self.rng_seed, num_skip_steps=num_skip_steps, integration_type=self.run_cfg.integration_type)
+            rng_seed=self.rng_seed, windows_update_freq=self.run_cfg.windows_update_freq, integration_type=self.run_cfg.integration_type)
         
         return solver
 

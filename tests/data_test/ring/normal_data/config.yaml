@@ -57,5 +57,6 @@ run_cfg: !!python/object:phystem.systems.ring.run_config.CollectDataCfg
   - 1
   integration_type: !!python/object/apply:phystem.systems.ring.run_config.IntegrationType
   - 0
+  windows_update_freq: 1
 space_cfg: !!python/object:phystem.systems.ring.configs.SpaceCfg
   size: 30

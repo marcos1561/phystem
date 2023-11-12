@@ -51,11 +51,12 @@ run_cfg: !!python/object:phystem.systems.ring.run_config.CollectDataCfg
   - 1
   integration_type: !!python/object/apply:phystem.systems.ring.run_config.IntegrationType
   - 0
-  num_col_windows: 20
+  num_col_windows: 15
   solver_type: !!python/object/apply:phystem.core.run_config.SolverType
   - 2
   tf: 100
   update_type: !!python/object/apply:phystem.core.run_config.UpdateType
   - 2
+  windows_update_freq: 1000
 space_cfg: !!python/object:phystem.systems.ring.configs.SpaceCfg
   size: 30

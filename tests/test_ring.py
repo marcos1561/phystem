@@ -23,9 +23,17 @@ class TestRing(unittest.TestCase):
 
         run_cfg: CollectDataCfg = cfg["run_cfg"] 
 
+        from math import ceil
+        size = cfg["space_cfg"].size
+        diameter = cfg["dynamic_cfg"].diameter
+
         run_cfg.folder_path = folder_path
-        run_cfg.num_col_windows = 20
+        run_cfg.num_col_windows = int(ceil(size/(diameter*1.2)) * 0.6) 
+        # run_cfg.num_col_windows = 3
+        run_cfg.windows_update_freq = 1000
         run_cfg.update_type = UpdateType.WINDOWS
+
+        print(f"\nwindows_cols: {run_cfg.num_col_windows}\n")
 
         run_cfg.func = collect_pipelines.get_func(run_cfg.func_id)
 

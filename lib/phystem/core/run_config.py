@@ -115,7 +115,7 @@ class RunCfg:
         self.update_type = update_type
         self.checkpoint = checkpoint
         
-        if checkpoint:
+        if checkpoint is not None:
             # Carrega as configurações utilizadas nos dados salvos.
             with open(os.path.join(checkpoint.folder_path, "config.yaml"), "r") as f:
                 self.checkpoint.configs = yaml.unsafe_load(f)
