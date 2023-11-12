@@ -85,13 +85,11 @@ public:
     Vector3d old_pos; // Posições das partículas
     vector<vector<double>> old_self_prop_angle; // Ângulo da direção da velocidade auto propulsora
 
-
     RingCfg dynamic_cfg; // Configurações da dinâmica entre as partículas
     double size; // tamanho de uma dimensão do espaço
     double dt; 
     int num_skip_steps; // Passa passa pular no gerenciador de número aleatórios (não funciona no momento)
     int integration_type;
-    
 
     double sim_time;
     int num_time_steps;
@@ -99,11 +97,9 @@ public:
     int num_particles; // Número de partículas no anel
     int num_rings; 
     
-    Vector3d self_prop_vel; // Vetor unitário da velocidade propulsora (Em teoria pode ser removido)
     Vector3d sum_forces_matrix; // Matrix com a soma das forças sobre cada partícula
 
     WindowsManagerRing windows_manager;
-
 
     //==
     // Area Potencial
@@ -123,7 +119,6 @@ public:
 
     vector<vector<vector<double*>>> pos_t; // Transposta da posições das partículas
     
-
     // Pontos utilizados na renderização do anel, sua estrutura é a seguinte
     //
     // [p1, pm1_1, pm1_2, p2, pm2_1, pm2_2, p3, pm3_1, pm3_2, p4, ...]
@@ -141,10 +136,10 @@ public:
     AreaDebug area_debug = {0};
     //=========//
 
-    Ring(Vector3d &pos0, Vector3d &vel0, vector<vector<double>> self_prop_angle0,
-        RingCfg dynamic_cfg, double size, double dt, int num_col_windows, int seed=-1, int num_skip_steps=0,
+    Ring(Vector3d &pos0, vector<vector<double>> self_prop_angle0, RingCfg dynamic_cfg, 
+        double size, double dt, int num_col_windows, int seed=-1, int num_skip_steps=0,
         int integration_type=0) 
-    : pos(pos0), vel(vel0), self_prop_angle(self_prop_angle0), dynamic_cfg(dynamic_cfg), size(size), dt(dt),
+    : pos(pos0), self_prop_angle(self_prop_angle0), dynamic_cfg(dynamic_cfg), size(size), dt(dt),
     num_skip_steps(num_skip_steps), integration_type(integration_type)
     {
         if (seed != -1.)
@@ -192,23 +187,11 @@ public:
         diameter_twelve = pow(diameter, 12.); 
         force_r_lim = pow(2, 1./6.) * diameter;
 
-        Vector2d ring_self_prop_vel;
-        for (auto vec_angle : self_prop_angle) {
-            ring_self_prop_vel = Vector2d(num_particles);
-            for (int i = 0; i < num_particles; i++)
-            {
-                auto angle = vec_angle[i];
-                double vx = cos(angle);
-                double vy = sin(angle);
-                ring_self_prop_vel[i] = {vx, vy};
-            }
-            self_prop_vel.push_back(ring_self_prop_vel);
-        }
-
         auto zero_vector_1d = vector<double>(num_particles, 0.); 
         auto zero_vector_2d = vector<array<double, 2>>(num_particles, {0., 0.}); 
 
         old_pos = Vector3d(num_rings, zero_vector_2d);
+        vel = Vector3d(num_rings, zero_vector_2d);
         old_self_prop_angle = vector<vector<double>>(num_rings, zero_vector_1d);
         self_prop_angle_deriv = vector<vector<double>>(num_rings, zero_vector_1d);
         
@@ -240,7 +223,6 @@ public:
             }
         }
 
-        // graph_points = vector<array<double, 2>>(3*num_particles, {0., 0.});
         graph_points = Vector3d(num_rings, vector<array<double, 2>>(3*num_particles, {0., 0.}));
         
         update_graph_points();
@@ -667,89 +649,6 @@ public:
         angle_deriv_i = angle_derivate;
     }
 
-    void advance_time_old(int ring_id) {
-        for (int i=0; i < num_particles; i++) {
-            pos[ring_id][i][0] += dt * vel[ring_id][i][0];
-            pos[ring_id][i][1] += dt * vel[ring_id][i][1];
-
-            #if DEBUG == 1
-            if (vel[ring_id][i][0] > 1e6) {
-                std::cout << "Error: High velocity" << std::endl;
-            }
-            
-            if (isnan(pos[ring_id][i][0]) == true) {
-                std::cout << "Error: pos nan 1" << std::endl;
-            }
-            #endif
-
-            #if DEBUG == 1    
-                auto& rng_nums = rng_manager.get_random_num(i, ring_id);
-                double rng_rot = (double)rng_nums[0]/(double)RAND_MAX * 2. - 1.;
-                double rng_trans_x = (double)rng_nums[1]/(double)RAND_MAX * 2. - 1.;
-                double rng_trans_y = (double)rng_nums[2]/(double)RAND_MAX * 2. - 1.;
-            #else
-                double rng_rot = (double)rand()/(double)RAND_MAX * 2. - 1.;
-                double rng_trans_x = (double)rand()/(double)RAND_MAX * 2. - 1.;
-                double rng_trans_y = (double)rand()/(double)RAND_MAX * 2. - 1.;
-            #endif
-
-            double noise_rot = rng_rot * sqrt(2. * rot_diff) / sqrt(dt); 
-            double noise_trans_x = rng_trans_x * sqrt(2. * trans_diff) / sqrt(dt); 
-            double noise_trans_y = rng_trans_y * sqrt(2. * trans_diff) / sqrt(dt); 
-
-            double speed = sqrt(vel[ring_id][i][0]*vel[ring_id][i][0] + vel[ring_id][i][1]*vel[ring_id][i][1]);
-            
-            double angle_derivate;
-            if (speed == 0.) {
-                update_debug.count_zero_speed += 1;
-                angle_derivate = 0.;
-            } else {
-                double cross_prod = self_prop_vel[ring_id][i][0] * vel[ring_id][i][1]/speed - self_prop_vel[ring_id][i][1] * vel[ring_id][i][0]/speed;
-                
-                if (abs(cross_prod) > 1) {
-                    #if DEBUG == 1
-                    std::cout << "Error: cross_prod | " << cross_prod << std::endl;
-                    #endif
-                    cross_prod = copysign(1, cross_prod);
-                }
-
-                angle_derivate = 1. / relax_time * asin(cross_prod) + noise_rot;
-            }
-            
-            self_prop_angle[ring_id][i] += angle_derivate * dt;
-
-            vel[ring_id][i][0] = vo * self_prop_vel[ring_id][i][0] + mobility * sum_forces_matrix[ring_id][i][0] + noise_trans_x;
-            vel[ring_id][i][1] = vo * self_prop_vel[ring_id][i][1] + mobility * sum_forces_matrix[ring_id][i][1] + noise_trans_y;
-
-            self_prop_vel[ring_id][i][0] = cos(self_prop_angle[ring_id][i]);
-            self_prop_vel[ring_id][i][1] = sin(self_prop_angle[ring_id][i]);
-
-            // for (int i = 0; i < num_particles; i++)
-            // {
-            //     pos[i][0] = remainder(pos[i][0] + size/2., size) + size/2.; 
-            //     pos[i][1] = remainder(pos[i][1] + size/2., size) + size/2.; 
-            // }
-            
-            for (int dim = 0; dim < 2.f; dim ++) {
-                if (pos[ring_id][i][dim] > size/2.f)
-                    pos[ring_id][i][dim] -= size;
-                else if (pos[ring_id][i][dim] < -size/2.f)
-                    pos[ring_id][i][dim] += size;
-            }
-
-            #if DEBUG == 1
-            if (isnan(pos[ring_id][i][0]) == true)
-                std::cout << "Error: pos_nan 2" << std::endl;
-
-            total_forces[ring_id][i][0] = sum_forces_matrix[ring_id][i][0];
-            total_forces[ring_id][i][1] = sum_forces_matrix[ring_id][i][1];
-            #endif
-
-            sum_forces_matrix[ring_id][i][0] = 0.f;
-            sum_forces_matrix[ring_id][i][1] = 0.f;
-        }        
-    }
-
     void advance_time(int ring_id) {
         double angle_deriv_i;
         Vec2d vel_i;
@@ -1136,3 +1035,87 @@ public:
         return sum_vel;
     }
 };
+
+
+// void advance_time_old(int ring_id) {
+//         for (int i=0; i < num_particles; i++) {
+//             pos[ring_id][i][0] += dt * vel[ring_id][i][0];
+//             pos[ring_id][i][1] += dt * vel[ring_id][i][1];
+
+//             #if DEBUG == 1
+//             if (vel[ring_id][i][0] > 1e6) {
+//                 std::cout << "Error: High velocity" << std::endl;
+//             }
+            
+//             if (isnan(pos[ring_id][i][0]) == true) {
+//                 std::cout << "Error: pos nan 1" << std::endl;
+//             }
+//             #endif
+
+//             #if DEBUG == 1    
+//                 auto& rng_nums = rng_manager.get_random_num(i, ring_id);
+//                 double rng_rot = (double)rng_nums[0]/(double)RAND_MAX * 2. - 1.;
+//                 double rng_trans_x = (double)rng_nums[1]/(double)RAND_MAX * 2. - 1.;
+//                 double rng_trans_y = (double)rng_nums[2]/(double)RAND_MAX * 2. - 1.;
+//             #else
+//                 double rng_rot = (double)rand()/(double)RAND_MAX * 2. - 1.;
+//                 double rng_trans_x = (double)rand()/(double)RAND_MAX * 2. - 1.;
+//                 double rng_trans_y = (double)rand()/(double)RAND_MAX * 2. - 1.;
+//             #endif
+
+//             double noise_rot = rng_rot * sqrt(2. * rot_diff) / sqrt(dt); 
+//             double noise_trans_x = rng_trans_x * sqrt(2. * trans_diff) / sqrt(dt); 
+//             double noise_trans_y = rng_trans_y * sqrt(2. * trans_diff) / sqrt(dt); 
+
+//             double speed = sqrt(vel[ring_id][i][0]*vel[ring_id][i][0] + vel[ring_id][i][1]*vel[ring_id][i][1]);
+            
+//             double angle_derivate;
+//             if (speed == 0.) {
+//                 update_debug.count_zero_speed += 1;
+//                 angle_derivate = 0.;
+//             } else {
+//                 double cross_prod = self_prop_vel[ring_id][i][0] * vel[ring_id][i][1]/speed - self_prop_vel[ring_id][i][1] * vel[ring_id][i][0]/speed;
+                
+//                 if (abs(cross_prod) > 1) {
+//                     #if DEBUG == 1
+//                     std::cout << "Error: cross_prod | " << cross_prod << std::endl;
+//                     #endif
+//                     cross_prod = copysign(1, cross_prod);
+//                 }
+
+//                 angle_derivate = 1. / relax_time * asin(cross_prod) + noise_rot;
+//             }
+            
+//             self_prop_angle[ring_id][i] += angle_derivate * dt;
+
+//             vel[ring_id][i][0] = vo * self_prop_vel[ring_id][i][0] + mobility * sum_forces_matrix[ring_id][i][0] + noise_trans_x;
+//             vel[ring_id][i][1] = vo * self_prop_vel[ring_id][i][1] + mobility * sum_forces_matrix[ring_id][i][1] + noise_trans_y;
+
+//             self_prop_vel[ring_id][i][0] = cos(self_prop_angle[ring_id][i]);
+//             self_prop_vel[ring_id][i][1] = sin(self_prop_angle[ring_id][i]);
+
+//             // for (int i = 0; i < num_particles; i++)
+//             // {
+//             //     pos[i][0] = remainder(pos[i][0] + size/2., size) + size/2.; 
+//             //     pos[i][1] = remainder(pos[i][1] + size/2., size) + size/2.; 
+//             // }
+            
+//             for (int dim = 0; dim < 2.f; dim ++) {
+//                 if (pos[ring_id][i][dim] > size/2.f)
+//                     pos[ring_id][i][dim] -= size;
+//                 else if (pos[ring_id][i][dim] < -size/2.f)
+//                     pos[ring_id][i][dim] += size;
+//             }
+
+//             #if DEBUG == 1
+//             if (isnan(pos[ring_id][i][0]) == true)
+//                 std::cout << "Error: pos_nan 2" << std::endl;
+
+//             total_forces[ring_id][i][0] = sum_forces_matrix[ring_id][i][0];
+//             total_forces[ring_id][i][1] = sum_forces_matrix[ring_id][i][1];
+//             #endif
+
+//             sum_forces_matrix[ring_id][i][0] = 0.f;
+//             sum_forces_matrix[ring_id][i][1] = 0.f;
+//         }        
+//     }

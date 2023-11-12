@@ -28,5 +28,7 @@ run_cfg: !!python/object:phystem.systems.self_propelling.run_config.CollectDataC
   update_type: !!python/object/apply:phystem.core.run_config.UpdateType
   - 1
   checkpoint: null
+  integration_type: !!python/object/apply:phystem.systems.ring.run_config.IntegrationType
+  - 0
 space_cfg: !!python/object:phystem.systems.self_propelling.configs.SpaceCfg
   size: 11

@@ -1,10 +1,13 @@
+from math import pi, ceil
+import numpy as np
+
 from phystem.systems.ring.simulation import Simulation
 
 from phystem.systems.ring.configs import *
 from phystem.systems.ring.ui.graph import GraphCfg
 
-from phystem.core.run_config import UpdateType, SolverType, RunType, ReplayDataCfg
-from phystem.systems.ring.run_config import RealTimeCfg, CollectDataCfg, SaveCfg
+from phystem.core.run_config import UpdateType, RunType
+from phystem.systems.ring.run_config import RealTimeCfg
 
 dynamic_cfg = RingCfg(
     spring_k=8,
@@ -16,7 +19,7 @@ dynamic_cfg = RingCfg(
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
     p0=3.5449077018, # Círculo
-    area0=53,
+    # area0=53,
 
     exclusion_vol=1,
     diameter=1,
@@ -30,8 +33,6 @@ dynamic_cfg = RingCfg(
 )
 
 
-from math import pi, ceil
-import numpy as np
 n = 5
 k = 1.4
 radius = 20/6 * 1.5

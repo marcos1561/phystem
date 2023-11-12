@@ -108,7 +108,7 @@ def checkpoints(sim: Simulation, collect_cfg: CheckPointCfg):
     while solver.time < run_cfg.tf:
         solver.update()
         collector.collect(count)
-        # prog.update(solver.time)
+        prog.update(solver.time)
         count += 1
     
     print("num saves:", collector.num_saves)

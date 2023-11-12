@@ -30,8 +30,6 @@ dynamic_cfg = RingCfg(
     rot_diff=0.1,
 )
 
-print(dynamic_cfg.area0)
-
 space_cfg = SpaceCfg(
     size = 30,
 )
@@ -43,7 +41,6 @@ creator_cfg = CreatorCfg(
     num_rings = 4,
     num_p = 30,
     r = radius,
-    vo = dynamic_cfg.vo,
     angle=[pi/4, -3*pi/4, 3*pi/4, -pi/4],
     center=[
         [-a * radius, -a * radius], 
@@ -54,9 +51,9 @@ creator_cfg = CreatorCfg(
 )
 
 seed = 40028922
-seed=None
+seed = None
 
-run_type = RunType.REAL_TIME
+run_type = RunType.COLLECT_DATA
 
 real_time_cfg = RealTimeCfg(
     dt = 0.001*1.5,

@@ -89,13 +89,12 @@ class CreatorCfg:
     '''
     Configurações passada ao construtor de configuração inicial.
     '''
-    def __init__(self, num_rings: int,  num_p: int, r: list[float], vo: list[float], angle: list[float],
+    def __init__(self, num_rings: int,  num_p: int, r: list[float], angle: list[float],
         center: list[list[float]]) -> None:
         self.num_rings = num_rings
         self.num_p = num_p
     
         self.r = self.process_scalar_input(r)
-        self.vo = self.process_scalar_input(vo)
         self.angle = self.process_scalar_input(angle)
         
         self.center = center
@@ -120,7 +119,6 @@ class CreatorCfg:
             "num_rings": self.num_rings,
             "num_p": self.num_p,
             "r": self.r,
-            "vo": self.vo,
             "angle": self.angle,
             "center": self.center,
         }

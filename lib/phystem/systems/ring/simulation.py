@@ -36,7 +36,6 @@ class Simulation(SimulationCore):
         if self.run_cfg.id is RunType.REPLAY_DATA:
             return SolverRD(self.run_cfg)
 
-        num_skip_steps = 0        
         if self.run_cfg.checkpoint:
             from phystem.systems.ring.collectors import StateCheckpoint
             
@@ -44,6 +43,7 @@ class Simulation(SimulationCore):
             num_skip_steps = metadata["num_time_steps"]
         else:
             init_data = self.creator.create()
+            num_skip_steps = 0        
         
         solver = CppSolver(**init_data.get_data(), dynamic_cfg=self.dynamic_cfg, size=self.space_cfg.size,
             dt=self.run_cfg.dt, update_type=self.run_cfg.update_type, num_col_windows=self.run_cfg.num_col_windows, 

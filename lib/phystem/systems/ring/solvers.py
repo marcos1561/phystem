@@ -6,7 +6,7 @@ from phystem.systems.ring.run_config import IntegrationType
 from phystem import cpp_lib
 
 class CppSolver:
-    def __init__(self, pos: np.ndarray, vel: np.ndarray, self_prop_angle: np.ndarray, 
+    def __init__(self, pos: np.ndarray, self_prop_angle: np.ndarray, 
         dynamic_cfg: RingCfg, size: float, dt: float, num_col_windows: int, update_type: UpdateType, 
         integration_type=IntegrationType.euler, rng_seed=None, num_skip_steps=0) -> None:
         if rng_seed is None:
@@ -17,14 +17,12 @@ class CppSolver:
         dynamic_cfg = cpp_lib.configs.RingCfg(dynamic_cfg.cpp_constructor_args())
         
         pos_in = [cpp_lib.data_types.PosVec(ring_pos) for ring_pos in pos]
-        vel_in = [cpp_lib.data_types.PosVec(ring_vel) for ring_vel in vel]
         angle_in = [cpp_lib.data_types.List(ring_angle) for ring_angle in self_prop_angle]
 
         pos = cpp_lib.data_types.Vector3d(pos_in)
-        vel = cpp_lib.data_types.Vector3d(vel_in)
         self_prop_angle = cpp_lib.data_types.List2d(angle_in)
 
-        self.cpp_solver = cpp_lib.solvers.Ring(pos, vel, self_prop_angle, dynamic_cfg, size, dt, num_col_windows, 
+        self.cpp_solver = cpp_lib.solvers.Ring(pos, self_prop_angle, dynamic_cfg, size, dt, num_col_windows, 
             rng_seed, num_skip_steps, integration_type.value)
 
         update_type_to_func = {

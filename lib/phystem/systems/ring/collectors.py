@@ -82,7 +82,6 @@ class StateCheckpoint(collectors.Collector):
     def get_file_path(path):
         return [
             os.path.join(path, "pos.npy"),
-            os.path.join(path, "vel.npy"),
             os.path.join(path, "angle.npy"),
             os.path.join(path, "check_point_metadata.pickle"),
         ]
@@ -90,19 +89,17 @@ class StateCheckpoint(collectors.Collector):
     def collect(self, count: int) -> None:
         if count % self.freq == 0:
             self.pos = np.array(self.solver.pos)
-            self.vel = np.array(self.solver.vel)
             self.angle = np.array(self.solver.self_prop_angle)
             self.metadata["num_time_steps"] = self.solver.num_time_steps
             self.metadata["time"] = self.solver.time
             
-            print(f"Saving | t = {self.solver.time} | count = {count} | count/f = {count/self.freq}")
+            # print(f"Saving | t = {self.solver.time} | count = {count} | count/f = {count/self.freq}")
             self.num_saves += 1
 
             np.save(self.file_path[0], self.pos)
-            np.save(self.file_path[1], self.vel)
-            np.save(self.file_path[2], self.angle)
+            np.save(self.file_path[1], self.angle)
             
-            with open(self.file_path[3], "wb") as f:
+            with open(self.file_path[2], "wb") as f:
                 pickle.dump(self.metadata, f)                
 
     @staticmethod
@@ -111,13 +108,12 @@ class StateCheckpoint(collectors.Collector):
 
         file_path = StateCheckpoint.get_file_path(path)
         pos = np.load(file_path[0]) 
-        vel =np.load(file_path[1])
-        angle = np.load(file_path[2])
+        angle = np.load(file_path[1])
         
-        with open(file_path[3], "rb") as f:
+        with open(file_path[2], "rb") as f:
             metadata = pickle.load(f)
         
-        init_data = InitData(pos, vel, angle)
+        init_data = InitData(pos, angle)
         return init_data, metadata
 
 

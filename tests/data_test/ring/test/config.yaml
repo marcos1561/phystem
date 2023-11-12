@@ -49,6 +49,8 @@ run_cfg: !!python/object:phystem.systems.ring.run_config.CollectDataCfg
   func_cfg: null
   func_id: !!python/object/apply:phystem.systems.ring.collect_pipelines.FuncID
   - 1
+  integration_type: !!python/object/apply:phystem.systems.ring.run_config.IntegrationType
+  - 0
   num_col_windows: 20
   solver_type: !!python/object/apply:phystem.core.run_config.SolverType
   - 2

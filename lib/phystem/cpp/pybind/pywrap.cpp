@@ -111,8 +111,8 @@ PYBIND11_MODULE(cpp_lib, m) {
         ;      
 
     py::class_<Ring>(solvers, "Ring")
-        .def(py::init<Vector3d&, Vector3d&, vector<vector<double>>&, RingCfgPy, 
-            double, double, int, int, int, int>(), py::arg("pos0"), py::arg("vel0"), py::arg("self_prop_angle0"), 
+        .def(py::init<Vector3d&, vector<vector<double>>&, RingCfgPy, 
+            double, double, int, int, int, int>(), py::arg("pos0"), py::arg("self_prop_angle0"), 
             py::arg("dynamic_cfg"), py::arg("size"), py::arg("dt"), py::arg("num_col_windows"), py::arg("seed")=-1,
             py::arg("num_skip_steps")=0, py::arg("integration_type")=0)
         .def("update_normal", &Ring::update_normal, py::call_guard<py::gil_scoped_release>())
@@ -124,7 +124,6 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def_readonly("num_time_steps", &Ring::num_time_steps, byref)
         .def_readonly("pos", &Ring::pos, byref)
         .def_readonly("vel", &Ring::vel, byref)
-        .def_readonly("self_prop_vel", &Ring::self_prop_vel, byref)
         .def_readonly("self_prop_angle", &Ring::self_prop_angle, byref)
         .def_readonly("pos_continuos", &Ring::pos_continuos, byref)
         .def_readonly("pos_t", &Ring::pos_t, byref)
