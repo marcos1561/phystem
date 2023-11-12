@@ -5,7 +5,7 @@ from phystem.systems.ring.ui.graph import GraphCfg
 from phystem.systems.ring import collect_pipelines
 
 from phystem.core.run_config import UpdateType, SolverType, RunType, ReplayDataCfg
-from phystem.systems.ring.run_config import RealTimeCfg, CollectDataCfg, SaveCfg
+from phystem.systems.ring.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, IntegrationType
 
 dynamic_cfg = RingCfg(
     spring_k=8,
@@ -17,7 +17,7 @@ dynamic_cfg = RingCfg(
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
     p0=3.5449077018, # Círculo
-    area0=53,
+    # area0=53,
 
     exclusion_vol=1,
     diameter=1,
@@ -29,6 +29,8 @@ dynamic_cfg = RingCfg(
     trans_diff=0.1,
     rot_diff=0.1,
 )
+
+print(dynamic_cfg.area0)
 
 space_cfg = SpaceCfg(
     size = 30,
@@ -54,12 +56,12 @@ creator_cfg = CreatorCfg(
 seed = 40028922
 seed=None
 
-run_type = RunType.COLLECT_DATA
+run_type = RunType.REAL_TIME
 
 real_time_cfg = RealTimeCfg(
-    dt = 0.001/2,
-    num_steps_frame = 1000,
+    dt = 0.001*1.5,
     num_col_windows=8,
+    num_steps_frame=200,
     fps = 60,
     graph_cfg = GraphCfg(
         show_circles  = True,
@@ -67,10 +69,11 @@ real_time_cfg = RealTimeCfg(
         show_f_vol    = False,
         show_f_area   = False,
         show_f_total  = False,
-        begin_paused=False,
-        cpp_is_debug=True,
+        begin_paused  = False,
+        cpp_is_debug  = True,
     ),
     update_type=UpdateType.WINDOWS,
+    integration_type=IntegrationType.euler,
 )
 
 replay_data_cfg = None

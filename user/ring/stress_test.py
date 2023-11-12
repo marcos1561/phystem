@@ -5,10 +5,10 @@ from phystem.systems.ring.ui.graph import GraphCfg
 from phystem.systems.ring import collect_pipelines
 
 from phystem.core.run_config import UpdateType, SolverType, RunType, ReplayDataCfg, CheckpointCfg
-from phystem.systems.ring.run_config import RealTimeCfg, CollectDataCfg, SaveCfg
+from phystem.systems.ring.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, IntegrationType
 
 dynamic_cfg = RingCfg(
-    spring_k=8,
+    spring_k=10,
     spring_r=0.7,
     
     area_potencial="target_area",
@@ -17,7 +17,7 @@ dynamic_cfg = RingCfg(
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
     p0=3.5449077018, # Círculo
-    area0=53,
+    # area0=53,
 
     exclusion_vol=1,
     diameter=1,
@@ -66,11 +66,11 @@ run_type = RunType.REAL_TIME
 
 num_windows = int(ceil(space_cfg.size/(dynamic_cfg.diameter*3)))
 real_time_cfg = RealTimeCfg(
-    dt = 0.001,
+    dt = 0.001*4,
     num_steps_frame = 400,
     fps = 60,
     graph_cfg = GraphCfg(
-        show_circles  = True,
+        show_circles  = False,
         show_f_spring = False,
         show_f_vol    = False,
         show_f_area   = False,
@@ -80,6 +80,7 @@ real_time_cfg = RealTimeCfg(
     ),
     num_col_windows=num_windows,
     update_type=UpdateType.WINDOWS,
+    integration_type=IntegrationType.euler,
     # checkpoint=CheckpointCfg(
     #     folder_path="stress/checkpoint",
     #     override_cfgs=True,
