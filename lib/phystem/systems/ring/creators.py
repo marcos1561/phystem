@@ -36,7 +36,7 @@ class CreateType:
     NORMAL = auto()
 
 class Creator(CreatorCore):
-    def __init__(self, num_rings: int, num_p: int, r: list[float], vo: list[float], angle: list[float], center: list, state_folder: str=None, rng_seed: int = None) -> None:
+    def __init__(self, num_rings: int, num_p: int, r: list[float], vo: list[float], angle: list[float], center: list, rng_seed: int = None) -> None:
         '''
         Cria a configuração inicial do anel em formato de círculo com as velocidades
         coincidindo com as velocidades autopropulsoras.
@@ -79,7 +79,6 @@ class Creator(CreatorCore):
         self.vo = vo
         self.angle = angle
         self.center = center
-        self.state_path = state_folder
 
     # def create(self) -> InitData:
     #     trig_angle = np.pi/180*60
@@ -109,10 +108,6 @@ class Creator(CreatorCore):
             : InitData
                 Dados da configuração inicial
         '''
-        if self.state_path:
-            init_data = self.from_state()
-            return init_data
-        
         pos = []
         vel = []
         self_prop_angle = []
@@ -137,10 +132,6 @@ class Creator(CreatorCore):
             self_prop_angle.append(ring_self_prop_angle)
 
         return InitData(np.array(pos), np.array(vel), np.array(self_prop_angle))
-
-    def from_state(self):
-        # pos = np.load()
-        pass
 
 class CreatorRD(CreatorCore):
     def create(self) -> None:

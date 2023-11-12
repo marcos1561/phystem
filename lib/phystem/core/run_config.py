@@ -270,7 +270,7 @@ class SaveCfg(RunCfg):
     '''
     id = RunType.SAVE_VIDEO
     def __init__(self, path:str, speed: float, fps: int, dt: float, duration: float = None, tf: float = None, 
-        graph_cfg=None, solver_type=SolverType.CPP, update_type=UpdateType.NORMAL) -> None:  
+        graph_cfg=None, solver_type=SolverType.CPP, update_type=UpdateType.NORMAL, checkpoint: CheckpointCfg=None) -> None:  
         '''
         Salva um vídeo da simulação em `path`. Ao menos um dos seguintes parâmetros deve ser 
         especificado:
@@ -312,7 +312,7 @@ class SaveCfg(RunCfg):
             update_type:
                 Tipo de integração a ser utilizado pelo solver.
         '''
-        super().__init__(dt, solver_type, update_type)
+        super().__init__(dt, solver_type, update_type, checkpoint)
         if duration == None and tf == None:
             raise ValueError("Um dos parâmetros `duration` ou `tf` deve ser passado.")
         self.speed = speed

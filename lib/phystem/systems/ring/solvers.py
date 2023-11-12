@@ -2,12 +2,13 @@ import numpy as np
 
 from phystem.core.run_config import ReplayDataCfg, UpdateType
 from phystem.systems.ring.configs import RingCfg
+from phystem.systems.ring.run_config import IntegrationType
 from phystem import cpp_lib
 
 class CppSolver:
     def __init__(self, pos: np.ndarray, vel: np.ndarray, self_prop_angle: np.ndarray, 
         dynamic_cfg: RingCfg, size: float, dt: float, num_col_windows: int, update_type: UpdateType, 
-        rng_seed=None, num_skip_steps=0) -> None:
+        integration_type=IntegrationType.euler, rng_seed=None, num_skip_steps=0) -> None:
         if rng_seed is None:
             rng_seed = -1
         if num_col_windows is None:
@@ -24,7 +25,7 @@ class CppSolver:
         self_prop_angle = cpp_lib.data_types.List2d(angle_in)
 
         self.cpp_solver = cpp_lib.solvers.Ring(pos, vel, self_prop_angle, dynamic_cfg, size, dt, num_col_windows, 
-            rng_seed, num_skip_steps)
+            rng_seed, num_skip_steps, integration_type.value)
 
         update_type_to_func = {
             UpdateType.NORMAL: self.cpp_solver.update_normal,

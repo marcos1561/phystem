@@ -72,7 +72,7 @@
     "python.testing.unittestEnabled": true,
     "cmake.configureOnOpen": false,
     "cSpell.words": [
-        "phystem"
+        "phystem", "verlet"
     ],
     "cmake.sourceDirectory": "/home/marcos/Documents/Programacao/IC/active-matter/lib/phystem/cpp/tests_ui",
     "cmake.buildDirectory": "/home/marcos/Documents/Programacao/IC/active-matter/lib/phystem/cpp/tests_ui/build",

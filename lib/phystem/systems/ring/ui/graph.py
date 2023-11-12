@@ -326,14 +326,13 @@ class Info(graph.Info):
         super().__init__(ax)
         self.solver = solver
         self.time_it = time_it
-        self.cfg_info = dynamic_cfg.info() + "\n" f"N = {creator_cfg.num_p}\nL = {space_cfg.size}\n" 
+        self.cfg_info = dynamic_cfg.info() + f"N = {creator_cfg.num_p}\n" 
 
     def get_info(self):
         sim_info = (
             f"$\Delta$T (ms): {self.time_it.mean_time():.3f}\n\n"
             f"t : {self.solver.time:.3f}\n"
-            f"dt: {self.solver.dt:.3f}\n"
-            f"<V> = {self.solver.mean_vel(0):.3f}\n"
+            f"dt: {self.solver.dt:.5f}\n"
             f"Area = {self.solver.cpp_solver.area_debug.area[0]:.3f}\n"
             "\n"
             f"spring_overlap: {self.solver.spring_debug.count_overlap}\n"

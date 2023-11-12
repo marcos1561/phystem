@@ -2,11 +2,11 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
 from phystem.systems.ring.run_config import RealTimeCfg, SaveCfg
-from phystem.core.run_config import RunType
+from phystem.core.run_config import RunCfg, RunType
 
 from phystem.core.simulation import SimulationCore
 from phystem.core.solvers import SolverCore
-from phystem.systems.ring.configs import CreatorCfg
+from phystem.systems.ring.configs import CreatorCfg, RingCfg
 from phystem.systems.ring.creators import CreatorRD, Creator
 from phystem.systems.ring.solvers import CppSolver, SolverRD
 
@@ -15,8 +15,15 @@ from phystem.systems.ring.ui.widget import WidgetManager
 from phystem.gui_phystem.widget import WidgetType
 
 class Simulation(SimulationCore):
+    run_cfg: RealTimeCfg
     creator_cfg: CreatorCfg
+    dynamic_cfg: RingCfg
     creator: Creator
+
+    def __init__(self, creator_cfg: CreatorCfg, dynamic_cfg: RingCfg, space_cfg, run_cfg: RunCfg, other_cfgs: dict = None, rng_seed: float = None) -> None:
+        dynamic_cfg.adjust_area_pars(creator_cfg.num_p)
+        super().__init__(creator_cfg, dynamic_cfg, space_cfg, run_cfg, other_cfgs, rng_seed)
+
 
     def get_creator(self) -> Creator:
 
@@ -40,7 +47,7 @@ class Simulation(SimulationCore):
         
         solver = CppSolver(**init_data.get_data(), dynamic_cfg=self.dynamic_cfg, size=self.space_cfg.size,
             dt=self.run_cfg.dt, update_type=self.run_cfg.update_type, num_col_windows=self.run_cfg.num_col_windows, 
-            rng_seed=self.rng_seed, num_skip_steps=num_skip_steps)
+            rng_seed=self.rng_seed, num_skip_steps=num_skip_steps, integration_type=self.run_cfg.integration_type)
         
         return solver
 
