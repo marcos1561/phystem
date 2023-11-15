@@ -245,7 +245,7 @@ A interface visual da simulação é totalmente feita utilizando o `matplotlib`.
 fig, ax_walker = plt.subplots()      
 ```
 
-Ainda falta decidir como renderizar o caminhante. Como ele consiste em apenas um posição no plano, vamos renderizá-lo como uma partículas. Tal forma de renderização já está implementada no phystem e podemos utilizá-la da seguinte forma
+Ainda falta decidirmos como renderizar o caminhante. Como ele consiste em apenas uma posição no plano, vamos renderizá-lo como uma partícula. Tal forma de renderização já está implementada no phystem e podemos utilizá-la da seguinte forma
 
 ``` python
 # simulation.py
@@ -259,7 +259,7 @@ particles_graph = graph.ParticlesGraph(
 )
 ```
 
-Por fim, precisamos inicializar o gráfico das partículas e gerar uma animação do matplotlib. A animação é do tipo função, ou seja, ela chama uma função a cada quadro da animação, e nessa função o `Solver` precisa executar um passo temporal e o gráfico precisa ser atualizado.
+Por fim, precisamos inicializar o gráfico das partículas e gerar uma animação do matplotlib. A animação é do tipo função, ou seja, ela chama uma função a cada quadro da animação. Nessa função, o `Solver` precisa executar um passo temporal e o gráfico precisa ser atualizado.
 
 ``` python
 # simulation.py
@@ -272,6 +272,17 @@ def update(frame):
 
 ani = animation.FuncAnimation(fig, update, interval=1/(real_time_cfg.fps)*1000)
 plt.show()
+```
+
+Frequentemente é desejável realizar mais de um passo temporal por quadro, isso pode ser simplesmente feito chamando `Solver.update` em um loop. A classe padrão da configuração de execução em tempo real possui o membro `num_steps_frame` que deve ser utilizado justamente para isso.
+
+``` python
+# simulation.py
+def update(frame):
+    for _ in range(real_time_cfg.num_steps_frame):
+        self.solver.update()
+
+    particles_graph.update()
 ```
 
 A implementação completa da aplicação da simulação fica da seguinte forma
