@@ -1,7 +1,4 @@
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-
-from phystem.systems.ring.run_config import RealTimeCfg, SaveCfg
+from phystem.systems.ring.run_config import RealTimeCfg
 from phystem.core.run_config import RunCfg, RunType
 
 from phystem.core.simulation import SimulationCore
@@ -26,7 +23,6 @@ class Simulation(SimulationCore):
 
 
     def get_creator(self) -> Creator:
-
         if self.run_cfg.id is RunType.REPLAY_DATA:
             return CreatorRD()
 
@@ -38,7 +34,6 @@ class Simulation(SimulationCore):
 
         if self.run_cfg.checkpoint:
             from phystem.systems.ring.collectors import StateCheckpoint
-            
             init_data, metadata = StateCheckpoint.load(self.run_cfg.checkpoint.folder_path)
         else:
             init_data = self.creator.create()
@@ -60,7 +55,7 @@ class Simulation(SimulationCore):
         ax_main = axes["main"]
         info_ax = axes["info"]
 
-        ## Creates graphs managers ###
+        ## Creates graphs ###
         particles_graph = MainGraph(
             ax=ax_main, solver=self.solver, space_cfg=self.space_cfg, dynamic_cfg=self.dynamic_cfg, 
             graph_cfg=real_time_cfg.graph_cfg)
@@ -85,26 +80,9 @@ class Simulation(SimulationCore):
             particles_graph.update()
 
         if self.run_cfg.id is RunType.SAVE_VIDEO:
-            from phystem.utils.progress import MplAnim as Progress
-            import os, yaml
-            save_video_cfg: SaveCfg = self.run_cfg
-            
-            folder_path = save_video_cfg.path.split("/")[0]
-            video_name = save_video_cfg.path.split("/")[-1].split(".")[0]
-            if not os.path.exists(folder_path):
-                raise Exception(f"O caminho {folder_path} não existe.")
-
-            frames = save_video_cfg.num_frames
-            progress = Progress(frames, 10)
-            ani = animation.FuncAnimation(fig, update, frames=frames)
-
-            config_path = os.path.join(folder_path, f"{video_name}_config.yaml")
-            with open(config_path, "w") as f:
-                yaml.dump(self.configs, f)
-            ani.save(save_video_cfg.path, fps=save_video_cfg.fps, progress_callback=progress.update)
+            self.save_video(fig, update)
         else:
-            ani = animation.FuncAnimation(fig, update, interval=1/(real_time_cfg.fps)*1000, cache_frame_data=False)
-            plt.show()
+            self.run_animation(fig, update)
 
     @staticmethod
     def configure_ui(run_type: RunType):
@@ -152,6 +130,5 @@ class Simulation(SimulationCore):
 
         for wg_type, wg_axes in axes_correct_order.items():
             axes[wg_type] = wg_axes
-
 
         return fig, axes

@@ -109,11 +109,12 @@ collect_data_cfg = CollectDataCfg(
 )
 
 save_cfg = SaveCfg(
-    path = "data/videos/teste2.mp4",
+    # path = "data/videos/teste2.mp4",
+    path = "./teste_video.mp4",
     speed=0.5,
     fps=60, 
-    dt=0.0001,
-    duration=10,
+    dt=0.001,
+    duration=3,
     tf=None,
     graph_cfg = GraphCfg(
         show_circles  = True,

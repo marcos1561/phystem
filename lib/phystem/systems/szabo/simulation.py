@@ -1,15 +1,12 @@
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-
+from phystem.core.simulation import SimulationCore 
 from phystem.systems.szabo import creators 
 import phystem.systems.szabo.solvers as solvers 
-from phystem.systems.szabo.ui.graph import ParticlesGraph, Info, MeanVelGraph
 
 from phystem.core.run_config import RunType, SolverType
-from phystem.systems.szabo.run_config import RealTimeCfg, SaveCfg
+from phystem.systems.szabo.run_config import RealTimeCfg
 from phystem.systems.szabo.configs import CreatorCfg
-from phystem.core.simulation import SimulationCore 
-import phystem.core.creators as core_creator 
+
+from phystem.systems.szabo.ui.graph import ParticlesGraph, Info, MeanVelGraph
 from phystem.systems.szabo.ui.widget import WidgetManager
 from phystem.gui_phystem.widget import WidgetType
 
@@ -71,17 +68,20 @@ class Simulation(SimulationCore):
             # mean_vel_graph.update()
 
         if self.run_cfg.id is RunType.SAVE_VIDEO:
-            from phystem.utils.progress import MplAnim as Progress
-            save_video_cfg: SaveCfg = self.run_cfg
+            self.save_video(fig, update)
 
-            frames = save_video_cfg.num_frames
-            progress = Progress(frames, 10)
-            ani = animation.FuncAnimation(fig, update, frames=frames)
+            # from phystem.utils.progress import MplAnim as Progress
+            # save_video_cfg: SaveCfg = self.run_cfg
+
+            # frames = save_video_cfg.num_frames
+            # progress = Progress(frames, 10)
+            # ani = animation.FuncAnimation(fig, update, frames=frames)
         
-            ani.save(save_video_cfg.path, fps=save_video_cfg.fps, progress_callback=progress.update)
+            # ani.save(save_video_cfg.path, fps=save_video_cfg.fps, progress_callback=progress.update)
         else:
-            ani = animation.FuncAnimation(fig, update, interval=1/(real_time_cfg.fps)*1000, cache_frame_data=False)
-            plt.show()
+            self.run_animation(fig, update)
+            # ani = animation.FuncAnimation(fig, update, interval=1/(real_time_cfg.fps)*1000, cache_frame_data=False)
+            # plt.show()
     
     @staticmethod
     def configure_ui(run_type: RunType):

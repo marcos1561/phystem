@@ -1,8 +1,13 @@
 from copy import deepcopy
 from abc import ABC, abstractmethod
 
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from matplotlib.figure import Figure
+import os, yaml
+
 from phystem.utils.timer import TimeIt
-from phystem.core.run_config import RunType, RunCfg, CollectDataCfg
+from phystem.core.run_config import RunType, RunCfg, CollectDataCfg, SaveCfg, RealTimeCfg
 from phystem.core.creators import CreatorCore
 from phystem.core.solvers import SolverCore
 
@@ -102,3 +107,48 @@ class SimulationCore(ABC):
     def run_only_sim(self):
         run_cfg: CollectDataCfg = self.run_cfg
         run_cfg.func(self, run_cfg.func_cfg)
+
+    def run_animation(self, fig: Figure, update):
+        '''
+        Começa a animação em tempo rela da integração do sistema.
+
+        Parâmetros:
+            fig: 
+                'Figure' do matplotlib.
+
+            update:
+                Função que atualiza um frame do vídeo.
+        '''
+        real_time_cfg: RealTimeCfg = self.run_cfg
+
+        ani = animation.FuncAnimation(fig, update, interval=1/(real_time_cfg.fps)*1000, cache_frame_data=False)
+        plt.show()
+
+    def save_video(self, fig: Figure, update):
+        '''
+        Salva um vídeo da simulação de acordo com as configurações dadas.
+
+        Parâmetros:
+            fig: 
+                'Figure' do matplotlib.
+
+            update:
+                Função que atualiza um frame do vídeo.
+        '''
+        from phystem.utils.progress import MplAnim as Progress
+        
+        save_video_cfg: SaveCfg = self.run_cfg
+        
+        folder_path = save_video_cfg.path.split("/")[0]
+        video_name = save_video_cfg.path.split("/")[-1].split(".")[0]
+        if not os.path.exists(folder_path):
+            raise Exception(f"O caminho {folder_path} não existe.")
+
+        frames = save_video_cfg.num_frames
+        progress = Progress(frames, 10)
+        ani = animation.FuncAnimation(fig, update, frames=frames)
+
+        config_path = os.path.join(folder_path, f"{video_name}_config.yaml")
+        with open(config_path, "w") as f:
+            yaml.dump(self.configs, f)
+        ani.save(save_video_cfg.path, fps=save_video_cfg.fps, progress_callback=progress.update)

@@ -32,7 +32,7 @@ creator_cfg = CreatorCfg(
 seed = 40028922
 # seed=None
 
-run_type = RunType.REAL_TIME
+run_type = RunType.SAVE_VIDEO
 
 real_time_cfg = RealTimeCfg(
     dt = 0.01,
@@ -74,14 +74,15 @@ collect_data_cfg = CollectDataCfg(
 )
 
 save_cfg = SaveCfg(
-    path = "szabo.gif",
+    path = "./szabo.gif",
     speed=5,
     fps=30, 
     dt=0.01,
-    duration=5,
+    duration=3,
     tf=None,
     graph_cfg = GraphCfg(
-        show_circles=True),
+        show_circles=False
+    ),
     num_windows=10,
     solver_type=SolverType.CPP,
     update_type=UpdateType.WINDOWS,
