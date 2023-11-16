@@ -1,13 +1,14 @@
 from math import ceil
 
 from phystem.systems.ring.simulation import Simulation
-
-from phystem.systems.ring.configs import *
-from phystem.systems.ring.ui.graph import GraphCfg
 from phystem.systems.ring import collect_pipelines
 
-from phystem.core.run_config import UpdateType, SolverType, RunType, ReplayDataCfg
-from phystem.systems.ring.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, IntegrationType
+from phystem.systems.ring.configs import *
+from phystem.core.run_config import UpdateType, SolverType, RunType
+from phystem.core.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, ReplayDataCfg
+from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg
+from phystem.systems.ring.ui.graph import GraphCfg
+
 
 dynamic_cfg = RingCfg(
     spring_k=8,
@@ -55,12 +56,16 @@ creator_cfg = CreatorCfg(
 seed = 40028922
 seed = None
 
-run_type = RunType.REAL_TIME
+run_type = RunType.SAVE_VIDEO
 
 real_time_cfg = RealTimeCfg(
-    dt = 0.001,
-    num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6) ,
-    windows_update_freq=1,
+    int_cfg=IntegrationCfg(
+        dt = 0.001,
+        num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6),
+        windows_update_freq=1,
+        integration_type=IntegrationType.euler,
+        update_type=UpdateType.WINDOWS,
+    ),
     num_steps_frame=200,
     fps = 60,
     graph_cfg = GraphCfg(
@@ -72,8 +77,6 @@ real_time_cfg = RealTimeCfg(
         begin_paused  = False,
         cpp_is_debug  = True,
     ),
-    update_type=UpdateType.WINDOWS,
-    integration_type=IntegrationType.euler,
 )
 
 replay_data_cfg = None
@@ -91,29 +94,38 @@ if run_type is RunType.REPLAY_DATA:
     )
 
 collect_data_cfg = CollectDataCfg(
-    tf = 30,
-    dt = 0.001/2,
-    num_col_windows=8,
-    folder_path="checkpoint",
-    func = collect_pipelines.checkpoints,
+    int_cfg=IntegrationCfg(
+        dt = 0.001,
+        num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6),
+        windows_update_freq=1,
+        integration_type=IntegrationType.euler,
+        update_type=UpdateType.WINDOWS,
+    ),
+    tf=30,
+    folder_path="data_test",
+    func = collect_pipelines.last_pos,
     # func_id = collect_pipelines.FuncID.state,
     # get_func= collect_pipelines.get_func,
     # func_cfg = collect_pipelines.CollectPlCfg(
     #     only_last=False, 
     # ),
-    func_cfg = collect_pipelines.CheckPointCfg(
-        num_checkpoints=20, 
-    ),
-    solver_type=SolverType.CPP,
-    update_type=UpdateType.WINDOWS,
+    # func_cfg = collect_pipelines.CheckPointCfg(
+    #     num_checkpoints=20, 
+    # ),
 )
 
 save_cfg = SaveCfg(
+    int_cfg=IntegrationCfg(
+        dt = 0.001,
+        num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6),
+        windows_update_freq=1,
+        integration_type=IntegrationType.euler,
+        update_type=UpdateType.WINDOWS,
+    ),
     # path = "data/videos/teste2.mp4",
     path = "./teste_video.mp4",
     speed=0.5,
     fps=60, 
-    dt=0.001,
     duration=3,
     tf=None,
     graph_cfg = GraphCfg(
@@ -125,8 +137,11 @@ save_cfg = SaveCfg(
     ),
 )
 
-run_type_to_cfg = {RunType.COLLECT_DATA: collect_data_cfg, RunType.REAL_TIME: real_time_cfg, 
-    RunType.SAVE_VIDEO: save_cfg, RunType.REPLAY_DATA: replay_data_cfg}
+run_type_to_cfg = {
+    RunType.REAL_TIME: real_time_cfg,
+    RunType.COLLECT_DATA: collect_data_cfg,
+    RunType.SAVE_VIDEO: save_cfg,
+}
 
 sim = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type], rng_seed=seed)
 sim.run()

@@ -1,21 +1,18 @@
-from phystem.systems.ring.run_config import RealTimeCfg
-from phystem.core.run_config import RunCfg, RunType
-
 from phystem.core.simulation import SimulationCore
 from phystem.core.solvers import SolverCore
-from phystem.systems.ring.configs import CreatorCfg, RingCfg
-from phystem.systems.ring.creators import CreatorRD, Creator
 from phystem.systems.ring.solvers import CppSolver, SolverRD
+from phystem.systems.ring.creators import CreatorRD, Creator
+
+from phystem.core.run_config import RunCfg, RunType, RealTimeCfg
+from phystem.systems.ring.configs import CreatorCfg, RingCfg
 
 from phystem.systems.ring.ui.graph import Info, MainGraph
 from phystem.systems.ring.ui.widget import WidgetManager
 from phystem.gui_phystem.widget import WidgetType
 
 class Simulation(SimulationCore):
-    run_cfg: RealTimeCfg
     creator_cfg: CreatorCfg
     dynamic_cfg: RingCfg
-    creator: Creator
 
     def __init__(self, creator_cfg: CreatorCfg, dynamic_cfg: RingCfg, space_cfg, run_cfg: RunCfg, other_cfgs: dict = None, rng_seed: float = None) -> None:
         dynamic_cfg.adjust_area_pars(creator_cfg.num_p)
@@ -29,6 +26,8 @@ class Simulation(SimulationCore):
         return Creator(**self.creator_cfg.get_pars())
     
     def get_solver(self) -> SolverCore:
+        self.creator: Creator
+
         if self.run_cfg.id is RunType.REPLAY_DATA:
             return SolverRD(self.run_cfg)
 
@@ -38,15 +37,13 @@ class Simulation(SimulationCore):
         else:
             init_data = self.creator.create()
         
-        solver = CppSolver(**init_data.get_data(), dynamic_cfg=self.dynamic_cfg, size=self.space_cfg.size,
-            dt=self.run_cfg.dt, update_type=self.run_cfg.update_type, num_col_windows=self.run_cfg.num_col_windows, 
-            rng_seed=self.rng_seed, windows_update_freq=self.run_cfg.windows_update_freq, integration_type=self.run_cfg.integration_type)
+        solver = CppSolver(**init_data.get_data(), dynamic_cfg=self.dynamic_cfg, space_cfg=self.space_cfg,
+            int_cfg=self.run_cfg.int_cfg, rng_seed=self.rng_seed)
         
         return solver
 
     def run_real_time(self):
         real_time_cfg: RealTimeCfg = self.run_cfg
-        self.solver: CppSolver
 
         fig, axes = self.configure_ui(real_time_cfg.id)
 

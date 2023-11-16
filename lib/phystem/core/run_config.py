@@ -81,23 +81,21 @@ class UpdateType(Enum):
 
 class CheckpointCfg:
     def __init__(self, folder_path: str, override_cfgs: bool = False) -> None:
-        self.override_cfgs = override_cfgs
+        '''
+        Parameters:
+            folder_path:
+                Caminho da pasta que contém o checkpoint.
+            
+            override_cfgs:
+                Se for 'True', as configurações salvas no checkpoint serão ignoradas.
+        '''
         self.folder_path = folder_path
+        self.override_cfgs = override_cfgs
 
         self.configs: dict = None
 
-class RunCfg:
-    '''
-    Base para as configurações do mode de execução.
-    
-    Attributes:
-    ----------
-        id:
-            Id identificando qual é o mode de execução .
-    '''
-    id: RunType
-    def __init__(self, dt: float, solver_type = SolverType.CPP, update_type = UpdateType.NORMAL,
-        checkpoint: CheckpointCfg = None) -> None:
+class IntegrationCfg:
+    def __init__(self, dt: float, solver_type=SolverType.CPP, update_type=UpdateType.NORMAL) -> None:
         '''
         Parameters:
         -----------
@@ -113,6 +111,29 @@ class RunCfg:
         self.dt = dt
         self.solver_type = solver_type
         self.update_type = update_type
+
+class RunCfg:
+    '''
+    Base para as configurações do mode de execução.
+    
+    Attributes:
+    ----------
+        id:
+            Id identificando qual é o mode de execução .
+    '''
+    id: RunType
+    def __init__(self, int_cfg: IntegrationCfg, checkpoint: CheckpointCfg = None) -> None:
+        '''
+        Parameters:
+        -----------
+            int_cfg:
+                Configurações relacionadas a integração do sistema.
+            
+            checkpoint:
+                Configurações para carregar um checkpoint. Caso seja 'none', o checkpoint
+                não é carregado.
+        '''
+        self.int_cfg = int_cfg
         self.checkpoint = checkpoint
         
         if checkpoint is not None:
@@ -126,8 +147,8 @@ class CollectDataCfg(RunCfg):
     não relevantes para a integração do sistema.
     '''
     id = RunType.COLLECT_DATA
-    def __init__(self, tf: float, dt: float, folder_path: str, func_cfg=None, func: callable=None, func_id=None, 
-        get_func: callable=None, solver_type=SolverType.CPP, update_type=UpdateType.NORMAL, checkpoint: CheckpointCfg = None) -> None:
+    def __init__(self, int_cfg: IntegrationCfg, tf: float, folder_path: str, func_cfg=None, func: callable=None,
+        func_id=None, get_func: callable=None, checkpoint: CheckpointCfg = None) -> None:
         '''
         Configurações da coleta de dados de acordo com um pipeline. A pipeline pode ser especificada de duas formas.
 
@@ -139,12 +160,12 @@ class CollectDataCfg(RunCfg):
         
         Parameters:
         -----------
+            int_cfg:
+                Configurações relacionadas a integração do sistema.
+            
             tf:
                 Tempo final da integração.    
         
-            dt:
-                Passo temporal
-            
             folder_path:
                 Caminho para a pasta que vai conter os dados salvos.
             
@@ -160,17 +181,15 @@ class CollectDataCfg(RunCfg):
             get_func:
                 Retorna uma pipeline de coleta de dados dado um id. \n
                     func = get_func(func_id)
-                
-            solver_type:
-                Tipo do solver a ser utilizado.
             
-            update_type:
-                Tipo de integração a ser utilizado pelo solver.
+            checkpoint:
+                Configurações para carregar um checkpoint. Casa seja 'None', o checkpoint
+                não é carregado.
         '''
         if func_id is None and func is None:
             raise ValueError("'func_id' e 'func' não podem ser ambos nulos.")
         
-        super().__init__(dt, solver_type, update_type, checkpoint)
+        super().__init__(int_cfg, checkpoint)
         self.tf = tf
         self.folder_path = folder_path
         
@@ -186,12 +205,12 @@ class RealTimeCfg(RunCfg):
     Renderização em tempo real da simulação.
     '''
     id = RunType.REAL_TIME
-    def __init__(self, dt: float, num_steps_frame: int, fps: int, graph_cfg=None,
-        solver_type=SolverType.CPP, update_type=UpdateType.NORMAL, checkpoint: CheckpointCfg=None) -> None:
+    def __init__(self, int_cfg: IntegrationCfg, num_steps_frame: int, fps: int, graph_cfg=None,
+        checkpoint: CheckpointCfg=None) -> None:
         '''
         Parameters:
-            dt:
-                Passo temporal
+            int_cfg:
+                Configurações relacionadas a integração do sistema.
 
             num_steps_frame:
                 Quando passos temporais são dados por frame.
@@ -202,13 +221,11 @@ class RealTimeCfg(RunCfg):
             graph_cfg:
                 Configurações passadas para o gerenciador do gráfico da simulação.
                 
-            solver_type:
-                Tipo do solver a ser utilizado.
-            
-            update_type:
-                Tipo de integração a ser utilizado pelo solver.
+            checkpoint:
+                Configurações para carregar um checkpoint. Casa seja 'None', o checkpoint
+                não é carregado.
         '''
-        super().__init__(dt, solver_type, update_type, checkpoint)
+        super().__init__(int_cfg, checkpoint)
         self.num_steps_frame = num_steps_frame
         self.fps = fps
         self.graph_cfg = graph_cfg
@@ -262,15 +279,13 @@ class ReplayDataCfg(RealTimeCfg):
         self.frequency = frequency
         self.directory = directory
 
-
-        
 class SaveCfg(RunCfg):
     '''
     Salva um vídeo da simulação.
     '''
     id = RunType.SAVE_VIDEO
-    def __init__(self, path:str, speed: float, fps: int, dt: float, duration: float = None, tf: float = None, 
-        graph_cfg=None, solver_type=SolverType.CPP, update_type=UpdateType.NORMAL, checkpoint: CheckpointCfg=None) -> None:  
+    def __init__(self, int_cfg: IntegrationCfg, path:str, speed: float, fps: int, duration: float = None, 
+        tf: float = None, graph_cfg=None, checkpoint: CheckpointCfg=None) -> None:  
         '''
         Salva um vídeo da simulação em `path`. Ao menos um dos seguintes parâmetros deve ser 
         especificado:
@@ -283,6 +298,9 @@ class SaveCfg(RunCfg):
 
         Parameters:
         -----------
+            int_cfg:
+                Configurações relacionadas a integração do sistema.
+        
             path:
                 Local completo para salvar o vídeo.
             
@@ -293,9 +311,6 @@ class SaveCfg(RunCfg):
             
             fps:
                 fps do vídeo.
-            
-            dt:
-                Passo temporal da simulação.
 
             duration:
                 Duração do vídeo em segundos.
@@ -305,22 +320,20 @@ class SaveCfg(RunCfg):
             
             graph_cfg:
                 Configurações passadas para o gerenciador do gráfico da simulação.
-                
-            solver_type:
-                Tipo do solver a ser utilizado.
-            
-            update_type:
-                Tipo de integração a ser utilizado pelo solver.
+
+            checkpoint:
+                Configurações para carregar um checkpoint. Caso seja 'none', o checkpoint
+                não é carregado.
         '''
-        super().__init__(dt, solver_type, update_type, checkpoint)
+        super().__init__(int_cfg, checkpoint)
         if duration == None and tf == None:
             raise ValueError("Um dos parâmetros `duration` ou `tf` deve ser passado.")
         self.speed = speed
         self.path = path
         self.fps = fps
-        self.dt = dt
         self.graph_cfg = graph_cfg
 
+        dt = self.int_cfg.dt
         self.num_steps_frame = speed / fps / dt
         if self.num_steps_frame < 1:
             self.num_steps_frame = 1
@@ -331,8 +344,8 @@ class SaveCfg(RunCfg):
         if duration != None:
             self.duration = duration
             self.num_frames = int(duration * fps)
-            self.tf = self.num_frames * self.num_steps_frame * self.dt
+            self.tf = self.num_frames * self.num_steps_frame * dt
         elif tf != None:
             self.tf = tf
-            self.num_frames = int(self.tf / self.num_steps_frame / self.dt)
+            self.num_frames = int(self.tf / self.num_steps_frame / dt)
             self.duration = self.num_frames / self.fps

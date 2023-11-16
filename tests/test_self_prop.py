@@ -4,8 +4,8 @@ import os, yaml
 from phystem.systems.szabo.simulation import Simulation
 from phystem.systems.szabo import collect_pipelines
 from phystem.systems.szabo.configs import *
-from phystem.systems.szabo.run_config import CollectDataCfg
-from phystem.core.run_config import UpdateType
+from phystem.core.run_config import CollectDataCfg, UpdateType
+from phystem.systems.szabo.run_config import IntegrationCfg
 
 current_folder = os.path.dirname(__file__)
 
@@ -21,9 +21,10 @@ class TestSelfPropelling(unittest.TestCase):
             cfg = yaml.unsafe_load(f)
 
         run_cfg: CollectDataCfg = cfg["run_cfg"] 
+        int_cfg: IntegrationCfg = run_cfg.int_cfg
 
         run_cfg.folder_path = os.path.join(folder_path, "test")
-        run_cfg.update_type = UpdateType.WINDOWS
+        int_cfg.update_type = UpdateType.WINDOWS
         run_cfg.func = collect_pipelines.get_func(run_cfg.func_id)
 
         sim = Simulation(**cfg)
@@ -54,9 +55,10 @@ class TestSelfPropelling(unittest.TestCase):
             cfg = yaml.unsafe_load(f)
 
         run_cfg: CollectDataCfg = cfg["run_cfg"] 
+        int_cfg: IntegrationCfg = run_cfg.int_cfg
 
         run_cfg.folder_path = os.path.join(folder_path, "test")
-        run_cfg.update_type = UpdateType.WINDOWS
+        int_cfg.update_type = UpdateType.WINDOWS
         run_cfg.func = collect_pipelines.get_func(run_cfg.func_id)
 
         sim = Simulation(**cfg)

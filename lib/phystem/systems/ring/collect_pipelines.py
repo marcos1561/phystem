@@ -1,10 +1,11 @@
-from phystem.core.solvers import SolverCore
-from phystem.systems.ring.run_config import CollectDataCfg 
-
 from phystem.systems.ring.simulation import Simulation
+from phystem.core.solvers import SolverCore
 from phystem.systems.ring import collectors
 
+from phystem.core.run_config import CollectDataCfg 
+
 from phystem.utils import progress
+
 
 class CollectPlCfg:
     '''
@@ -34,7 +35,7 @@ def state(sim: Simulation, collect_cfg: CollectPlCfg):
     if not collect_cfg.only_last:
         state_collector = collectors.State(
             solver, run_cfg.folder_path, sim.configs,
-            dt=run_cfg.dt, tf=run_cfg.tf, num_points=1000,
+            dt=run_cfg.int_cfg.dt, tf=run_cfg.tf, num_points=1000,
         )
         
         state_collector.collect(0)
@@ -50,7 +51,7 @@ def state(sim: Simulation, collect_cfg: CollectPlCfg):
     else:
         state_collector = collectors.State(
             solver, run_cfg.folder_path, sim.configs,
-            tf=0, dt=run_cfg.dt, num_points=2,
+            tf=0, dt=run_cfg.int_cfg.dt, num_points=2,
         )
         
         state_collector.collect(0)
@@ -68,7 +69,7 @@ def area(sim: Simulation, collect_cfg: CollectPlCfg):
     prog = progress.Continuos(run_cfg.tf)
     area_collector = collectors.AreaCollector(
         solver, run_cfg.folder_path, sim.configs,
-        tf=run_cfg.tf, dt=run_cfg.dt, num_points=1000,
+        tf=run_cfg.tf, dt=run_cfg.int_cfg.dt, num_points=1000,
     )
     
     count = 1

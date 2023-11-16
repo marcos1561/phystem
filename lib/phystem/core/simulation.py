@@ -44,11 +44,13 @@ class SimulationCore(ABC):
         if self.run_cfg.checkpoint:
             if not self.run_cfg.checkpoint.override_cfgs:
                 checkpoint_cfgs = self.run_cfg.checkpoint.configs
+                self.run_cfg.int_cfg = checkpoint_cfgs["run_cfg"].int_cfg 
                 self.creator_cfg = checkpoint_cfgs["creator_cfg"]
                 self.space_cfg = checkpoint_cfgs["space_cfg"]
                 self.dynamic_cfg = checkpoint_cfgs["dynamic_cfg"]
                 self.other_cfgs = checkpoint_cfgs["other_cfgs"]
                 self.rng_seed = checkpoint_cfgs["rng_seed"]
+
 
         self.configs_container = {
             "creator_cfg": self.creator_cfg,
@@ -59,16 +61,8 @@ class SimulationCore(ABC):
             "rng_seed": self.rng_seed,
         }
 
-
-        # Coleção contendo as configurações utilizadas para salvá-las.
+        # Cópia das configurações para salvá-las.
         self.configs = {name: deepcopy(cfg) for name, cfg in self.configs_container.items()}
-        # self.configs = {
-        #     "creator_cfg": deepcopy(creator_cfg),
-        #     "dynamic_cfg": deepcopy(dynamic_cfg),
-        #     "space_cfg": deepcopy(space_cfg),
-        #     "run_cfg": deepcopy(run_cfg),
-        #     "rng_seed": deepcopy(rng_seed),
-        # }
 
         if run_cfg.id is RunType.COLLECT_DATA:
             # Como a configuração 'func' é uma função, ela não é salva.

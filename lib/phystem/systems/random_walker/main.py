@@ -1,4 +1,4 @@
-from phystem.core.run_config import RealTimeCfg, SaveCfg
+from phystem.core.run_config import RealTimeCfg, SaveCfg, IntegrationCfg
 
 from phystem.systems.random_walker.configs import *
 from phystem.systems.random_walker.simulation import Simulation
@@ -18,7 +18,9 @@ creator_cfg = CreatorCfg(
 )
 
 run_cfg = RealTimeCfg(
-    dt=0.1,
+    IntegrationCfg(
+        dt=0.1,
+    ),
     num_steps_frame=1,
     fps=60,
 )

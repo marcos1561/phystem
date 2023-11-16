@@ -41,22 +41,25 @@ dynamic_cfg: !!python/object:phystem.systems.ring.configs.RingCfg
   vo: 1
 other_cfgs: null
 rng_seed: 40028922
-run_cfg: !!python/object:phystem.systems.ring.run_config.CollectDataCfg
+run_cfg: !!python/object:phystem.core.run_config.CollectDataCfg
   checkpoint: null
-  dt: 0.0005
   folder_path: normal_data
   func: nao salvo
   func_cfg: null
   func_id: !!python/object/apply:phystem.systems.ring.collect_pipelines.FuncID
   - 1
-  num_col_windows: null
-  solver_type: !!python/object/apply:phystem.core.run_config.SolverType
-  - 2
   tf: 100
-  update_type: !!python/object/apply:phystem.core.run_config.UpdateType
-  - 1
   integration_type: !!python/object/apply:phystem.systems.ring.run_config.IntegrationType
   - 0
-  windows_update_freq: 1
+  int_cfg: !!python/object:phystem.systems.ring.run_config.IntegrationCfg
+    dt: 0.0005
+    integration_type: !!python/object/apply:phystem.systems.ring.run_config.IntegrationType
+    - 0
+    num_col_windows: null
+    solver_type: !!python/object/apply:phystem.core.run_config.SolverType
+    - 2
+    update_type: !!python/object/apply:phystem.core.run_config.UpdateType
+    - 1
+    windows_update_freq: 1
 space_cfg: !!python/object:phystem.systems.ring.configs.SpaceCfg
   size: 30

@@ -2,8 +2,8 @@ from phystem.core.simulation import SimulationCore
 from phystem.systems.szabo import creators 
 import phystem.systems.szabo.solvers as solvers 
 
-from phystem.core.run_config import RunType, SolverType
-from phystem.systems.szabo.run_config import RealTimeCfg
+from phystem.core.run_config import RealTimeCfg, RunType, SolverType
+from phystem.systems.szabo.run_config import IntegrationCfg
 from phystem.systems.szabo.configs import CreatorCfg
 
 from phystem.systems.szabo.ui.graph import ParticlesGraph, Info, MeanVelGraph
@@ -24,12 +24,12 @@ class Simulation(SimulationCore):
 
         if self.run_cfg.id is RunType.REPLAY_DATA:
             return solvers.SolverRD(self.run_cfg)
-        
-        solver_type = self.run_cfg.solver_type
 
+        int_cfg: IntegrationCfg = self.run_cfg.int_cfg        
+        solver_type = int_cfg.solver_type
         if solver_type is SolverType.CPP:
             return solvers.CppSolver(self.creator.pos, self.creator.vel, self.dynamic_cfg,
-                self.space_cfg.size, self.run_cfg.dt, self.run_cfg.num_windows, self.run_cfg.update_type, self.rng_seed)  
+                self.space_cfg.size, int_cfg.dt, int_cfg.num_col_windows, int_cfg.update_type, self.rng_seed)  
         elif solver_type is SolverType.PYTHON:
             raise Exception("Python solver ainda não implementado.")
 

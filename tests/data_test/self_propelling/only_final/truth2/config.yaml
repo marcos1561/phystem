@@ -1,9 +1,9 @@
-creator_cfg: !!python/object:phystem.systems.self_propelling.configs.CreatorCfg
+creator_cfg: !!python/object:phystem.systems.szabo.configs.CreatorCfg
   n: 10
   r: 5.5
-  type: !!python/object/apply:phystem.systems.self_propelling.configs.CreateType
+  type: !!python/object/apply:phystem.systems.szabo.configs.CreateType
   - 2
-dynamic_cfg: !!python/object:phystem.systems.self_propelling.configs.SelfPropellingCfg
+dynamic_cfg: !!python/object:phystem.systems.szabo.configs.SelfPropellingCfg
   max_attractive_force: 1.0
   max_r: 1.0
   max_repulsive_force: 1.0
@@ -12,24 +12,23 @@ dynamic_cfg: !!python/object:phystem.systems.self_propelling.configs.SelfPropell
   r_eq: 0.8333333333333334
   relaxation_time: 1.0
   vo: 1.0
-rng_seed: 40028922
-run_cfg: !!python/object:phystem.systems.self_propelling.run_config.CollectDataCfg
-  dt: 0.01
-  folder_path: /home/marcos/Documents/Programacao/IC/active-matter/tests/data_test/self_propelling/only_final/truth2
-  func: nao salvo
-  func_cfg: !!python/object:phystem.systems.self_propelling.collect_pipelines.CollectPlCfg
-    only_last: true
-  func_id: !!python/object/apply:phystem.systems.self_propelling.collect_pipelines.FuncID
-  - 1
-  num_windows: 10
-  solver_type: !!python/object/apply:phystem.core.run_config.SolverType
-  - 2
-  tf: 100
-  update_type: !!python/object/apply:phystem.core.run_config.UpdateType
-  - 1
+other_cfgs: 40028922
+rng_seed: null
+run_cfg: !!python/object:phystem.core.run_config.CollectDataCfg
   checkpoint: null
-  integration_type: !!python/object/apply:phystem.systems.ring.run_config.IntegrationType
-  - 0
-  windows_update_freq: 1
-space_cfg: !!python/object:phystem.systems.self_propelling.configs.SpaceCfg
+  folder_path: /home/marcos/Documents/Programacao/IC/phystem/tests/data_test/self_propelling/only_final/truth2
+  func: nao salvo
+  func_cfg: !!python/object:phystem.systems.szabo.collect_pipelines.CollectPlCfg
+    only_last: true
+  func_id: !!python/object/apply:phystem.systems.szabo.collect_pipelines.FuncID
+  - 1
+  int_cfg: !!python/object:phystem.systems.szabo.run_config.IntegrationCfg
+    dt: 0.01
+    num_col_windows: 10
+    solver_type: !!python/object/apply:phystem.core.run_config.SolverType
+    - 2
+    update_type: !!python/object/apply:phystem.core.run_config.UpdateType
+    - 1
+  tf: 100
+space_cfg: !!python/object:phystem.systems.szabo.configs.SpaceCfg
   size: 11

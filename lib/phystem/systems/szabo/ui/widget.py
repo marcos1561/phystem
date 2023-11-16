@@ -1,7 +1,6 @@
 from matplotlib.widgets import Button, Slider
 
-from phystem.systems.szabo.run_config import RealTimeCfg
-from phystem.systems.szabo.run_config import RealTimeCfg
+from phystem.core.run_config import RealTimeCfg
 from phystem.core.run_config import RealTimeCfg, RunType
 from phystem.gui_phystem import widget
 

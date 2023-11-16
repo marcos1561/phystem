@@ -1,18 +1,17 @@
 import numpy as np
 
 from phystem.core.run_config import ReplayDataCfg, UpdateType
-from phystem.systems.ring.configs import RingCfg
-from phystem.systems.ring.run_config import IntegrationType
+from phystem.systems.ring.configs import RingCfg, SpaceCfg
+from phystem.systems.ring.run_config import IntegrationCfg
 from phystem import cpp_lib
 
 class CppSolver:
     def __init__(self, pos: np.ndarray, self_prop_angle: np.ndarray, 
-        dynamic_cfg: RingCfg, size: float, dt: float, num_col_windows: int, update_type: UpdateType, 
-        integration_type=IntegrationType.euler, rng_seed=None, windows_update_freq=1) -> None:
+        dynamic_cfg: RingCfg, space_cfg: SpaceCfg, int_cfg: IntegrationCfg, rng_seed=None) -> None:
         if rng_seed is None:
             rng_seed = -1
-        if num_col_windows is None:
-            num_col_windows = 1
+        if int_cfg.num_col_windows is None:
+            int_cfg.num_col_windows = 1
 
         dynamic_cfg = cpp_lib.configs.RingCfg(dynamic_cfg.cpp_constructor_args())
         
@@ -22,17 +21,22 @@ class CppSolver:
         pos = cpp_lib.data_types.Vector3d(pos_in)
         self_prop_angle = cpp_lib.data_types.List2d(angle_in)
 
-        self.cpp_solver = cpp_lib.solvers.Ring(pos, self_prop_angle, dynamic_cfg, size, dt, num_col_windows, 
-            rng_seed, windows_update_freq, integration_type.value)
+        self.cpp_solver = cpp_lib.solvers.Ring(
+            pos, self_prop_angle, 
+            dynamic_cfg, 
+            space_cfg.size, 
+            int_cfg.dt, int_cfg.num_col_windows, 
+            rng_seed, 
+            int_cfg.windows_update_freq, int_cfg.integration_type.value)
 
         update_type_to_func = {
             UpdateType.NORMAL: self.cpp_solver.update_normal,
             UpdateType.WINDOWS: self.cpp_solver.update_windows,
         }
-        self.update_func = update_type_to_func[update_type]
+        self.update_func = update_type_to_func[int_cfg.update_type]
 
         self.time = 0
-        self.dt = dt
+        self.dt = int_cfg.dt
         self.n = len(self_prop_angle)
 
     @property

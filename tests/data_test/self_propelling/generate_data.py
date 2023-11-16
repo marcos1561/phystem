@@ -1,11 +1,12 @@
 import os
 
-from phystem.systems.szabo.configs import *
-from phystem.systems.szabo.run_config import CollectDataCfg
-from phystem.core.run_config import SolverType, UpdateType
 from phystem.systems.szabo.simulation import Simulation
-from phystem.systems.szabo.collect_pipelines import CollectPlCfg
 from phystem.systems.szabo import collect_pipelines
+
+from phystem.systems.szabo.configs import *
+from phystem.systems.szabo.run_config import IntegrationCfg
+from phystem.core.run_config import CollectDataCfg, SolverType, UpdateType
+from phystem.systems.szabo.collect_pipelines import CollectPlCfg
 
 current_folder = os.path.dirname(__file__)
 
@@ -34,15 +35,17 @@ def generate_final_run_data_1():
         seed = 40028922
 
         run_cfg = CollectDataCfg(
+            IntegrationCfg(
+                dt = 0.05,
+                num_col_windows=15,
+                solver_type=SolverType.CPP,
+                update_type=UpdateType.NORMAL,
+            ),
             tf = 20,
-            dt = 0.05,
-            num_windows=15,
             folder_path=os.path.join(current_folder, "only_final/truth"),
             func_id=collect_pipelines.FuncID.state,
             get_func=collect_pipelines.get_func,
             func_cfg=CollectPlCfg(only_last=True),
-            solver_type=SolverType.CPP,
-            update_type=UpdateType.NORMAL,
         )
 
         sim = Simulation(creator_cfg, self_propelling_cfg, space_cfg, run_cfg, seed)
@@ -73,15 +76,17 @@ def generate_final_run_data_2():
         seed = 40028922
 
         run_cfg = CollectDataCfg(
+            IntegrationCfg(
+                dt=0.01,
+                num_col_windows=10,
+                solver_type=SolverType.CPP,
+                update_type=UpdateType.NORMAL,
+            ),
             tf = 100,
-            dt = 0.01,
-            num_windows=10,
             folder_path=os.path.join(current_folder, "only_final/truth2"),
             func_id=collect_pipelines.FuncID.state,
             get_func=collect_pipelines.get_func,
             func_cfg=CollectPlCfg(only_last=True),
-            solver_type=SolverType.CPP,
-            update_type=UpdateType.NORMAL,
         )
 
         sim = Simulation(creator_cfg, self_propelling_cfg, space_cfg, run_cfg, seed)

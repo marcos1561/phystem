@@ -32,7 +32,7 @@ class Simulation(SimulationCore):
             po0, vel0,
             noise_strength = self.dynamic_cfg.noise_strength,
             size = self.space_cfg.size,
-            dt = self.run_cfg.dt,
+            dt = self.run_cfg.int_cfg.dt,
         )
 
     def run_real_time(self):

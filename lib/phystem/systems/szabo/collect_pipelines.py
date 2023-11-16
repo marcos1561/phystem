@@ -20,7 +20,7 @@ import phystem.systems.szabo.collectors as collectors
 from phystem.systems.szabo.simulation import Simulation
 from phystem.systems.szabo.solvers import CppSolver
 from phystem.systems.szabo.configs import *
-from phystem.systems.szabo.run_config import CollectDataCfg
+from phystem.core.run_config import CollectDataCfg
 
 from phystem.utils import progress
 
@@ -45,7 +45,7 @@ def state(sim: Simulation, collect_cfg: CollectPlCfg):
     if not collect_cfg.only_last:
         state_collector = collectors.State(
             solver, run_cfg.folder_path, sim.configs,
-            dt=run_cfg.dt, tf=run_cfg.tf, num_points=1000,
+            dt=run_cfg.int_cfg.dt, tf=run_cfg.tf, num_points=1000,
         )
         
         state_collector.collect(0)
@@ -61,7 +61,7 @@ def state(sim: Simulation, collect_cfg: CollectPlCfg):
     else:
         state_collector = collectors.State(
             solver, run_cfg.folder_path, sim.configs,
-            tf=0, dt=run_cfg.dt, num_points=2,
+            tf=0, dt=run_cfg.int_cfg.dt, num_points=2,
         )
         
         state_collector.collect(0)
@@ -90,7 +90,7 @@ def nabla_range(sim: Simulation, collect_cfg: CollectDataCfg):
         sim.init_sim()
 
         collector = collectors.MeanVel(
-            solver, run_cfg.tf, run_cfg.dt,
+            solver, run_cfg.tf, run_cfg.int_cfg.dt,
             num_points=num_points, path=run_cfg.folder_path,
         )
 

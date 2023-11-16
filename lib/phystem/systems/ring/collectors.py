@@ -1,6 +1,5 @@
 import numpy as np
-import os, yaml, pickle
-from phystem.core.solvers import SolverCore
+import os, pickle
 
 from phystem.systems.ring.solvers import CppSolver
 from phystem.core import collectors
