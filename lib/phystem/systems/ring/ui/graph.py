@@ -15,7 +15,7 @@ from phystem.systems.ring.configs import RingCfg, SpaceCfg, CreatorCfg, RingCfg
 
 class GraphCfg:
     def __init__(self, show_circles=False, show_f_spring=False, show_f_vol=False, show_f_area=False, 
-        show_f_total=False, force_to_color=None, begin_paused=False, cpp_is_debug=True) -> None:
+        show_f_total=False, force_to_color=None, begin_paused=False, pause_on_high_vel=False, cpp_is_debug=True) -> None:
         self.show_circles = show_circles
         self.show_f_spring = show_f_spring
         self.show_f_vol = show_f_vol
@@ -25,6 +25,8 @@ class GraphCfg:
         self.show_pos_cont = False
 
         self.begin_paused = begin_paused
+        self.pause_on_high_vel = pause_on_high_vel
+
         self.cpp_is_debug = cpp_is_debug
 
         self.force_to_color = force_to_color

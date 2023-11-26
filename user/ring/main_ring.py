@@ -4,7 +4,7 @@ from phystem.systems.ring.simulation import Simulation
 from phystem.systems.ring import collect_pipelines
 
 from phystem.systems.ring.configs import *
-from phystem.core.run_config import UpdateType, SolverType, RunType
+from phystem.core.run_config import UpdateType, RunType, CheckpointCfg
 from phystem.core.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, ReplayDataCfg
 from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg
 from phystem.systems.ring.ui.graph import GraphCfg
@@ -56,28 +56,35 @@ creator_cfg = CreatorCfg(
 seed = 40028922
 seed = None
 
-run_type = RunType.SAVE_VIDEO
+run_type = RunType.REAL_TIME
 
 real_time_cfg = RealTimeCfg(
     int_cfg=IntegrationCfg(
-        dt = 0.001,
+        # dt = 0.001*5, # max euler
+        dt = 0.001*5 * 1.55,
         num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
-        integration_type=IntegrationType.euler,
+        integration_type=IntegrationType.verlet,
         update_type=UpdateType.WINDOWS,
     ),
-    num_steps_frame=200,
-    fps = 60,
+    num_steps_frame=100,
+    fps=60,
     graph_cfg = GraphCfg(
-        show_circles  = True,
-        show_f_spring = False,
-        show_f_vol    = False,
-        show_f_area   = False,
-        show_f_total  = False,
-        begin_paused  = False,
-        cpp_is_debug  = True,
+        show_circles      = True,
+        show_f_spring     = False,
+        show_f_vol        = False,
+        show_f_area       = False,
+        show_f_total      = False,
+        begin_paused      = False,
+        pause_on_high_vel = True,
+        cpp_is_debug      = True,
     ),
+    checkpoint=CheckpointCfg(
+        folder_path="checkpoint/data",
+        override_cfgs=True,
+    )
 )
+print(real_time_cfg.int_cfg.num_col_windows)
 
 replay_data_cfg = None
 if run_type is RunType.REPLAY_DATA:
@@ -101,17 +108,17 @@ collect_data_cfg = CollectDataCfg(
         integration_type=IntegrationType.euler,
         update_type=UpdateType.WINDOWS,
     ),
-    tf=30,
-    folder_path="data_test",
-    func = collect_pipelines.last_pos,
+    tf=3,
+    folder_path="checkpoint/data",
+    func = collect_pipelines.checkpoints,
     # func_id = collect_pipelines.FuncID.state,
     # get_func= collect_pipelines.get_func,
     # func_cfg = collect_pipelines.CollectPlCfg(
     #     only_last=False, 
     # ),
-    # func_cfg = collect_pipelines.CheckPointCfg(
-    #     num_checkpoints=20, 
-    # ),
+    func_cfg = collect_pipelines.CheckPointCfg(
+        num_checkpoints=20, 
+    ),
 )
 
 save_cfg = SaveCfg(

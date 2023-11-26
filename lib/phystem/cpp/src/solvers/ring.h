@@ -3,6 +3,7 @@
 #include <array>
 #include <iostream>
 #include <cstdlib> 
+#include <omp.h>
 
 #include "../configs/ring.h"
 #include "../rng_manager.h"
@@ -51,6 +52,7 @@ struct AreaDebug {
 
 struct UpdateDebug {
     int count_zero_speed;
+    bool high_vel;
 };
 
 class Ring {
@@ -78,9 +80,9 @@ public:
     double force_r_lim;
 
     Vector3d pos; // Posições das partículas
-    Vector3d vel; // Velocidades das partículas (Utilizado pelo verlet)
+    // Vector3d vel; // Velocidades das partículas (Utilizado pelo verlet)
     vector<vector<double>> self_prop_angle; // Ângulo da direção da velocidade auto propulsora
-    vector<vector<double>> self_prop_angle_deriv; // Derivada do ângulo da direção da velocidade auto propulsora. (Utilizado pelo verlet)
+    // vector<vector<double>> self_prop_angle_deriv; // Derivada do ângulo da direção da velocidade auto propulsora. (Utilizado pelo verlet)
     
     Vector3d old_pos; // Posições das partículas
     vector<vector<double>> old_self_prop_angle; // Ângulo da direção da velocidade auto propulsora
@@ -90,6 +92,12 @@ public:
     double dt; 
     int windows_update_freq; 
     int integration_type;
+
+    double base_dt;
+    double low_dt;
+    int num_low_dt;
+    int dt_count;
+    bool is_low_dt;
 
     double sim_time;
     int num_time_steps;
@@ -108,6 +116,11 @@ public:
     Vector3d pos_continuos; // Posições das partículas de forma contínua
     //=========//
 
+    //==
+    // RK4
+    //==
+    // (k_i, anel, partícula, [x, y, theta])
+    vector<vector<vector<array<double, 3>>>> k_matrix;
 
     //==
     // DEBUG
@@ -130,7 +143,7 @@ public:
     RngManager rng_manager;
     IntersectionCalculator intersect;
 
-    UpdateDebug update_debug = {0};
+    UpdateDebug update_debug = {0, false};
     SpringDebug spring_debug = {0};
     ExcludedVolDebug excluded_vol_debug = {0};
     AreaDebug area_debug = {0};
@@ -153,6 +166,12 @@ public:
         num_rings = pos0.size();
         sim_time = 0.0;
         num_time_steps = 0;
+        
+        base_dt = dt;
+        low_dt = 0.001;
+        num_low_dt = (int)(base_dt/low_dt) * 100;
+        dt_count = 0;
+        is_low_dt = false;
 
         windows_manager = WindowsManagerRing(&pos, num_col_windows, num_col_windows, size, windows_update_freq);
 
@@ -193,14 +212,18 @@ public:
         auto zero_vector_2d = vector<array<double, 2>>(num_particles, {0., 0.}); 
 
         old_pos = Vector3d(num_rings, zero_vector_2d);
-        vel = Vector3d(num_rings, zero_vector_2d);
+        // vel = Vector3d(num_rings, zero_vector_2d);
         old_self_prop_angle = vector<vector<double>>(num_rings, zero_vector_1d);
-        self_prop_angle_deriv = vector<vector<double>>(num_rings, zero_vector_1d);
+        // self_prop_angle_deriv = vector<vector<double>>(num_rings, zero_vector_1d);
         
         sum_forces_matrix = Vector3d(num_rings, zero_vector_2d);
         
         differences = Vector3d(num_rings, zero_vector_2d);
         pos_continuos = Vector3d(num_rings, zero_vector_2d);
+
+        auto deriv_particles = vector<array<double, 3>>(num_particles, {0., 0., 0.});
+        auto deriv_rings = vector<vector<array<double, 3>>>(num_rings, deriv_particles);
+        k_matrix = vector<vector<vector<array<double, 3>>>>(4, deriv_rings);
 
         #if DEBUG == 1
         // for (int i = 0; i < num_skip_steps; i++)
@@ -600,7 +623,7 @@ public:
         }
     }
 
-    void calc_derivate(Vec2d &vel_i, double &angle_deriv_i, int ring_id, int particle_id) {
+    void calc_derivate(double &vel_x, double &vel_y, double &angle_deriv_i, int ring_id, int particle_id) {
         int i = particle_id;
         Vec2d self_vel_i = {cos(self_prop_angle[ring_id][i]), sin(self_prop_angle[ring_id][i])};
 
@@ -625,6 +648,7 @@ public:
 
         #if DEBUG == 1
         if (speed > 1e6) {
+            update_debug.high_vel = true;
             std::cout << "Error: High velocity" << std::endl;
         }
         #endif
@@ -646,63 +670,99 @@ public:
             angle_derivate = 1. / relax_time * asin(cross_prod) + noise_rot;
         }
 
-        vel_i[0] = vel_x_i;
-        vel_i[1] = vel_y_i;
+        vel_x = vel_x_i;
+        vel_y = vel_y_i;
         angle_deriv_i = angle_derivate;
     }
 
-    void advance_time(int ring_id) {
+    void advance_time() {
         double angle_deriv_i;
         Vec2d vel_i;
 
-        for (int i=0; i < num_particles; i++) {
-            calc_derivate(vel_i, angle_deriv_i, ring_id, i);
+        // #if DEBUG == 1
+        // if (is_low_dt == true) {
+        //     dt_count ++;
 
-            pos[ring_id][i][0] += vel_i[0] * dt;
-            pos[ring_id][i][1] += vel_i[1] * dt;
-            self_prop_angle[ring_id][i] += angle_deriv_i * dt;
+        //     if (dt_count > num_low_dt) {
+        //         is_low_dt = false;
+        //         dt = base_dt;
+        //     }
+        // }
 
-            if (isnan(pos[ring_id][i][0]) == true) {
-                std::cout << "Error: pos nan 1" << std::endl;
-            }
+        // if (is_low_dt == false) {
+        //     double max_force = 0;
+        //     for (int ring_id = 0; ring_id < num_rings; ring_id++) {
+        //         for (auto& f: total_forces[ring_id]) {
+        //             double f_mod = vector_mod(f);
+        //             if (f_mod > max_force) {
+        //                 max_force = f_mod;
+        //             }
+        //         }
+        //     }
+            
+        //     // std::cout << "Max Force: " << max_force << std::endl;
 
-            for (int dim = 0; dim < 2.f; dim ++) {
-                if (pos[ring_id][i][dim] > size/2.f)
-                    pos[ring_id][i][dim] -= size;
-                else if (pos[ring_id][i][dim] < -size/2.f)
-                    pos[ring_id][i][dim] += size;
-            }
+        //     if (max_force > 15) {
+        //         dt = low_dt;
+        //         is_low_dt = true;
+        //         dt_count = 0;
+        //     }
+        // }
+        // #endif
 
-            #if DEBUG == 1
-            if (isnan(pos[ring_id][i][0]) == true)
-                std::cout << "Error: pos_nan 2" << std::endl;
+        for (int ring_id = 0; ring_id < num_rings; ring_id++) {
+            for (int i=0; i < num_particles; i++) {
+                calc_derivate(vel_i[0], vel_i[1], angle_deriv_i, ring_id, i);
 
-            total_forces[ring_id][i][0] = sum_forces_matrix[ring_id][i][0];
-            total_forces[ring_id][i][1] = sum_forces_matrix[ring_id][i][1];
-            #endif
+                pos[ring_id][i][0] += vel_i[0] * dt;
+                pos[ring_id][i][1] += vel_i[1] * dt;
+                self_prop_angle[ring_id][i] += angle_deriv_i * dt;
 
-            sum_forces_matrix[ring_id][i][0] = 0.f;
-            sum_forces_matrix[ring_id][i][1] = 0.f;
-        }        
+                #if DEBUG == 1
+                if (isnan(pos[ring_id][i][0]) == true) {
+                    std::cout << "Error: pos nan 1" << std::endl;
+                }
+                #endif
+
+                for (int dim = 0; dim < 2.f; dim ++) {
+                    if (pos[ring_id][i][dim] > size/2.f)
+                        pos[ring_id][i][dim] -= size;
+                    else if (pos[ring_id][i][dim] < -size/2.f)
+                        pos[ring_id][i][dim] += size;
+                }
+
+                #if DEBUG == 1
+                if (isnan(pos[ring_id][i][0]) == true)
+                    std::cout << "Error: pos_nan 2" << std::endl;
+
+                total_forces[ring_id][i][0] = sum_forces_matrix[ring_id][i][0];
+                total_forces[ring_id][i][1] = sum_forces_matrix[ring_id][i][1];
+                #endif
+
+                sum_forces_matrix[ring_id][i][0] = 0.f;
+                sum_forces_matrix[ring_id][i][1] = 0.f;
+            }        
+        }
     }
 
     void advance_time_verlet() {
         for (int ring_id = 0; ring_id < num_rings; ring_id++)
         {
             for (int i=0; i < num_particles; i++) {
-                auto& vel_i = vel[ring_id][i];
-                auto& angle_deriv_i = self_prop_angle_deriv[ring_id][i];
+                auto& vel_x = k_matrix[0][ring_id][i][0];
+                auto& vel_y = k_matrix[0][ring_id][i][1];
+                auto& angle_deriv_i = k_matrix[0][ring_id][i][2];
 
                 #if DEBUG == 1
-                if (isnan(vel_i[0]) == true) {
+                if (isnan(vel_x) == true) {
                     std::cout << "Error: vel nan 1" << std::endl;
                 }
                 #endif
                 
-                calc_derivate(vel_i, angle_deriv_i, ring_id, i);
+                calc_derivate(vel_x, vel_y, angle_deriv_i, ring_id, i);
 
                 #if DEBUG == 1
-                if (isnan(vel_i[0]) == true) {
+                if (isnan(vel_x) == true) {
                     std::cout << "Error: vel nan 2" << std::endl;
                 }
                 #endif
@@ -711,8 +771,8 @@ public:
                 old_pos[ring_id][i][1] = pos[ring_id][i][1];
                 old_self_prop_angle[ring_id][i] = self_prop_angle[ring_id][i];
                 
-                pos[ring_id][i][0] += vel_i[0] * dt;
-                pos[ring_id][i][1] += vel_i[1] * dt;
+                pos[ring_id][i][0] += vel_x * dt;
+                pos[ring_id][i][1] += vel_y * dt;
                 self_prop_angle[ring_id][i] += angle_deriv_i * dt;
 
                 #if DEBUG == 1
@@ -740,19 +800,23 @@ public:
         
         calc_forces_windows();
 
-        double angle_deriv_i;
-        Vec2d vel_i;
+        double angle_deriv_2;
+        Vec2d vel2;
         for (int ring_id = 0; ring_id < num_rings; ring_id++)
         {
             for (int i=0; i < num_particles; i++) {
-                calc_derivate(vel_i, angle_deriv_i, ring_id, i);
-
+                calc_derivate(vel2[0], vel2[1], angle_deriv_2, ring_id, i);
+                
                 auto& old_pos_i = old_pos[ring_id][i];
-                auto& vel1 = vel[ring_id][i];
+                auto& old_angle_i = old_self_prop_angle[ring_id][i];
 
-                pos[ring_id][i][0] = old_pos_i[0] + 0.5 * (vel1[0] + vel_i[0]) * dt;
-                pos[ring_id][i][1] = old_pos_i[1] + 0.5 * (vel1[1] + vel_i[1]) * dt;
-                self_prop_angle[ring_id][i] = old_self_prop_angle[ring_id][i] + 0.5 * (self_prop_angle_deriv[ring_id][i] + angle_deriv_i) * dt;
+                auto& k1 = k_matrix[0][ring_id][i];
+                Vec2d vel1 = {k1[0], k1[1]};
+                auto angle_deriv_1 = k1[2];
+
+                pos[ring_id][i][0] = old_pos_i[0] + 0.5 * (vel1[0] + vel2[0]) * dt;
+                pos[ring_id][i][1] = old_pos_i[1] + 0.5 * (vel1[1] + vel2[1]) * dt;
+                self_prop_angle[ring_id][i] = old_angle_i + 0.5 * (angle_deriv_1 + angle_deriv_2) * dt;
 
                 if (isnan(pos[ring_id][i][0]) == true) {
                     std::cout << "Error: pos nan 1" << std::endl;
@@ -779,6 +843,157 @@ public:
         }
     }
 
+    void advance_time_rk4() {
+        // if (is_low_dt == true) {
+        //     dt_count ++;
+
+        //     if (dt_count > num_low_dt) {
+        //         is_low_dt = false;
+        //         dt = base_dt;
+        //     }
+        // }
+
+        // if (is_low_dt == false) {
+        //     double max_force = 0;
+        //     for (int ring_id = 0; ring_id < num_rings; ring_id++) {
+        //         for (auto& f: total_forces[ring_id]) {
+        //             double f_mod = vector_mod(f);
+        //             if (f_mod > max_force) {
+        //                 max_force = f_mod;
+        //             }
+        //         }
+        //     }
+            
+        //     // std::cout << "Max Force: " << max_force << std::endl;
+
+        //     if (max_force > 15) {
+        //         dt = low_dt;
+        //         is_low_dt = true;
+        //         dt_count = 0;
+        //     }
+        // }
+
+        
+        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        {
+            for (int p_id = 0; p_id < num_particles; p_id++)
+            {
+                old_pos[ring_id][p_id][0] = pos[ring_id][p_id][0];
+                old_pos[ring_id][p_id][1] = pos[ring_id][p_id][1];
+                old_self_prop_angle[ring_id][p_id] = self_prop_angle[ring_id][p_id];
+            }
+        }
+        
+        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        {
+            for (int i=0; i < num_particles; i++) {
+                double& vel_i_x = k_matrix[0][ring_id][i][0];
+                double& vel_i_y = k_matrix[0][ring_id][i][1];
+                double& angle_deriv_i = k_matrix[0][ring_id][i][2];
+
+                calc_derivate(vel_i_x, vel_i_y, angle_deriv_i, ring_id, i);
+
+                pos[ring_id][i][0] += vel_i_x * dt * 0.5;
+                pos[ring_id][i][1] += vel_i_y * dt * 0.5;
+                self_prop_angle[ring_id][i] += angle_deriv_i * dt * 0.5;
+
+                for (int dim = 0; dim < 2.f; dim ++) {
+                    if (pos[ring_id][i][dim] > size/2.f)
+                        pos[ring_id][i][dim] -= size;
+                    else if (pos[ring_id][i][dim] < -size/2.f)
+                        pos[ring_id][i][dim] += size;
+                }
+
+                sum_forces_matrix[ring_id][i][0] = 0.f;
+                sum_forces_matrix[ring_id][i][1] = 0.f;
+            } 
+        }
+        calc_forces_windows();
+        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        {
+            for (int i=0; i < num_particles; i++) {
+                double& vel_i_x = k_matrix[1][ring_id][i][0];
+                double& vel_i_y = k_matrix[1][ring_id][i][1];
+                double& angle_deriv_i = k_matrix[1][ring_id][i][2];
+
+                calc_derivate(vel_i_x, vel_i_y, angle_deriv_i, ring_id, i);
+
+                pos[ring_id][i][0] = old_pos[ring_id][i][0] + vel_i_x * dt * 0.5;
+                pos[ring_id][i][1] = old_pos[ring_id][i][1] + vel_i_y * dt * 0.5;
+                self_prop_angle[ring_id][i] = old_self_prop_angle[ring_id][i] + angle_deriv_i * dt * 0.5;
+
+                for (int dim = 0; dim < 2.f; dim ++) {
+                    if (pos[ring_id][i][dim] > size/2.f)
+                        pos[ring_id][i][dim] -= size;
+                    else if (pos[ring_id][i][dim] < -size/2.f)
+                        pos[ring_id][i][dim] += size;
+                }
+
+                sum_forces_matrix[ring_id][i][0] = 0.f;
+                sum_forces_matrix[ring_id][i][1] = 0.f;
+            } 
+        }
+        calc_forces_windows();
+        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        {
+            for (int i=0; i < num_particles; i++) {
+                double& vel_i_x = k_matrix[2][ring_id][i][0];
+                double& vel_i_y = k_matrix[2][ring_id][i][1];
+                double& angle_deriv_i = k_matrix[2][ring_id][i][2];
+
+                calc_derivate(vel_i_x, vel_i_y, angle_deriv_i, ring_id, i);
+
+                pos[ring_id][i][0] = old_pos[ring_id][i][0] + vel_i_x * dt;
+                pos[ring_id][i][1] = old_pos[ring_id][i][1] + vel_i_y * dt;
+                self_prop_angle[ring_id][i] = old_self_prop_angle[ring_id][i] + angle_deriv_i * dt;
+
+                for (int dim = 0; dim < 2.f; dim ++) {
+                    if (pos[ring_id][i][dim] > size/2.f)
+                        pos[ring_id][i][dim] -= size;
+                    else if (pos[ring_id][i][dim] < -size/2.f)
+                        pos[ring_id][i][dim] += size;
+                }
+
+                sum_forces_matrix[ring_id][i][0] = 0.f;
+                sum_forces_matrix[ring_id][i][1] = 0.f;
+            } 
+        }
+        calc_forces_windows();
+        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        {
+            for (int i=0; i < num_particles; i++) {
+                double& vel_i_x = k_matrix[3][ring_id][i][0];
+                double& vel_i_y = k_matrix[3][ring_id][i][1];
+                double& angle_deriv_i = k_matrix[3][ring_id][i][2];
+
+                calc_derivate(vel_i_x, vel_i_y, angle_deriv_i, ring_id, i);
+                sum_forces_matrix[ring_id][i][0] = 0.f;
+                sum_forces_matrix[ring_id][i][1] = 0.f;
+            } 
+        }
+        
+        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        {
+            for (int i=0; i < num_particles; i++) {
+                auto& k1 = k_matrix[0][ring_id][i];
+                auto& k2 = k_matrix[1][ring_id][i];
+                auto& k3 = k_matrix[2][ring_id][i];
+                auto& k4 = k_matrix[3][ring_id][i];
+
+                pos[ring_id][i][0] = old_pos[ring_id][i][0] + dt * (1./6. * k1[0] + 1./3. * k2[0] + 1./3. * k3[0] + 1./6. * k4[0]);
+                pos[ring_id][i][1] = old_pos[ring_id][i][1] + dt * (1./6. * k1[1] + 1./3. * k2[1] + 1./3. * k3[1] + 1./6. * k4[1]);
+                self_prop_angle[ring_id][i] = old_self_prop_angle[ring_id][i] + dt * (1./6. * k1[2] + 1./3. * k2[2] + 1./3. * k3[2] + 1./6. * k4[2]);
+
+                for (int dim = 0; dim < 2.f; dim ++) {
+                    if (pos[ring_id][i][dim] > size/2.f)
+                        pos[ring_id][i][dim] -= size;
+                    else if (pos[ring_id][i][dim] < -size/2.f)
+                        pos[ring_id][i][dim] += size;
+                }
+            } 
+        }
+    }
+
     void update_normal() {
         #if DEBUG == 1
         rng_manager.update();
@@ -801,15 +1016,15 @@ public:
         switch (integration_type)
         {
         case 0:
-            for (int ring_id = 0; ring_id < num_rings; ring_id++) {
-                advance_time(ring_id);
-            }
+            advance_time();
             break;
         case 1:
             advance_time_verlet();
             break;
+        case 2:
+            advance_time_rk4();
+            break;
         }
-        
         
         #if DEBUG == 1
         update_graph_points();   
@@ -833,6 +1048,8 @@ public:
         #endif
 
         // Excluded volume
+        // #pragma omp parallel for \
+        // schedule(dynamic, 30)
         for (auto win_id: windows_manager.windows_ids) {
             auto & window = windows_manager.windows[win_id[0]][win_id[1]];
             auto & neighbors = windows_manager.window_neighbor[win_id[0]][win_id[1]];
@@ -898,12 +1115,13 @@ public:
         switch (integration_type)
         {
         case 0:
-            for (int ring_id = 0; ring_id < num_rings; ring_id++) {
-                advance_time(ring_id);
-            }
+            advance_time();
             break;
         case 1:
             advance_time_verlet();
+            break;
+        case 2:
+            advance_time_rk4();
             break;
         }
 
@@ -1005,36 +1223,6 @@ public:
                 calc_border_point(ring_id, p, p_after, p_graph_id + 1);
             }
         }
-    }
-
-    double mean_vel(int ring_id) {
-        double sum_vel[2] = {0, 0};
-        for (array<double, 2> vel_i: vel[ring_id]) {
-            double speed = sqrt(vel_i[0]*vel_i[0] + vel_i[1]*vel_i[1]);
-            
-            if (speed == 0)
-                continue;
-
-            sum_vel[0] += vel_i[0]/speed;
-            sum_vel[1] += vel_i[1]/speed;
-        }
-        double speed_total = sqrt(sum_vel[0]*sum_vel[0] + sum_vel[1]*sum_vel[1]);
-        return speed_total / num_particles;
-    }
-
-    array<double, 2> mean_vel_vec(int ring_id) {
-        array<double, 2> sum_vel = {0., 0.};
-        for (array<double, 2> vel_i: vel[ring_id]) {
-            double speed = sqrt(vel_i[0]*vel_i[0] + vel_i[1]*vel_i[1]);
-            if (speed == 0)
-                continue;
-
-            sum_vel[0] += vel_i[0]/speed;
-            sum_vel[1] += vel_i[1]/speed;
-        }
-        sum_vel[0] /= (double)num_particles;
-        sum_vel[1] /= (double)num_particles;
-        return sum_vel;
     }
 };
 

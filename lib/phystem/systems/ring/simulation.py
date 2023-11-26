@@ -6,11 +6,12 @@ from phystem.systems.ring.creators import CreatorRD, Creator
 from phystem.core.run_config import RunCfg, RunType, RealTimeCfg
 from phystem.systems.ring.configs import CreatorCfg, RingCfg
 
-from phystem.systems.ring.ui.graph import Info, MainGraph
+from phystem.systems.ring.ui.graph import Info, MainGraph, GraphCfg
 from phystem.systems.ring.ui.widget import WidgetManager
 from phystem.gui_phystem.widget import WidgetType
 
 class Simulation(SimulationCore):
+    solver: CppSolver
     creator_cfg: CreatorCfg
     dynamic_cfg: RingCfg
 
@@ -44,6 +45,7 @@ class Simulation(SimulationCore):
 
     def run_real_time(self):
         real_time_cfg: RealTimeCfg = self.run_cfg
+        graph_cfg: GraphCfg = real_time_cfg.graph_cfg
 
         fig, axes = self.configure_ui(real_time_cfg.id)
 
@@ -63,13 +65,18 @@ class Simulation(SimulationCore):
         info_graph.init()
         particles_graph.init()
         
-        if real_time_cfg.graph_cfg.begin_paused:
+        if graph_cfg.begin_paused:
             widget_manager.is_paused = True
 
         def update(frame):
             if not widget_manager.is_paused:
                 i = 0
                 while i < real_time_cfg.num_steps_frame:
+                    if graph_cfg.pause_on_high_vel:
+                        if self.solver.update_debug.high_vel:
+                            widget_manager.is_paused = True
+                            break
+
                     self.time_it.decorator(self.solver.update)
                     i += 1
 

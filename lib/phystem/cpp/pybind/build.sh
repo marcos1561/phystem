@@ -1,1 +1,1 @@
-c++ -O3 -Wall -shared -std=c++11 -fPIC $(python3 -m pybind11 --includes) pywrap.cpp -o ../../cpp_lib$(python3-config --extension-suffix)
+c++ -fopenmp -O3 -Wall -shared -std=c++11 -fPIC $(python3 -m pybind11 --includes) pywrap.cpp -o ../../cpp_lib$(python3-config --extension-suffix)

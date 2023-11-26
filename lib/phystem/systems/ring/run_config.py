@@ -6,6 +6,7 @@ from phystem.core.run_config import SolverType, UpdateType
 class IntegrationType(Enum):
     euler=0
     verlet=1
+    rk4=2
 
 class IntegrationCfg(run_config.IntegrationCfg):
     def __init__(self, dt: float, num_col_windows: int=None, windows_update_freq=1, 

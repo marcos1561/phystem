@@ -108,6 +108,7 @@ PYBIND11_MODULE(cpp_lib, m) {
         ;      
     py::class_<UpdateDebug>(solvers, "UpdateDebug")
         .def_readonly("count_zero_speed", &UpdateDebug::count_zero_speed)
+        .def_readonly("high_vel", &UpdateDebug::high_vel)
         ;      
 
     py::class_<Ring>(solvers, "Ring")
@@ -117,13 +118,10 @@ PYBIND11_MODULE(cpp_lib, m) {
             py::arg("windows_update_freq")=0, py::arg("integration_type")=0)
         .def("update_normal", &Ring::update_normal, py::call_guard<py::gil_scoped_release>())
         .def("update_windows", &Ring::update_windows, py::call_guard<py::gil_scoped_release>())
-        .def("mean_vel", &Ring::mean_vel)
-        .def("mean_vel_vec", &Ring::mean_vel_vec)
         .def_readonly("num_rings", &Ring::num_rings, byref)
         .def_readonly("num_particles", &Ring::num_particles, byref)
         .def_readonly("num_time_steps", &Ring::num_time_steps, byref)
         .def_readonly("pos", &Ring::pos, byref)
-        .def_readonly("vel", &Ring::vel, byref)
         .def_readonly("self_prop_angle", &Ring::self_prop_angle, byref)
         .def_readonly("pos_continuos", &Ring::pos_continuos, byref)
         .def_readonly("pos_t", &Ring::pos_t, byref)
