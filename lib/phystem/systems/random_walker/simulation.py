@@ -5,8 +5,8 @@ import matplotlib.animation as animation
 from phystem.core.simulation import SimulationCore
 from phystem.core.run_config import RealTimeCfg, SaveCfg, RunType
 
-from phystem.gui_phystem.gui_config import StandardGui
-from phystem.gui_phystem import widget, graph
+from phystem.gui_phystem.mpl.gui_config import StandardGui
+from phystem.gui_phystem.mpl import widget, graph
 
 from phystem.systems.random_walker.creator import Creator 
 from phystem.systems.random_walker.solver import Solver 

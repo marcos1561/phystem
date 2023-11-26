@@ -1,4 +1,4 @@
-from phystem.gui_phystem.widget import WidgetType
+from phystem.gui_phystem.mpl.widget import WidgetType
 
 class VerticalGeometry:
     def __init__(self, main_ax_rect: list, width=None, height=None, x_pad=0.01, y_pad=0.01, rel_pad=0.01) -> None:

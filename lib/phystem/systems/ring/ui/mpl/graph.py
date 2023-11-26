@@ -7,8 +7,11 @@ from matplotlib import colors
 
 from copy import deepcopy
 
+from phystem.gui_phystem.mpl import graph
+from phystem.utils.timer import TimeIt 
+
 from phystem.systems.ring.solvers import CppSolver
-from phystem.systems.ring.configs import RingCfg, SpaceCfg, RingCfg
+from phystem.systems.ring.configs import RingCfg, SpaceCfg, CreatorCfg, RingCfg
 
 class GraphCfg:
     def __init__(self, show_circles=False, show_f_spring=False, show_f_vol=False, show_f_area=False, 
@@ -306,3 +309,28 @@ class MainGraph:
 
         # return (self.lines, self.points, self.circles_col) + tuple(self.arrows.values())
         return
+
+class Info(graph.Info):
+    def __init__(self, ax: Axes, solver: CppSolver, time_it: TimeIt, 
+        dynamic_cfg: RingCfg, creator_cfg: CreatorCfg, space_cfg: SpaceCfg) -> None:
+        super().__init__(ax)
+        self.solver = solver
+        self.time_it = time_it
+        self.cfg_info = dynamic_cfg.info() + f"N = {creator_cfg.num_p}\n" 
+
+    def get_info(self):
+        sim_info = (
+            f"$\Delta$T (ms): {self.time_it.mean_time():.3f}\n\n"
+            f"t : {self.solver.time:.3f}\n"
+            f"dt: {self.solver.dt:.5f}\n"
+            f"Area = {self.solver.cpp_solver.area_debug.area[0]:.3f}\n"
+            "\n"
+            f"spring_overlap: {self.solver.spring_debug.count_overlap}\n"
+            f"vol_overlap   : {self.solver.excluded_vol_debug.count_overlap}\n"
+            f"area_overlap  : {self.solver.area_debug.count_overlap}\n"
+            f"zero_speed    : {self.solver.update_debug.count_zero_speed}\n"
+            "\n"
+            f"{self.cfg_info}"
+        )
+
+        return sim_info

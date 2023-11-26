@@ -13,6 +13,7 @@ class StandardManager:
     '''
     def __init__(self, buttons_ax, slider_ax, run_cfg: RealTimeCfg) -> None:
         self.run_cfg = run_cfg
+        self.graph_cfg = run_cfg.graph_cfg
 
         self.buttons = {}
         self.sliders: dict[str, Slider] = {}

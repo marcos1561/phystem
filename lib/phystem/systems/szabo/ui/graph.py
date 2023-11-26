@@ -6,7 +6,7 @@ from phystem.systems.szabo.solvers import CppSolver
 from phystem.systems.szabo.configs import *
 from phystem.systems.szabo.run_config import GraphCfg
 from phystem.utils.timer import TimeIt
-import phystem.gui_phystem.graph as graph
+import phystem.gui_phystem.mpl.graph as graph
 
 class ParticlesGraph:
     def __init__(self, ax: Axes, solver: CppSolver, space_cfg: SpaceCfg, dynamic_cfg: SelfPropellingCfg, graph_cfg: GraphCfg) -> None:

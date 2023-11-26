@@ -8,7 +8,7 @@ from phystem.systems.szabo.configs import CreatorCfg
 
 from phystem.systems.szabo.ui.graph import ParticlesGraph, Info, MeanVelGraph
 from phystem.systems.szabo.ui.widget import WidgetManager
-from phystem.gui_phystem.widget import WidgetType
+from phystem.gui_phystem.mpl.widget import WidgetType
 
 class Simulation(SimulationCore): 
     creator_cfg: CreatorCfg
@@ -79,7 +79,7 @@ class Simulation(SimulationCore):
         
             # ani.save(save_video_cfg.path, fps=save_video_cfg.fps, progress_callback=progress.update)
         else:
-            self.run_animation(fig, update)
+            self.run_mpl_animation(fig, update)
             # ani = animation.FuncAnimation(fig, update, interval=1/(real_time_cfg.fps)*1000, cache_frame_data=False)
             # plt.show()
     
@@ -88,9 +88,9 @@ class Simulation(SimulationCore):
         '''
         Configura as posições e tamanhos dos elementos gráficos.
         '''
-        from phystem.gui_phystem.gui_config import StandardGui
-        from phystem.gui_phystem.widget import WidgetType
-        from phystem.gui_phystem.geometry import VerticalGeometry
+        from phystem.gui_phystem.mpl.gui_config import StandardGui
+        from phystem.gui_phystem.mpl.widget import WidgetType
+        from phystem.gui_phystem.mpl.geometry import VerticalGeometry
 
         fig, axes, space_mngs = StandardGui().run()
         widget_space_mng: VerticalGeometry = space_mngs["widgets"]

@@ -2,7 +2,7 @@ from matplotlib.widgets import Button, Slider
 
 from phystem.core.run_config import RealTimeCfg
 from phystem.core.run_config import RealTimeCfg, RunType
-from phystem.gui_phystem import widget
+from phystem.gui_phystem.mpl import widget
 
 class WidgetManager(widget.StandardManager):
     def __init__(self, buttons_ax, slider_ax, run_cfg: RealTimeCfg) -> None:

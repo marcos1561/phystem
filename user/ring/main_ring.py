@@ -60,14 +60,14 @@ run_type = RunType.REAL_TIME
 
 real_time_cfg = RealTimeCfg(
     int_cfg=IntegrationCfg(
-        # dt = 0.001*5, # max euler
-        dt = 0.001*5 * 1.55,
+        dt = 0.001, # max euler
+        # dt = 0.001*5 * 1.55,
         num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
         integration_type=IntegrationType.verlet,
         update_type=UpdateType.WINDOWS,
     ),
-    num_steps_frame=100,
+    num_steps_frame=600,
     fps=60,
     graph_cfg = GraphCfg(
         show_circles      = True,

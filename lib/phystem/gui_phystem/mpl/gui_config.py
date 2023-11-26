@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from phystem.gui_phystem.widget import WidgetType
+from phystem.gui_phystem.mpl.widget import WidgetType
 
 class StandardGui:
     '''
@@ -13,7 +13,7 @@ class StandardGui:
         self.space_mngs = {}
 
     def run(self, panel_width=0.2, widget_width=0.6):
-        from phystem.gui_phystem import geometry
+        from phystem.gui_phystem.mpl import geometry
         fig = self.fig
 
         width = panel_width

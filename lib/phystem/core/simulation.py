@@ -1,5 +1,6 @@
 from copy import deepcopy
 from abc import ABC, abstractmethod
+from typing import Type
 
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -10,6 +11,10 @@ from phystem.utils.timer import TimeIt
 from phystem.core.run_config import RunType, RunCfg, CollectDataCfg, SaveCfg, RealTimeCfg
 from phystem.core.creators import CreatorCore
 from phystem.core.solvers import SolverCore
+
+from phystem.gui_phystem.application import AppCore
+from phystem.gui_phystem import control_ui
+from phystem.gui_phystem import info_ui
 
 class SimulationCore(ABC): 
     '''
@@ -68,6 +73,7 @@ class SimulationCore(ABC):
             # Como a configuração 'func' é uma função, ela não é salva.
             self.configs["run_cfg"].func = "nao salvo"
 
+        self.app: AppCore = None
         self.time_it = TimeIt(num_samples=200)
 
         self.init_sim()    
@@ -102,7 +108,14 @@ class SimulationCore(ABC):
         run_cfg: CollectDataCfg = self.run_cfg
         run_cfg.func(self, run_cfg.func_cfg)
 
-    def run_animation(self, fig: Figure, update):
+    def run_app(self, fig: Figure, update, title=None,
+        InfoT=info_ui.InfoCore, ControlT=control_ui.ControlCore):
+        self.app = AppCore(fig, self.configs_container, self.solver, self.time_it, self.run_cfg, update, title,
+            InfoT, ControlT)
+        self.app.run()
+
+
+    def run_mpl_animation(self, fig: Figure, update):
         '''
         Começa a animação em tempo rela da integração do sistema.
 

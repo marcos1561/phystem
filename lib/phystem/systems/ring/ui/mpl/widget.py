@@ -5,7 +5,7 @@ from matplotlib.axes import Axes
 
 from phystem.core.run_config import RealTimeCfg, RunType
 from phystem.systems.ring.ui.graph import GraphCfg
-from phystem.gui_phystem import widget
+from phystem.gui_phystem.mpl import widget
 
 class CheckButtonsV:
     def __init__(self, ax: Axes, labels: dict[str, str], actives: dict[str, bool], callback: dict[str, Callable],
@@ -42,9 +42,12 @@ class CheckButtonsV:
 
         
 class WidgetManager(widget.StandardManager):
+    graph_cfg: GraphCfg
+
     def __init__(self, buttons_ax, slider_ax, run_cfg: RealTimeCfg) -> None:
         super().__init__(buttons_ax, slider_ax, run_cfg)
-        self.graph_cfg: GraphCfg = run_cfg.graph_cfg
+        # self.graph_cfg = run_cfg.graph_cfg
+        # self.graph_cfg: GraphCfg = run_cfg.graph_cfg
 
         self.buttons["circles"] = Button(buttons_ax["circles"], "Show Circles")
         self.buttons["circles"].on_clicked(self.circles_callback)
@@ -59,7 +62,7 @@ class WidgetManager(widget.StandardManager):
         self.buttons["check_buttons"] = CheckButtonsV(
             ax=buttons_ax["check_buttons"],
             labels=internal_name_to_label,
-            actives=self.graph_cfg.f_name_to_show,
+            actives=self.graph_cfg.get_show_forces(),
             callback=dict(zip(internal_name_to_label.keys(), [self.forces_callback]*len(internal_name_to_label.keys()))),
             rel_pad=0,
             colors=self.graph_cfg.force_to_color,
@@ -92,7 +95,7 @@ class WidgetManager(widget.StandardManager):
 
     def forces_callback(self, label):
         internal_l = self.force_label_to_internal[label]
-        self.graph_cfg.f_name_to_show[internal_l] = not self.graph_cfg.f_name_to_show[internal_l] 
+        self.graph_cfg.set_show_force(internal_l, not self.graph_cfg.get_show_forces()[internal_l])
 
     def circles_callback(self, event):
         if self.graph_cfg.show_circles:

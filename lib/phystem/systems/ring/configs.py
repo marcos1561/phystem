@@ -77,11 +77,11 @@ class RingCfg:
 
     def info(self):
         return (
-            f"k_mola = {self.spring_k:.2f}  | $p_0$ = {self.p0:.2f}\n"
+            f"k_mola = {self.spring_k:.2f}  | p_0 = {self.p0:.2f}\n"
             f"k_area = {self.k_bend:.2f}   | area = {self.area0:.2f}\n"
             f"\n"
-            f"$D_T$ = {self.trans_diff:.2f}\n"
-            f"$D_R$ = {self.rot_diff:.2f}\n"
+            f"D_T = {self.trans_diff:.2f}\n"
+            f"D_R = {self.rot_diff:.2f}\n"
             f"\n"
         )
 
