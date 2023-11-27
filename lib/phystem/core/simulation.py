@@ -8,7 +8,7 @@ from matplotlib.figure import Figure
 import os, yaml
 
 from phystem.utils.timer import TimeIt
-from phystem.core.run_config import RunType, RunCfg, CollectDataCfg, SaveCfg, RealTimeCfg
+from phystem.core.run_config import RunType, RunCfg, CollectDataCfg, SaveCfg, RealTimeCfg, UiSettings
 from phystem.core.creators import CreatorCore
 from phystem.core.solvers import SolverCore
 
@@ -109,9 +109,9 @@ class SimulationCore(ABC):
         run_cfg.func(self, run_cfg.func_cfg)
 
     def run_app(self, fig: Figure, update, title=None,
-        InfoT=info_ui.InfoCore, ControlT=control_ui.ControlCore):
+        InfoT=info_ui.InfoCore, ControlT=control_ui.ControlCore, ui_settings=UiSettings()):
         self.app = AppCore(fig, self.configs_container, self.solver, self.time_it, self.run_cfg, update, title,
-            InfoT, ControlT)
+            InfoT, ControlT, ui_settings)
         self.app.run()
 
 
@@ -131,7 +131,7 @@ class SimulationCore(ABC):
         ani = animation.FuncAnimation(fig, update, interval=1/(real_time_cfg.fps)*1000, cache_frame_data=False)
         plt.show()
 
-    def save_video(self, fig: Figure, update):
+    def save_video(self, fig: Figure, update, ControlT=control_ui.ControlCore):
         '''
         Salva um vídeo da simulação de acordo com as configurações dadas.
 
@@ -143,7 +143,11 @@ class SimulationCore(ABC):
                 Função que atualiza um frame do vídeo.
         '''
         from phystem.utils.progress import MplAnim as Progress
-        
+
+        # Instantiation of app because update may use control_mng.
+        self.app = AppCore(fig, self.configs_container, self.solver, self.time_it, self.run_cfg, None, None,
+            ControlT=ControlT)
+
         save_video_cfg: SaveCfg = self.run_cfg
         
         folder_path = save_video_cfg.path.split("/")[0]

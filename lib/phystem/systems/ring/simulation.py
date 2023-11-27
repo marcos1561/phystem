@@ -64,7 +64,8 @@ class Simulation(SimulationCore):
         particles_graph.init()
 
         def update(frame=None):
-            control_mng: ui_components.ControlMng = self.app.control.control_mng
+            control_mng = self.app.control.control_mng
+
             if not control_mng.is_paused:
                 i = 0
                 while i < real_time_cfg.num_steps_frame:
@@ -79,7 +80,7 @@ class Simulation(SimulationCore):
             particles_graph.update()
 
         if self.run_cfg.id is RunType.SAVE_VIDEO:
-            self.save_video(fig, update)
+            self.save_video(fig, update, ui_components.Control)
         else:
             self.run_app(fig, update, "Ring", ui_components.Info, ui_components.Control)
 

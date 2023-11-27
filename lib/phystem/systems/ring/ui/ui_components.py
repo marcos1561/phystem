@@ -43,7 +43,7 @@ class ControlMng(ControlManagerCore):
 class Control(ControlCore):
     control_mng: ControlMng
 
-    def get_control_mng(self, run_cfg: RealTimeCfg) -> ControlMng:
+    def get_control_mng(self, run_cfg: RealTimeCfg):
         return ControlMng(run_cfg)
 
     def configure_ui(self):

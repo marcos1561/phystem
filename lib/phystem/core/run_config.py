@@ -112,6 +112,12 @@ class IntegrationCfg:
         self.solver_type = solver_type
         self.update_type = update_type
 
+class UiSettings:
+    def __init__(self, window_scale=0.83, dpi=190, left_pannel_size=0.3) -> None:
+        self.window_scale = window_scale
+        self.dpi = dpi
+        self.left_pannel_size = left_pannel_size
+
 class RunCfg:
     '''
     Base para as configurações do mode de execução.
@@ -206,7 +212,7 @@ class RealTimeCfg(RunCfg):
     '''
     id = RunType.REAL_TIME
     def __init__(self, int_cfg: IntegrationCfg, num_steps_frame: int, fps: int, graph_cfg=None,
-        checkpoint: CheckpointCfg=None) -> None:
+        ui_settings=UiSettings(), checkpoint: CheckpointCfg=None) -> None:
         '''
         Parameters:
             int_cfg:
@@ -226,6 +232,7 @@ class RealTimeCfg(RunCfg):
                 não é carregado.
         '''
         super().__init__(int_cfg, checkpoint)
+        self.ui_settings = ui_settings
         self.num_steps_frame = num_steps_frame
         self.fps = fps
         self.graph_cfg = graph_cfg

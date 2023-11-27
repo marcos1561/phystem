@@ -12,10 +12,9 @@ from phystem.gui_phystem.control_mng import ControlManagerCore
 class ControlCore():
     def __init__(self, main_frame: ttk.Frame, run_cfg: RealTimeCfg) -> None:
         self.main_frame = main_frame
-
         self.control_mng = self.get_control_mng(run_cfg)
 
-    def get_control_mng(self, run_cfg: RealTimeCfg) -> ControlManagerCore:
+    def get_control_mng(self, run_cfg: RealTimeCfg):
         return ControlManagerCore(run_cfg)
 
     def configure_ui(self):
