@@ -15,6 +15,9 @@ class CppSolver:
 
         dynamic_cfg = cpp_lib.configs.RingCfg(dynamic_cfg.cpp_constructor_args())
         
+        in_pol_checker_cfg = cpp_lib.configs.InPolCheckerCfg(
+            int_cfg.in_pol_checker.num_col_windows, int_cfg.in_pol_checker.update_freq)
+
         pos_in = [cpp_lib.data_types.PosVec(ring_pos) for ring_pos in pos]
         angle_in = [cpp_lib.data_types.List(ring_angle) for ring_angle in self_prop_angle]
 
@@ -27,7 +30,10 @@ class CppSolver:
             space_cfg.size, 
             int_cfg.dt, int_cfg.num_col_windows, 
             rng_seed, 
-            int_cfg.windows_update_freq, int_cfg.integration_type.value)
+            int_cfg.windows_update_freq, 
+            int_cfg.integration_type.value,
+            in_pol_checker_cfg,
+        )
 
         update_type_to_func = {
             UpdateType.NORMAL: self.cpp_solver.update_normal,
@@ -102,6 +108,14 @@ class CppSolver:
     @property
     def differences(self):
         return self.cpp_solver.differences
+    
+    @property
+    def center_mass(self):
+        return self.cpp_solver.center_mass
+    
+    @property
+    def in_pol_checker(self):
+        return self.cpp_solver.in_pol_checker
     
     @property
     def spring_debug(self):

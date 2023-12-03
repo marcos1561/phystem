@@ -36,3 +36,8 @@ public:
     relax_time(relax_time), vo(vo), trans_diff(trans_diff), rot_diff(rot_diff), exclusion_vol(exclusion_vol), 
     diameter(diameter) {};
 };
+ 
+struct InPolCheckerCfg {
+    int num_cols_widows;
+    int update_freq;
+};

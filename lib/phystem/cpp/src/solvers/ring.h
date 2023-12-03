@@ -8,6 +8,7 @@
 #include "../configs/ring.h"
 #include "../rng_manager.h"
 #include "../windows_manager.h"
+#include "../in_pol_checker.h"
 #include "../macros_defs.h"
 
 #include "../intersections.h"
@@ -80,12 +81,10 @@ public:
     double force_r_lim;
 
     Vector3d pos; // Posições das partículas
-    // Vector3d vel; // Velocidades das partículas (Utilizado pelo verlet)
     vector<vector<double>> self_prop_angle; // Ângulo da direção da velocidade auto propulsora
-    // vector<vector<double>> self_prop_angle_deriv; // Derivada do ângulo da direção da velocidade auto propulsora. (Utilizado pelo verlet)
     
-    Vector3d old_pos; // Posições das partículas
-    vector<vector<double>> old_self_prop_angle; // Ângulo da direção da velocidade auto propulsora
+    Vector3d old_pos; 
+    vector<vector<double>> old_self_prop_angle;
 
     RingCfg dynamic_cfg; // Configurações da dinâmica entre as partículas
     double size; // tamanho de uma dimensão do espaço
@@ -102,19 +101,21 @@ public:
     double sim_time;
     int num_time_steps;
 
-    int num_particles; // Número de partículas no anel
+    int num_particles;
     int num_rings; 
     
     Vector3d sum_forces_matrix; // Matrix com a soma das forças sobre cada partícula
 
     WindowsManagerRing windows_manager;
+    InPolChecker in_pol_checker;
+
+    Vector2d center_mass;
 
     //==
     // Area Potencial
     //==
     Vector3d differences; // Vetor cujo i-ésimo elemento contém pos[i+1] - pos[i]
     Vector3d pos_continuos; // Posições das partículas de forma contínua
-    //=========//
 
     //==
     // RK4
@@ -151,7 +152,7 @@ public:
 
     Ring(Vector3d &pos0, vector<vector<double>> self_prop_angle0, RingCfg dynamic_cfg, 
         double size, double dt, int num_col_windows, int seed=-1, int windows_update_freq=1,
-        int integration_type=0) 
+        int integration_type=0, InPolCheckerCfg in_pol_checker_cfg={3, 1}) 
     : pos(pos0), self_prop_angle(self_prop_angle0), dynamic_cfg(dynamic_cfg), size(size), dt(dt),
     windows_update_freq(windows_update_freq), integration_type(integration_type)
     {
@@ -173,12 +174,17 @@ public:
         dt_count = 0;
         is_low_dt = false;
 
-        windows_manager = WindowsManagerRing(&pos, num_col_windows, num_col_windows, size, windows_update_freq);
-
         initialize_dynamic();
         
+        std::cout << in_pol_checker_cfg.num_cols_widows << std::endl;
+        std::cout << in_pol_checker_cfg.update_freq << std::endl;
+
+        windows_manager = WindowsManagerRing(&pos, num_col_windows, num_col_windows, size, windows_update_freq);
+        in_pol_checker = InPolChecker(&pos_continuos, &center_mass, size, 
+                        in_pol_checker_cfg.num_cols_widows, in_pol_checker_cfg.update_freq);
+        
         #if DEBUG == 1
-        rng_manager = RngManager(num_particles, num_rings, 3);
+        rng_manager = RngManager(num_particles, num_rings, 5);
         intersect = IntersectionCalculator(size);
         #endif
     }
@@ -212,14 +218,14 @@ public:
         auto zero_vector_2d = vector<array<double, 2>>(num_particles, {0., 0.}); 
 
         old_pos = Vector3d(num_rings, zero_vector_2d);
-        // vel = Vector3d(num_rings, zero_vector_2d);
         old_self_prop_angle = vector<vector<double>>(num_rings, zero_vector_1d);
-        // self_prop_angle_deriv = vector<vector<double>>(num_rings, zero_vector_1d);
         
         sum_forces_matrix = Vector3d(num_rings, zero_vector_2d);
         
         differences = Vector3d(num_rings, zero_vector_2d);
         pos_continuos = Vector3d(num_rings, zero_vector_2d);
+
+        center_mass = Vector2d(num_rings);
 
         auto deriv_particles = vector<array<double, 3>>(num_particles, {0., 0., 0.});
         auto deriv_rings = vector<vector<array<double, 3>>>(num_rings, deriv_particles);
@@ -238,7 +244,6 @@ public:
 
         area_debug.area = vector<double>(num_rings);
 
-        // vector<vector<double*>> ring_pos_t;
         pos_t = vector<vector<vector<double*>>>(num_rings, vector<vector<double*>>(2));
         for (int i=0; i < num_rings; i ++) {
             for (int j = 0; j < num_particles; j++)
@@ -351,20 +356,28 @@ public:
         double vol_fx = force_intensity/dist * dx;
         double vol_fy = force_intensity/dist * dy;
 
+        #pragma omp atomic
         sum_forces_matrix[ring_id][p_id][0] += vol_fx;
+        #pragma omp atomic
         sum_forces_matrix[ring_id][p_id][1] += vol_fy;
         
         if (use_third_law) {
+            #pragma omp atomic
             sum_forces_matrix[other_ring_id][other_id][0] -= vol_fx;
+            #pragma omp atomic
             sum_forces_matrix[other_ring_id][other_id][1] -= vol_fy;
         }
 
         #if DEBUG == 1
+        #pragma omp atomic
         vol_forces[ring_id][p_id][0] += vol_fx;
+        #pragma omp atomic
         vol_forces[ring_id][p_id][1] += vol_fy;
         
         if (use_third_law) {
+            #pragma omp atomic
             vol_forces[other_ring_id][other_id][0] -= vol_fx;
+            #pragma omp atomic
             vol_forces[other_ring_id][other_id][1] -= vol_fy;
         }
         #endif
@@ -710,6 +723,7 @@ public:
         // }
         // #endif
 
+        #pragma omp parallel for schedule(dynamic, 10)
         for (int ring_id = 0; ring_id < num_rings; ring_id++) {
             for (int i=0; i < num_particles; i++) {
                 calc_derivate(vel_i[0], vel_i[1], angle_deriv_i, ring_id, i);
@@ -1048,8 +1062,7 @@ public:
         #endif
 
         // Excluded volume
-        // #pragma omp parallel for \
-        // schedule(dynamic, 30)
+        #pragma omp parallel for schedule(dynamic, 15)
         for (auto win_id: windows_manager.windows_ids) {
             auto & window = windows_manager.windows[win_id[0]][win_id[1]];
             auto & neighbors = windows_manager.window_neighbor[win_id[0]][win_id[1]];
@@ -1076,6 +1089,7 @@ public:
             }
         }
 
+        #pragma omp parallel for schedule(dynamic, 10)
         for (int ring_id = 0; ring_id < num_rings; ring_id++)
         {
             // Springs
@@ -1111,6 +1125,8 @@ public:
         windows_manager.update_window_members();
 
         calc_forces_windows();
+        calc_center_mass();
+        in_pol_checker.update();
 
         switch (integration_type)
         {
@@ -1132,6 +1148,32 @@ public:
         sim_time += dt;
         num_time_steps += 1;
    }
+
+    void calc_center_mass() {
+        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        {
+            auto &ring = pos_continuos[ring_id];
+
+            auto &cm = center_mass[ring_id];
+            cm[0] = 0;
+            cm[1] = 0;
+
+            for (auto & particle: ring) {
+                cm[0] += particle[0];
+                cm[1] += particle[1];
+            }
+
+            cm[0] /= num_particles;
+            cm[1] /= num_particles;
+
+            for (int dim = 0; dim < 2; dim ++) {
+                if (cm[dim] > size/2.f)
+                    cm[dim] -= size;
+                else if (cm[dim] < -size/2.f)
+                    cm[dim] += size;
+            }
+        }
+    }
 
     void calc_border_point(int ring_id, array<double, 2> &p1, array<double, 2> &p2, int mid_point_id, bool place_above_p2=false) {
         /**

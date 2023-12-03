@@ -13,7 +13,7 @@ class ProgressType:
     nothing = 2
 
 class Progress(ABC):
-    def __init__(self, end: int | float, step: int) -> None:
+    def __init__(self, end: float, step: int) -> None:
         self.end = end
         self.start_time = time.time()
 
@@ -57,9 +57,11 @@ class Progress(ABC):
                 f"Progresso: {100.00:.2f} %\nTempo total: {str(timedelta(seconds=total_time))}")
 
 class Discrete(Progress):
-    def __init__(self, end: int | float, step: int) -> None:
+    def __init__(self, end: int, step: int) -> None:
         super().__init__(end, step)
         self.count_step = int(end * step/100)
+        if self.count_step == 0:
+            self.count_step = 1
 
     def get_progress_type(self, t: float) -> int:
         to_inform_first_estimate = self.to_inform_first_progress()
@@ -74,7 +76,7 @@ class Discrete(Progress):
             return ProgressType.nothing
 
 class Continuos(Progress):
-    def __init__(self, end: int | float, step: int = 10) -> None:
+    def __init__(self, end: float, step: int = 10) -> None:
         super().__init__(end, step)
 
         self.interval_lims: np.ndarray = np.linspace(0, end, step)

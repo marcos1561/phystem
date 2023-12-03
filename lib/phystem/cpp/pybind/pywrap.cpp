@@ -51,6 +51,10 @@ PYBIND11_MODULE(cpp_lib, m) {
     py::class_<RingCfgPy>(configs, "RingCfg")
         .def(py::init<py::dict &>())
         ;
+    
+    py::class_<InPolCheckerCfg>(configs, "InPolCheckerCfg")
+        .def(py::init<int, int>())
+        ;
 
     //==
     // Manager
@@ -69,6 +73,12 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def_readonly("capacity", &WindowsManager::capacity)
         .def_readonly("windows_ids", &WindowsManager::windows_ids)
         .def_readonly("window_neighbor", &WindowsManager::window_neighbor)
+        ;
+    
+    py::class_<InPolChecker>(managers, "InPolChecker")
+        .def(py::init<Vector3d*, VecList*, int, double>())
+        .def_readonly("num_inside_points", &InPolChecker::num_inside_points)
+        .def_readonly("inside_points", &InPolChecker::inside_points)
         ;
 
     //==
@@ -113,9 +123,9 @@ PYBIND11_MODULE(cpp_lib, m) {
 
     py::class_<Ring>(solvers, "Ring")
         .def(py::init<Vector3d&, vector<vector<double>>&, RingCfgPy, 
-            double, double, int, int, int, int>(), py::arg("pos0"), py::arg("self_prop_angle0"), 
+            double, double, int, int, int, int, InPolCheckerCfg>(), py::arg("pos0"), py::arg("self_prop_angle0"), 
             py::arg("dynamic_cfg"), py::arg("size"), py::arg("dt"), py::arg("num_col_windows"), py::arg("seed")=-1,
-            py::arg("windows_update_freq")=0, py::arg("integration_type")=0)
+            py::arg("windows_update_freq")=0, py::arg("integration_type")=0, py::arg("InPolChecker"))
         .def("update_normal", &Ring::update_normal, py::call_guard<py::gil_scoped_release>())
         .def("update_windows", &Ring::update_windows, py::call_guard<py::gil_scoped_release>())
         .def_readonly("num_rings", &Ring::num_rings, byref)
@@ -135,5 +145,7 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def_readonly("vol_forces", &Ring::vol_forces)
         .def_readonly("area_forces", &Ring::area_forces)
         .def_readonly("differences", &Ring::differences)
+        .def_readonly("center_mass", &Ring::center_mass)
+        .def_readonly("in_pol_checker", &Ring::in_pol_checker)
         ;
 }

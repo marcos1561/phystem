@@ -1,6 +1,6 @@
 creator_cfg: !!python/object:phystem.systems.szabo.configs.CreatorCfg
-  n: 200
-  r: 15.0
+  n: 10
+  r: 5.5
   type: !!python/object/apply:phystem.systems.szabo.configs.CreateType
   - 2
 dynamic_cfg: !!python/object:phystem.systems.szabo.configs.SelfPropellingCfg
@@ -23,12 +23,12 @@ run_cfg: !!python/object:phystem.core.run_config.CollectDataCfg
   func_id: !!python/object/apply:phystem.systems.szabo.collect_pipelines.FuncID
   - 1
   int_cfg: !!python/object:phystem.systems.szabo.run_config.IntegrationCfg
-    dt: 0.05
-    num_col_windows: 15
+    dt: 0.01
+    num_col_windows: 10
     solver_type: !!python/object/apply:phystem.core.run_config.SolverType
     - 2
     update_type: !!python/object/apply:phystem.core.run_config.UpdateType
     - 2
-  tf: 20
+  tf: 100
 space_cfg: !!python/object:phystem.systems.szabo.configs.SpaceCfg
-  size: 30
+  size: 11

@@ -27,6 +27,8 @@ class ControlMng(ControlManagerCore):
         self.vars["f_area"] = BooleanVar(value=self.graph_cfg.show_f_area)
         self.vars["f_total"] = BooleanVar(value=self.graph_cfg.show_f_total)
         self.vars["pos_cont"] = BooleanVar(value=self.graph_cfg.show_pos_cont)
+        self.vars["center_mass"] = BooleanVar(value=self.graph_cfg.show_center_mass)
+        self.vars["inside_points"] = BooleanVar(value=self.graph_cfg.show_inside)
 
     def show_circles(self):
         self.graph_cfg.show_circles = self.vars["show_circles"].get()
@@ -39,6 +41,12 @@ class ControlMng(ControlManagerCore):
     
     def show_pos_cont(self):
         self.graph_cfg.show_pos_cont = self.vars["pos_cont"].get()
+    
+    def show_center_mass(self):
+        self.graph_cfg.show_center_mass = self.vars["center_mass"].get()
+    
+    def show_inside_points(self):
+        self.graph_cfg.show_inside = self.vars["inside_points"].get()
 
 class Control(ControlCore):
     control_mng: ControlMng
@@ -65,6 +73,15 @@ class Control(ControlCore):
     
         pos_cont = ttk.Checkbutton(f_main_frame, text="Pos Cont", 
             variable=self.control_mng.vars["pos_cont"], command=self.control_mng.show_pos_cont)
+        
+        
+        cb_frame = ttk.Frame(f_main_frame)
+
+        center_mass = ttk.Checkbutton(cb_frame, text="Center Mass", 
+            variable=self.control_mng.vars["center_mass"], command=self.control_mng.show_center_mass)
+        
+        inside_points = ttk.Checkbutton(cb_frame, text="Inside Points", 
+            variable=self.control_mng.vars["inside_points"], command=self.control_mng.show_inside_points)
 
         show_circles.grid(column=0, row=2, sticky=W)
         
@@ -73,6 +90,10 @@ class Control(ControlCore):
             f_cb.grid(column=id, row=0, padx=10)
 
         pos_cont.grid(column=0, row=4, pady=15, sticky=W)
+        
+        cb_frame.grid(column=0, row=5, sticky=W, pady=15)
+        center_mass.grid(column=0, row=0)
+        inside_points.grid(column=1, row=0, padx=10)
 
 
 class Info(InfoCore):
@@ -97,5 +118,6 @@ class Info(InfoCore):
             f"area_overlap  : {self.solver.area_debug.count_overlap}\n"
             f"zero_speed    : {self.solver.update_debug.count_zero_speed}\n"
             "\n"
+            f"intersect    : {self.solver.cpp_solver.in_pol_checker.num_inside_points}\n"
             f"{self.cfg_info}"
         )

@@ -20,19 +20,14 @@ creator_cfg: !!python/object:phystem.systems.ring.configs.CreatorCfg
   - 3.666666666666667
   - 3.666666666666667
   - 3.666666666666667
-  vo:
-  - 1
-  - 1
-  - 1
-  - 1
 dynamic_cfg: !!python/object:phystem.systems.ring.configs.RingCfg
   area0: 40
-  area_potencial: format
+  area_potencial: target_area
   diameter: 1
   exclusion_vol: 1
   k_bend: 5
   mobility: 1
-  p0: 3.5449077018
+  p0: 4.743416490252569
   relax_time: 1
   rot_diff: 0.1
   spring_k: 10
@@ -48,11 +43,11 @@ run_cfg: !!python/object:phystem.core.run_config.CollectDataCfg
   func_cfg: null
   func_id: !!python/object/apply:phystem.systems.ring.collect_pipelines.FuncID
   - 1
-  tf: 100
-  integration_type: !!python/object/apply:phystem.systems.ring.run_config.IntegrationType
-  - 0
   int_cfg: !!python/object:phystem.systems.ring.run_config.IntegrationCfg
     dt: 0.0005
+    in_pol_checker: !!python/object:phystem.systems.ring.run_config.InPolCheckerCfg
+      num_col_windows: 3
+      update_freq: 1
     integration_type: !!python/object/apply:phystem.systems.ring.run_config.IntegrationType
     - 0
     num_col_windows: null
@@ -61,5 +56,6 @@ run_cfg: !!python/object:phystem.core.run_config.CollectDataCfg
     update_type: !!python/object/apply:phystem.core.run_config.UpdateType
     - 1
     windows_update_freq: 1
+  tf: 100
 space_cfg: !!python/object:phystem.systems.ring.configs.SpaceCfg
   size: 30

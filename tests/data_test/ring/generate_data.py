@@ -1,9 +1,10 @@
 from phystem.systems.ring.simulation import Simulation
 
 from phystem.systems.ring.configs import RingCfg, CreatorCfg, SpaceCfg
+from phystem.systems.ring.run_config import IntegrationCfg
 from phystem.systems.ring import collect_pipelines
 
-from phystem.systems.ring.run_config import CollectDataCfg
+from phystem.core.run_config import CollectDataCfg
 from phystem.core.run_config import UpdateType, SolverType
 
 
@@ -12,7 +13,7 @@ def generate_normal_data():
         spring_k=10,
         spring_r=0.3,
         
-        area_potencial="format",
+        area_potencial="target_area",
         k_bend=5,
         # p0=4.828427, # Triângulo retângulo
         # p0=4.55901, # Triângulo equilátero
@@ -42,7 +43,6 @@ def generate_normal_data():
         num_rings = 4,
         num_p = 30,
         r = radius,
-        vo = dynamic_cfg.vo,
         angle=[pi/4, -3*pi/4, 3*pi/4, -pi/4],
         center=[
             [-a * radius, -a * radius], 
@@ -55,13 +55,14 @@ def generate_normal_data():
     seed = 40028922
 
     collect_data_cfg = CollectDataCfg(
+        int_cfg=IntegrationCfg(
+            dt=0.001/2,
+            update_type=UpdateType.NORMAL,
+        ),
         tf = 100,
-        dt = 0.001/2,
         folder_path="normal_data",
         func_id = collect_pipelines.FuncID.last_pos,
         get_func= collect_pipelines.get_func,
-        solver_type=SolverType.CPP,
-        update_type=UpdateType.NORMAL,
     )
 
     sim = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=collect_data_cfg, rng_seed=seed)

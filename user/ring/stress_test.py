@@ -8,7 +8,7 @@ from phystem.core.run_config import UpdateType, RunType, RealTimeCfg, SaveCfg, C
 from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg
 
 dynamic_cfg = RingCfg(
-    spring_k=8,
+    spring_k=4,
     spring_r=0.7,
     
     area_potencial="target_area",
@@ -34,6 +34,7 @@ dynamic_cfg = RingCfg(
 
 from math import pi, ceil
 import numpy as np
+# n = int((15000)**.5) + 1
 n = 5
 k = 1.4
 radius = 20/6 * 1.5
@@ -43,6 +44,10 @@ l = 2 * k * radius
 space_cfg = SpaceCfg(
     size = n * l,
 )
+seed = 40028922
+# seed = None
+
+np.random.seed(seed)
 
 centers = []
 for j in range(n):
@@ -59,8 +64,6 @@ creator_cfg = CreatorCfg(
     center= centers,
 )
 
-seed = 40028922
-seed = None
 
 run_type = RunType.REAL_TIME
 
@@ -68,20 +71,22 @@ num_windows = int(0.72 * ceil(space_cfg.size/(dynamic_cfg.diameter*3)))
 real_time_cfg = RealTimeCfg(
     int_cfg=IntegrationCfg(
         # dt = 0.001*5, # max euler
-        dt = 0.001*5 * 1.6,
+        dt = 0.001,
         num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
-        integration_type=IntegrationType.rk4,
+        integration_type=IntegrationType.euler,
         update_type=UpdateType.WINDOWS,
     ),
-    num_steps_frame = 4*400,
+    num_steps_frame = 200,
     fps = 60,
     graph_cfg = GraphCfg(
-        show_circles  = False,
-        show_f_spring = False,
-        show_f_vol    = False,
-        show_f_area   = False,
-        show_f_total  = False,
+        show_circles     = True,
+        show_f_spring    = False,
+        show_f_vol       = False,
+        show_f_area      = False,
+        show_f_total     = False,
+        show_center_mass = True,
+        show_inside      = True,
         begin_paused=False,
         cpp_is_debug=True,
     ),
@@ -91,40 +96,51 @@ real_time_cfg = RealTimeCfg(
     # ),
 )
 
-# save_cfg = SaveCfg(
-#     path = "stress/stress_test.mp4",
-#     speed=8,
-#     fps=30, 
-#     dt=0.001/2,
-#     duration=10,
-#     tf=None,
-#     update_type=UpdateType.WINDOWS,
-#     num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*3))),
-#     graph_cfg = GraphCfg(
-#         show_circles  = False,
-#         show_f_spring = False,
-#         show_f_vol    = False,
-#         show_f_area   = False,
-#         show_f_total  = False,
-#     ),
-# )
+save_cfg = SaveCfg(
+    int_cfg=IntegrationCfg(
+        dt = 0.001,
+        num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6),
+        windows_update_freq=1,
+        integration_type=IntegrationType.euler,
+        update_type=UpdateType.WINDOWS,
+    ),
+    path = "stress/video_test2.mp4",
+    speed=2,
+    fps=30, 
+    # duration=0.01,
+    tf=7,
+    num_frames=1*15,
+    graph_cfg = GraphCfg(
+        show_circles  = True,
+        show_f_spring = False,
+        show_f_vol    = False,
+        show_f_area   = False,
+        show_f_total  = False,
+    ),
+)
 
-# collect_cfg = CollectDataCfg(
-#     tf = 10,
-#     dt = 0.001,
-#     folder_path= "stress/checkpoint",
-#     num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*3))),
-#     func=collect_pipelines.checkpoints,
-#     func_cfg=collect_pipelines.CheckPointCfg(
-#         num_checkpoints=10
-#     ),
-#     update_type=UpdateType.WINDOWS,
-# )
+def quick_collect(sim: Simulation, cfg=None):
+    import numpy as np
+    np.save("pos.npy", np.array(sim.solver.pos))
+    return
+
+collect_cfg = CollectDataCfg(
+    int_cfg=IntegrationCfg(
+        dt = 0.001,
+        num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6),
+        windows_update_freq=1,
+        integration_type=IntegrationType.euler,
+        update_type=UpdateType.WINDOWS,
+    ),
+    tf = 10,
+    folder_path= "stress/checkpoint",
+    func=quick_collect,
+)
 
 run_type_to_cfg = {
     RunType.REAL_TIME: real_time_cfg, 
-    # RunType.SAVE_VIDEO: save_cfg,
-    # RunType.COLLECT_DATA: collect_cfg,
+    RunType.SAVE_VIDEO: save_cfg,
+    RunType.COLLECT_DATA: collect_cfg,
 }
 
 sim = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type], rng_seed=seed)

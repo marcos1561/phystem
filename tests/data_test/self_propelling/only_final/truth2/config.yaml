@@ -23,6 +23,9 @@ run_cfg: !!python/object:phystem.core.run_config.CollectDataCfg
   func_id: !!python/object/apply:phystem.systems.szabo.collect_pipelines.FuncID
   - 1
   int_cfg: !!python/object:phystem.systems.szabo.run_config.IntegrationCfg
+    in_pol_checker: !!python/object:phystem.systems.ring.run_config.InPolCheckerCfg
+      num_col_windows: 3
+      update_freq: 100
     dt: 0.01
     num_col_windows: 10
     solver_type: !!python/object/apply:phystem.core.run_config.SolverType

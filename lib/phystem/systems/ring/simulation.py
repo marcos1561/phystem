@@ -29,7 +29,7 @@ class Simulation(SimulationCore):
         if self.run_cfg.id is RunType.REPLAY_DATA:
             return CreatorRD()
 
-        return Creator(**self.creator_cfg.get_pars())
+        return Creator(**self.creator_cfg.get_pars(), rng_seed=self.rng_seed)
     
     def get_solver(self) -> SolverCore:
         self.creator: Creator

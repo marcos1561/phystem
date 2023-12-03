@@ -6,12 +6,12 @@ from phystem.systems.ring import collect_pipelines
 from phystem.systems.ring.configs import *
 from phystem.core.run_config import UpdateType, RunType, CheckpointCfg
 from phystem.core.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, ReplayDataCfg
-from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg
+from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg
 from phystem.systems.ring.ui.graph import GraphCfg
 
 
 dynamic_cfg = RingCfg(
-    spring_k=8,
+    spring_k=2,
     spring_r=0.7,
     
     area_potencial="target_area",
@@ -66,6 +66,7 @@ real_time_cfg = RealTimeCfg(
         windows_update_freq=1,
         integration_type=IntegrationType.verlet,
         update_type=UpdateType.WINDOWS,
+        in_pol_checker=InPolCheckerCfg(4, 100),
     ),
     num_steps_frame=600,
     fps=60,
@@ -75,14 +76,16 @@ real_time_cfg = RealTimeCfg(
         show_f_vol        = False,
         show_f_area       = False,
         show_f_total      = False,
+        show_center_mass  = True,
+        show_inside       = True,
         begin_paused      = False,
         pause_on_high_vel = True,
         cpp_is_debug      = True,
     ),
-    checkpoint=CheckpointCfg(
-        folder_path="checkpoint/data",
-        override_cfgs=True,
-    )
+    # checkpoint=CheckpointCfg(
+    #     folder_path="checkpoint/data",
+    #     override_cfgs=True,
+    # )
 )
 print(real_time_cfg.int_cfg.num_col_windows)
 
@@ -106,7 +109,7 @@ collect_data_cfg = CollectDataCfg(
         num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
-        update_type=UpdateType.WINDOWS,
+        update_type=UpdateType.NORMAL,
     ),
     tf=3,
     folder_path="checkpoint/data",

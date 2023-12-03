@@ -292,7 +292,7 @@ class SaveCfg(RunCfg):
     '''
     id = RunType.SAVE_VIDEO
     def __init__(self, int_cfg: IntegrationCfg, path:str, speed: float, fps: int, duration: float = None, 
-        tf: float = None, graph_cfg=None, checkpoint: CheckpointCfg=None) -> None:  
+        tf: float = None, num_frames=None, graph_cfg=None, checkpoint: CheckpointCfg=None) -> None:  
         '''
         Salva um vídeo da simulação em `path`. Ao menos um dos seguintes parâmetros deve ser 
         especificado:
@@ -341,12 +341,7 @@ class SaveCfg(RunCfg):
         self.graph_cfg = graph_cfg
 
         dt = self.int_cfg.dt
-        self.num_steps_frame = speed / fps / dt
-        if self.num_steps_frame < 1:
-            self.num_steps_frame = 1
-            self.dt = self.speed/self.fps
-        else:
-            self.num_steps_frame = int(round(self.num_steps_frame))
+        self.set_num_steps_frame(speed, fps, dt)
 
         if duration != None:
             self.duration = duration
@@ -354,5 +349,20 @@ class SaveCfg(RunCfg):
             self.tf = self.num_frames * self.num_steps_frame * dt
         elif tf != None:
             self.tf = tf
-            self.num_frames = int(self.tf / self.num_steps_frame / dt)
+            
+            if num_frames is not None:
+                self.num_frames = num_frames
+                self.num_steps_frame = self.tf/num_frames/dt
+            else:
+                self.num_frames = int(self.tf / self.num_steps_frame / dt)
+
             self.duration = self.num_frames / self.fps
+    
+    def set_num_steps_frame(self, speed, fps, dt):
+        self.num_steps_frame = speed / fps / dt
+        if self.num_steps_frame < 1:
+            self.num_steps_frame = 1
+            self.dt = self.speed/self.fps
+        else:
+            self.num_steps_frame = int(round(self.num_steps_frame))
+

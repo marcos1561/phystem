@@ -12,12 +12,15 @@ from phystem.systems.ring.configs import RingCfg, SpaceCfg, RingCfg
 
 class GraphCfg:
     def __init__(self, show_circles=False, show_f_spring=False, show_f_vol=False, show_f_area=False, 
-        show_f_total=False, force_to_color=None, begin_paused=False, pause_on_high_vel=False, cpp_is_debug=True) -> None:
+        show_f_total=False, show_center_mass=False, show_inside=False, force_to_color=None, begin_paused=False, 
+        pause_on_high_vel=False, cpp_is_debug=True) -> None:
         self.show_circles = show_circles
         self.show_f_spring = show_f_spring
         self.show_f_vol = show_f_vol
         self.show_f_area = show_f_area
         self.show_f_total = show_f_total
+        self.show_center_mass = show_center_mass
+        self.show_inside = show_inside
 
         self.show_pos_cont = False
 
@@ -77,6 +80,8 @@ class MainGraph:
         # self.event_handler = MainEventHandler(self, self.graph_cfg)
         self.forces_state = deepcopy(self.graph_cfg.get_show_forces())
         self.pos_cont_state = self.graph_cfg.show_pos_cont
+        self.center_mass_state = self.graph_cfg.show_center_mass
+        self.inside_state = self.graph_cfg.show_inside
 
         self.circles: list[list[Circle]] = None
         self.circles_col: list[PatchCollection] = None
@@ -162,7 +167,7 @@ class MainGraph:
             x.append(ring_pos[id][0])
             y.append(ring_pos[id][1])
         return x, y
-
+    
     def init(self):
         r = self.space_cfg.size/2
         r_scale = 1
@@ -171,6 +176,7 @@ class MainGraph:
 
         self.ax.set_aspect(1)
 
+        # Borders
         self.ax.plot([-r, r], [-r, -r], color="black")
         self.ax.plot([-r, r], [r, r], color="black")
         self.ax.plot([r, r], [-r, r], color="black")
@@ -178,7 +184,22 @@ class MainGraph:
 
         self.points = [self.ax.scatter(*ring_pos_t, s=16, zorder=2) for ring_pos_t in self.pos_t]
         self.ith_points = self.ax.scatter(*self.get_ith_points(), c="black", s=22, zorder=2)
+
+        inside_points_arr = np.array(self.solver.in_pol_checker.inside_points).T
+        if inside_points_arr.size == 0:
+            inside_points_arr = np.array([[], []])
+
+        self.inside_points = self.ax.scatter(
+            *inside_points_arr, 
+            c="black", marker="x", zorder=10,
+        )
+        if not self.graph_cfg.show_inside:
+            self.inside_points.remove()
        
+        self.center_mass = self.ax.scatter(*np.array(self.solver.center_mass).T, c="black")
+        if not self.graph_cfg.show_center_mass:
+            self.center_mass.remove()
+
         self.points_continuos = [self.ax.scatter(*(np.array(self.solver.pos_continuos[ring_id]).T)) for ring_id in range(self.num_rings)]
         if not self.graph_cfg.show_pos_cont:
             [artist.remove() for artist in self.points_continuos]
@@ -239,14 +260,46 @@ class MainGraph:
                     if not show_force:
                         self.arrows[-1][f_name].remove()
                 
-
     def update(self):
         # TODO: Setar os segmentos sem reconstruir os mesmos.
         #   Talvez criar os segmentos no c++ e apenas referenciar eles aqui.
         
+        # Distinct ring point for rotation visualization
         ith_points = np.array(self.get_ith_points()).T
         self.ith_points.set_offsets(ith_points)
 
+        #==
+        # Inside Points
+        #==
+        if self.inside_state != self.graph_cfg.show_inside:
+            self.inside_state = self.graph_cfg.show_inside
+            if self.graph_cfg.show_inside:
+                self.ax.add_artist(self.inside_points)        
+            else:
+                self.inside_points.remove()
+        
+        if self.graph_cfg.show_inside:
+            inside_points = self.solver.in_pol_checker.inside_points
+            num_inside_points = self.solver.in_pol_checker.num_inside_points
+            if num_inside_points > 0:
+                self.inside_points.set_offsets(inside_points[:num_inside_points])
+        
+        #==
+        # Center of mass
+        #==
+        if self.center_mass_state != self.graph_cfg.show_center_mass:
+            self.center_mass_state = self.graph_cfg.show_center_mass
+            if self.graph_cfg.show_center_mass:
+                self.ax.add_artist(self.center_mass)        
+            else:
+                self.center_mass.remove()
+        
+        if self.graph_cfg.show_center_mass:
+            self.center_mass.set_offsets(self.solver.center_mass)
+
+        #==
+        # Ring lines
+        #==
         for ring_id in range(self.num_rings):
             self.points[ring_id].set_offsets(self.pos[ring_id])
             
