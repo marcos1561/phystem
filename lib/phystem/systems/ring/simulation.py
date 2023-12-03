@@ -63,6 +63,9 @@ class Simulation(SimulationCore):
         ## Initialize graphs ###
         particles_graph.init()
 
+        if graph_cfg.cpp_is_debug:
+            self.solver.update_visual_aids()
+
         def update(frame=None):
             control_mng = self.app.control.control_mng
 

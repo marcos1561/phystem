@@ -1117,7 +1117,7 @@ public:
         }
     }
 
-   void update_windows() {
+    void update_windows() {
         #if DEBUG == 1
         rng_manager.update();
         #endif
@@ -1147,7 +1147,16 @@ public:
 
         sim_time += dt;
         num_time_steps += 1;
-   }
+    }
+
+    void update_visual_aids() {
+        windows_manager.update_window_members();
+
+        calc_forces_windows();
+        calc_center_mass();
+        in_pol_checker.update();
+        update_graph_points();   
+    }
 
     void calc_center_mass() {
         for (int ring_id = 0; ring_id < num_rings; ring_id++)

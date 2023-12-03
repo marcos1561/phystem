@@ -117,7 +117,7 @@ class Info(InfoCore):
             f"vol_overlap   : {self.solver.excluded_vol_debug.count_overlap}\n"
             f"area_overlap  : {self.solver.area_debug.count_overlap}\n"
             f"zero_speed    : {self.solver.update_debug.count_zero_speed}\n"
+            f"intersect     : {self.solver.cpp_solver.in_pol_checker.num_inside_points}\n"
             "\n"
-            f"intersect    : {self.solver.cpp_solver.in_pol_checker.num_inside_points}\n"
             f"{self.cfg_info}"
         )

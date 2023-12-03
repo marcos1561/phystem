@@ -130,6 +130,9 @@ class CppSolver:
     def update_debug(self):
         return self.cpp_solver.update_debug
     
+    def update_visual_aids(self):
+        self.cpp_solver.update_visual_aids()
+
     def update(self):
         self.update_func()
         self.time += self.dt
