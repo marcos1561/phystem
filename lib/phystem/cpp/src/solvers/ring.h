@@ -92,6 +92,8 @@ public:
     int windows_update_freq; 
     int integration_type;
 
+    InPolCheckerCfg in_pol_checker_cfg; 
+
     double base_dt;
     double low_dt;
     int num_low_dt;
@@ -152,7 +154,7 @@ public:
 
     Ring(Vector3d &pos0, vector<vector<double>> self_prop_angle0, RingCfg dynamic_cfg, 
         double size, double dt, int num_col_windows, int seed=-1, int windows_update_freq=1,
-        int integration_type=0, InPolCheckerCfg in_pol_checker_cfg={3, 1}) 
+        int integration_type=0, InPolCheckerCfg in_pol_checker_cfg=InPolCheckerCfg(3, 1, true)) 
     : pos(pos0), self_prop_angle(self_prop_angle0), dynamic_cfg(dynamic_cfg), size(size), dt(dt),
     windows_update_freq(windows_update_freq), integration_type(integration_type)
     {
@@ -161,7 +163,6 @@ public:
         else
             srand(time(0));
 
-        std::cout << "Update freq: " << windows_update_freq << std::endl;
 
         num_particles = pos0[0].size();
         num_rings = pos0.size();
@@ -176,12 +177,9 @@ public:
 
         initialize_dynamic();
         
-        std::cout << in_pol_checker_cfg.num_cols_widows << std::endl;
-        std::cout << in_pol_checker_cfg.update_freq << std::endl;
-
         windows_manager = WindowsManagerRing(&pos, num_col_windows, num_col_windows, size, windows_update_freq);
         in_pol_checker = InPolChecker(&pos_continuos, &center_mass, size, 
-                        in_pol_checker_cfg.num_cols_widows, in_pol_checker_cfg.update_freq);
+                        in_pol_checker_cfg.num_cols_windows, in_pol_checker_cfg.update_freq, in_pol_checker_cfg.disable);
         
         #if DEBUG == 1
         rng_manager = RngManager(num_particles, num_rings, 5);
@@ -471,7 +469,7 @@ public:
         auto& v1 = pos_continuos[ring_id][id];
         
         id = 0;
-        if (point_id != (pos_continuos[ring_id].size() - 1))
+        if (point_id != ((int)pos_continuos[ring_id].size() - 1))
             id = point_id + 1;
         auto& v2 = pos_continuos[ring_id][id];
 
@@ -541,7 +539,7 @@ public:
         area_debug.area[ring_id] = area;
         #endif
 
-        auto& ring_pos = pos[ring_id];
+        // auto& ring_pos = pos[ring_id];
         for (int i = 0; i < num_particles; i++)
         {
             double d1 = vector_mod(differences[ring_id][i]);
@@ -586,7 +584,8 @@ public:
     }
 
     void target_area_forces(int ring_id) {
-        double perimeter = calc_differences(ring_id);
+        // double perimeter = calc_differences(ring_id);
+        calc_differences(ring_id);
 
         pos_continuos[ring_id][0] = pos[ring_id][0];
         for (size_t i = 0; i < (differences[ring_id].size()-1); i++)
@@ -1153,8 +1152,11 @@ public:
         windows_manager.update_window_members();
 
         calc_forces_windows();
+        
+        
         calc_center_mass();
         in_pol_checker.update();
+        
         update_graph_points();   
     }
 

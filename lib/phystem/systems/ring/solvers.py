@@ -16,7 +16,8 @@ class CppSolver:
         dynamic_cfg = cpp_lib.configs.RingCfg(dynamic_cfg.cpp_constructor_args())
         
         in_pol_checker_cfg = cpp_lib.configs.InPolCheckerCfg(
-            int_cfg.in_pol_checker.num_col_windows, int_cfg.in_pol_checker.update_freq)
+            int_cfg.in_pol_checker.num_col_windows, int_cfg.in_pol_checker.update_freq,
+            int_cfg.in_pol_checker.disable)
 
         pos_in = [cpp_lib.data_types.PosVec(ring_pos) for ring_pos in pos]
         angle_in = [cpp_lib.data_types.List(ring_angle) for ring_angle in self_prop_angle]

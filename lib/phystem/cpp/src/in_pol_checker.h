@@ -14,6 +14,7 @@ public:
     Vector2d* center_mass;
     double space_size;
     int update_freq;
+    bool disable;
 
     Vector2d inside_points;
     int num_inside_points;
@@ -23,15 +24,17 @@ public:
     int num_verts;
     int counter;
 
+
     InPolChecker() {};
 
-    InPolChecker(Vector3d *pols, Vector2d *center_mass, double space_size, int num_col_windows, int update_freq=1)
-    : pols(pols), center_mass(center_mass), space_size(space_size), update_freq(update_freq) {
+    InPolChecker(Vector3d *pols, Vector2d *center_mass, double space_size, int num_col_windows, int update_freq=1,
+        bool disable=false)
+    : pols(pols), center_mass(center_mass), space_size(space_size), update_freq(update_freq), disable(disable) {
         windows_manager = WindowsManager(center_mass, num_col_windows, num_col_windows, space_size);
-
+        std::cout << "update_freq: " << update_freq << std::endl; 
         num_verts = (*pols)[0].size();
         num_inside_points = 0;
-        counter = 0;
+        counter = 1;
     }
 
     bool is_inside_pol(double x, double y, int pol_id) {
@@ -65,7 +68,7 @@ public:
     void check_intersection(int pol_id, int other_id) {
         for (auto &p: (*pols)[pol_id]) {
             if (is_inside_pol(p[0], p[1], other_id) == true) {
-                if (inside_points.size() > num_inside_points) {
+                if ((int)inside_points.size() > num_inside_points) {
                     inside_points[num_inside_points] = p;
                 } else {
                     inside_points.push_back(p);
@@ -78,8 +81,11 @@ public:
     }
 
     void update() {
-        if (counter % update_freq == 0) {
-            counter = 0;
+        if (disable) 
+            return;
+
+        if (counter % (update_freq) == 0) {
+            counter = 1;
         } else {
             counter ++;
             return;

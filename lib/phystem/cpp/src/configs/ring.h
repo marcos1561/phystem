@@ -38,6 +38,12 @@ public:
 };
  
 struct InPolCheckerCfg {
-    int num_cols_widows;
+    int num_cols_windows;
     int update_freq;
+    bool disable;
+    
+    InPolCheckerCfg() { };
+    
+    InPolCheckerCfg(int num_cols_windows, int update_freq, bool disable=false)
+    : num_cols_windows(num_cols_windows), update_freq(update_freq), disable(disable) { }
 };

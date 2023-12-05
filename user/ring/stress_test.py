@@ -5,10 +5,10 @@ from phystem.systems.ring.ui.graph import GraphCfg
 from phystem.systems.ring import collect_pipelines
 
 from phystem.core.run_config import UpdateType, RunType, RealTimeCfg, SaveCfg, CollectDataCfg
-from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg
+from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg
 
 dynamic_cfg = RingCfg(
-    spring_k=10,
+    spring_k=3,
     spring_r=0.7,
     
     area_potencial="target_area",
@@ -35,7 +35,7 @@ dynamic_cfg = RingCfg(
 from math import pi, ceil
 import numpy as np
 # n = int((15000)**.5) + 1
-n = 7
+n = 2
 k = 1.1
 radius = 20/6 * 1.5
 num_rings = n**2
@@ -76,6 +76,8 @@ real_time_cfg = RealTimeCfg(
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
         update_type=UpdateType.WINDOWS,
+        in_pol_checker=InPolCheckerCfg(
+            num_col_windows=3, update_freq=1000, disable=False),
     ),
     num_steps_frame = 400,
     fps = 30,
@@ -85,9 +87,9 @@ real_time_cfg = RealTimeCfg(
         show_f_vol       = False,
         show_f_area      = False,
         show_f_total     = False,
-        show_center_mass = True,
+        show_center_mass = False,
         show_inside      = True,
-        begin_paused     = True,
+        begin_paused     = False,
     ),
     # checkpoint=CheckpointCfg(
     #     folder_path="stress/checkpoint",

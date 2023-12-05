@@ -9,14 +9,15 @@ class IntegrationType(Enum):
     rk4=2
 
 class InPolCheckerCfg:
-    def __init__(self, num_col_windows: int, update_freq: int) -> None:
+    def __init__(self, num_col_windows: int, update_freq: int, disable=False) -> None:
         self.num_col_windows = num_col_windows
         self.update_freq = update_freq
+        self.disable = disable
 
 class IntegrationCfg(run_config.IntegrationCfg):
     def __init__(self, dt: float, num_col_windows: int=None, windows_update_freq=1, 
         integration_type=IntegrationType.euler, solver_type=SolverType.CPP, update_type=UpdateType.NORMAL,
-        in_pol_checker=InPolCheckerCfg(3, 1)) -> None:
+        in_pol_checker=InPolCheckerCfg(3, 1, True)) -> None:
         if update_type == UpdateType.WINDOWS and num_col_windows is None:
             raise ValueError("'num_windows' deve ser especificado.")
 

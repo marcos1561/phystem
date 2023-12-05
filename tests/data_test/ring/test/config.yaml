@@ -46,6 +46,7 @@ run_cfg: !!python/object:phystem.core.run_config.CollectDataCfg
   int_cfg: !!python/object:phystem.systems.ring.run_config.IntegrationCfg
     dt: 0.0005
     in_pol_checker: !!python/object:phystem.systems.ring.run_config.InPolCheckerCfg
+      disable: true
       num_col_windows: 3
       update_freq: 1
     integration_type: !!python/object/apply:phystem.systems.ring.run_config.IntegrationType

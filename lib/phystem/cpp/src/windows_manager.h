@@ -188,7 +188,7 @@ public:
     }
 
     void update_window_members() {
-         if ((counter % update_freq) != 0) {
+        if ((counter % update_freq) != 0) {
             counter ++;
             return;
         } else {

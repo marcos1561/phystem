@@ -35,14 +35,15 @@ int main() {
     auto data = ring::init_cfg(2, n, r, cfg.vo);
 
     num_cols_windows=8;
-    auto solver = Ring(data.pos, data.self_prop_angle, cfg, size, dt, num_cols_windows, 12415, 1, 2);
+    auto solver = Ring(data.pos, data.self_prop_angle, cfg, size, dt, num_cols_windows, 12415, 1, 0,
+        InPolCheckerCfg(3, 10));
 
     for (int i = 0; i < 100000; i++)
     // while (true)
     {
         // solver.update_normal();
         solver.update_windows();
-        auto pos = solver.pos[0][0];
+        // auto pos = solver.pos[0][0];
         // std::cout << pos[0] << ", " << pos[1] << std::endl;
         // std::cout << solver.self_prop_angle[0][0] << std::endl;
     }

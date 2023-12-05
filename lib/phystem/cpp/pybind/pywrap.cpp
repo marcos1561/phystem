@@ -53,7 +53,7 @@ PYBIND11_MODULE(cpp_lib, m) {
         ;
     
     py::class_<InPolCheckerCfg>(configs, "InPolCheckerCfg")
-        .def(py::init<int, int>())
+        .def(py::init<int, int, bool>())
         ;
 
     //==
@@ -76,7 +76,7 @@ PYBIND11_MODULE(cpp_lib, m) {
         ;
     
     py::class_<InPolChecker>(managers, "InPolChecker")
-        .def(py::init<Vector3d*, VecList*, int, double>())
+        .def(py::init<Vector3d*, VecList*, int, double, bool>())
         .def_readonly("num_inside_points", &InPolChecker::num_inside_points)
         .def_readonly("inside_points", &InPolChecker::inside_points)
         ;
