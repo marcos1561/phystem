@@ -88,7 +88,7 @@ def last_pos(sim: Simulation, collect_cfg):
 
     prog = progress.Continuos(run_cfg.tf)
 
-    collector = collectors.LastPos(solver, run_cfg.folder_path, sim.configs)
+    collector = collectors.LastState(solver, run_cfg.folder_path, sim.configs)
 
     while solver.time < run_cfg.tf:
         solver.update()

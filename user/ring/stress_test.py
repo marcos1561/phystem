@@ -8,7 +8,7 @@ from phystem.core.run_config import UpdateType, RunType, RealTimeCfg, SaveCfg, C
 from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg
 
 dynamic_cfg = RingCfg(
-    spring_k=3,
+    spring_k=12,
     spring_r=0.7,
     
     area_potencial="target_area",
@@ -17,7 +17,7 @@ dynamic_cfg = RingCfg(
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
     # p0=3.5449077018, # Círculo
-    p0=3.7, # Círculo
+    p0=3.7,
     # area0=53,
 
     exclusion_vol=1,
@@ -35,7 +35,7 @@ dynamic_cfg = RingCfg(
 from math import pi, ceil
 import numpy as np
 # n = int((15000)**.5) + 1
-n = 2
+n = 5
 k = 1.1
 radius = 20/6 * 1.5
 num_rings = n**2
@@ -79,7 +79,7 @@ real_time_cfg = RealTimeCfg(
         in_pol_checker=InPolCheckerCfg(
             num_col_windows=3, update_freq=1000, disable=False),
     ),
-    num_steps_frame = 400,
+    num_steps_frame = 500,
     fps = 30,
     graph_cfg = GraphCfg(
         show_circles     = True,
@@ -89,7 +89,7 @@ real_time_cfg = RealTimeCfg(
         show_f_total     = False,
         show_center_mass = False,
         show_inside      = True,
-        begin_paused     = False,
+        begin_paused     = True,
     ),
     # checkpoint=CheckpointCfg(
     #     folder_path="stress/checkpoint",

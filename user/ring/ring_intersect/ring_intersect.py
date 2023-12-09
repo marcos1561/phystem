@@ -10,7 +10,7 @@ from phystem.systems.ring.ui.graph import GraphCfg
 import pipeline
 
 dynamic_cfg = RingCfg(
-    spring_k=3,
+    spring_k=5,
     spring_r=0.7,
     
     area_potencial="target_area",
@@ -37,7 +37,7 @@ dynamic_cfg = RingCfg(
 from math import pi, ceil
 import numpy as np
 n = 5
-k = 1.4
+k = 1.1
 radius = 20/6 * 1.5
 num_rings = n**2
 l = 2 * k * radius
@@ -78,7 +78,7 @@ collect_cfg = CollectDataCfg(
             num_col_windows=4, update_freq=100,
         ),
     ),
-    tf=15,
+    tf=40,
     
     folder_path="data",
     func=pipeline.collect_pipeline,

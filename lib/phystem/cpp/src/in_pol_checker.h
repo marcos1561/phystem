@@ -105,6 +105,7 @@ public:
                 for (int j = i+1; j < windows_cap; j ++) {
                     auto other_id = window[j];
                     check_intersection(pol_id, other_id);
+                    check_intersection(other_id, pol_id);
                 }
 
                 for (auto neigh_id : neighbors) {
@@ -114,6 +115,7 @@ public:
                     for (int j = 0; j < neigh_window_cap; j ++) {
                         auto other_id = neigh_window[j];
                         check_intersection(pol_id, other_id);
+                        check_intersection(other_id, pol_id);
                     }
                 }
             } 

@@ -3,6 +3,7 @@ from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection, PathCollection, PatchCollection
 from matplotlib.patches import Circle
 from matplotlib.quiver import Quiver 
+from matplotlib.artist import Artist 
 from matplotlib import colors 
 
 from copy import deepcopy
@@ -194,15 +195,18 @@ class MainGraph:
             c="black", marker="x", zorder=10,
         )
         if not self.graph_cfg.show_inside:
-            self.inside_points.remove()
+            # self.inside_points.remove()
+            self.inside_points.set_visible(False)
        
         self.center_mass = self.ax.scatter(*np.array(self.solver.center_mass).T, c="black")
         if not self.graph_cfg.show_center_mass:
-            self.center_mass.remove()
+            # self.center_mass.remove()
+            self.center_mass.set_visible(False)
 
         self.points_continuos = [self.ax.scatter(*(np.array(self.solver.pos_continuos[ring_id]).T)) for ring_id in range(self.num_rings)]
         if not self.graph_cfg.show_pos_cont:
-            [artist.remove() for artist in self.points_continuos]
+            # [artist.remove() for artist in self.points_continuos]
+            [artist.set_visible(False) for artist in self.points_continuos]
 
         # self.gg_points = self.ax.scatter(*np.array(self.graph_points).T)
 
@@ -233,7 +237,8 @@ class MainGraph:
             self.circles.append(ring_circles)
             self.circles_col.append(PatchCollection(ring_circles, match_original=True))
             if not self.graph_cfg.show_circles:
-                self.circles_col[-1].set_paths([])
+                # self.circles_col[-1].set_paths([])
+                self.circles_col[-1].set_visible(False)
             
             self.ax.add_collection(self.circles_col[-1])
 
@@ -258,8 +263,10 @@ class MainGraph:
                 
                 for f_name, show_force in self.graph_cfg.get_show_forces().items():
                     if not show_force:
-                        self.arrows[-1][f_name].remove()
-                
+                        # self.arrows[-1][f_name].remove()
+                        self.arrows[-1][f_name].set_visible(False)
+
+
     def update(self):
         # TODO: Setar os segmentos sem reconstruir os mesmos.
         #   Talvez criar os segmentos no c++ e apenas referenciar eles aqui.
@@ -271,31 +278,57 @@ class MainGraph:
         #==
         # Inside Points
         #==
-        if self.inside_state != self.graph_cfg.show_inside:
-            self.inside_state = self.graph_cfg.show_inside
-            if self.graph_cfg.show_inside:
-                self.ax.add_artist(self.inside_points)        
-            else:
-                self.inside_points.remove()
+        # if self.inside_state != self.graph_cfg.show_inside:
+        #     self.inside_state = self.graph_cfg.show_inside
+        #     if self.graph_cfg.show_inside:
+        #         # self.ax.add_artist(self.inside_points)        
+        #         self.inside_points.set_visible(True)
+        #     else:
+        #         # self.inside_points.remove()
+        #         self.inside_points.set_visible(False)
         
+        # if self.graph_cfg.show_inside:
+        #     inside_points = self.solver.in_pol_checker.inside_points
+        #     num_inside_points = self.solver.in_pol_checker.num_inside_points
+        #     if num_inside_points > 0:
+        #         if not self.inside_points.get_visible(): 
+        #             self.inside_points.set_visible(True)
+        #         self.inside_points.set_offsets(inside_points[:num_inside_points])
+        #     else:
+        #         if self.inside_points.get_visible(): 
+        #             self.inside_points.set_visible(False)
         if self.graph_cfg.show_inside:
             inside_points = self.solver.in_pol_checker.inside_points
             num_inside_points = self.solver.in_pol_checker.num_inside_points
             if num_inside_points > 0:
+                self.inside_points.set_visible(True)
                 self.inside_points.set_offsets(inside_points[:num_inside_points])
-        
+            else:
+                self.inside_points.set_visible(False)
+        else:
+            self.inside_points.set_visible(False)
+
+
         #==
         # Center of mass
         #==
-        if self.center_mass_state != self.graph_cfg.show_center_mass:
-            self.center_mass_state = self.graph_cfg.show_center_mass
-            if self.graph_cfg.show_center_mass:
-                self.ax.add_artist(self.center_mass)        
-            else:
-                self.center_mass.remove()
+        # if self.center_mass_state != self.graph_cfg.show_center_mass:
+        #     self.center_mass_state = self.graph_cfg.show_center_mass
+        #     if self.graph_cfg.show_center_mass:
+        #         self.ax.add_artist(self.center_mass)        
+        #     else:
+        #         self.center_mass.remove()
         
+        # if self.graph_cfg.show_center_mass:
+        #     self.center_mass.set_offsets(self.solver.center_mass)
         if self.graph_cfg.show_center_mass:
+            if self.center_mass.get_visible() == False:
+                self.center_mass.set_visible(True)
             self.center_mass.set_offsets(self.solver.center_mass)
+        else:
+            if self.center_mass.get_visible() == True:
+                self.center_mass.set_visible(False)
+
 
         #==
         # Ring lines
@@ -310,52 +343,82 @@ class MainGraph:
         #==
         # Pos Continuos
         #==
-        if self.graph_cfg.show_pos_cont:
-            if not self.pos_cont_state:
-                for ring_id in range(self.num_rings):
-                    self.ax.add_artist(self.points_continuos[ring_id])
-                self.pos_cont_state = True
+        # if self.graph_cfg.show_pos_cont:
+        #     if not self.pos_cont_state:
+        #         for ring_id in range(self.num_rings):
+        #             self.ax.add_artist(self.points_continuos[ring_id])
+        #         self.pos_cont_state = True
 
+        #     for ring_id in range(self.num_rings):
+        #         self.points_continuos[ring_id].set_offsets(self.solver.pos_continuos[ring_id])
+        # else:
+        #     if self.pos_cont_state:
+        #         for ring_id in range(self.num_rings):
+        #             self.points_continuos[ring_id].remove()
+        #         self.pos_cont_state = False
+        
+        if self.graph_cfg.show_pos_cont:
             for ring_id in range(self.num_rings):
+                self.points_continuos[ring_id].set_visible(True)
                 self.points_continuos[ring_id].set_offsets(self.solver.pos_continuos[ring_id])
         else:
-            if self.pos_cont_state:
-                for ring_id in range(self.num_rings):
-                    self.points_continuos[ring_id].remove()
-                self.pos_cont_state = False
+            for ring_id in range(self.num_rings):
+                self.points_continuos[ring_id].set_visible(False)
 
         #==
         # Circles
         #==
+        # if self.graph_cfg.show_circles:
+        #     for ring_id in range(self.num_rings):
+        #         for id in range(len(self.pos_t[ring_id][0])):
+        #             self.circles[ring_id][id].center = (self.pos_t[ring_id][0][id], self.pos_t[ring_id][1][id])
+        #         self.circles_col[ring_id].set_paths(self.circles[ring_id])
+        # else:
+        #     for ring_id in range(self.num_rings):
+        #         self.circles_col[ring_id].set_paths([])
+
         if self.graph_cfg.show_circles:
             for ring_id in range(self.num_rings):
+                self.circles_col[ring_id].set_visible(True)
+
                 for id in range(len(self.pos_t[ring_id][0])):
                     self.circles[ring_id][id].center = (self.pos_t[ring_id][0][id], self.pos_t[ring_id][1][id])
                 self.circles_col[ring_id].set_paths(self.circles[ring_id])
         else:
             for ring_id in range(self.num_rings):
-                self.circles_col[ring_id].set_paths([])
+                self.circles_col[ring_id].set_visible(False)
 
         #==
         # Arrows
         #==
         if self.cpp_is_debug:
+            # for f_name, show_force in self.graph_cfg.get_show_forces().items():
+            #     if show_force:
+            #         if self.forces_state[f_name] != show_force:
+            #             self.forces_state[f_name] = show_force
+            #             for ring_id in range(self.num_rings):
+            #                 self.ax.add_artist(self.arrows[ring_id][f_name])
+                    
+            #         for ring_id in range(self.num_rings):
+            #             forces = self.get_force(ring_id, f_name)
+            #             self.arrows[ring_id][f_name].set_UVC(U=forces[0], V=forces[1])
+            #             self.arrows[ring_id][f_name].set_offsets(self.pos[ring_id])
+            #     else:
+            #         if self.forces_state[f_name] != show_force:
+            #             self.forces_state[f_name] = show_force
+            #             for ring_id in range(self.num_rings):
+            #                 self.arrows[ring_id][f_name].remove()
+            
             for f_name, show_force in self.graph_cfg.get_show_forces().items():
                 if show_force:
-                    if self.forces_state[f_name] != show_force:
-                        self.forces_state[f_name] = show_force
-                        for ring_id in range(self.num_rings):
-                            self.ax.add_artist(self.arrows[ring_id][f_name])
-                    
                     for ring_id in range(self.num_rings):
                         forces = self.get_force(ring_id, f_name)
+                        self.arrows[ring_id][f_name].set_visible(True)
                         self.arrows[ring_id][f_name].set_UVC(U=forces[0], V=forces[1])
                         self.arrows[ring_id][f_name].set_offsets(self.pos[ring_id])
                 else:
-                    if self.forces_state[f_name] != show_force:
-                        self.forces_state[f_name] = show_force
-                        for ring_id in range(self.num_rings):
-                            self.arrows[ring_id][f_name].remove()
+                    for ring_id in range(self.num_rings):
+                        self.arrows[ring_id][f_name].set_visible(False)
 
         # return (self.lines, self.points, self.circles_col) + tuple(self.arrows.values())
         return

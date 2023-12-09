@@ -6,6 +6,7 @@ random_stuff
 user/ring/area_test/data
 user/ring/checkpoint
 user/ring/stress
+user/ring/ring_intersect
 
 lib/phystem/cpp/tests_ui/build
 lib/phystem/cpp/tests_ui/ui/build

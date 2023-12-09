@@ -117,12 +117,13 @@ class StateCheckpoint(collectors.Collector):
 
 
 
-class LastPos(collectors.Collector):
+class LastState(collectors.Collector):
     '''
     Coleta a posição no final da simulação. Para tal, apenas é necessário
     rodar a simulação e chamar o método 'save' após sua finalização.
     '''
-    
+    solver: CppSolver
+
     def __init__(self, solver: CppSolver, path: str, configs: list) -> None:
         super().__init__(solver, path, configs)
 
@@ -131,5 +132,7 @@ class LastPos(collectors.Collector):
 
     def save(self) -> None:
         super().save()
-        path_area = os.path.join(self.path, "pos.npy")
-        np.save(path_area, np.array(self.solver.pos))
+        pos_path = os.path.join(self.path, "pos.npy")
+        angle_path = os.path.join(self.path, "angle.npy")
+        np.save(pos_path, np.array(self.solver.pos))
+        np.save(angle_path, np.array(self.solver.self_prop_angle))

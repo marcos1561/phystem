@@ -66,7 +66,7 @@ real_time_cfg = RealTimeCfg(
         windows_update_freq=1,
         integration_type=IntegrationType.verlet,
         update_type=UpdateType.WINDOWS,
-        in_pol_checker=InPolCheckerCfg(4, 100),
+        in_pol_checker=InPolCheckerCfg(4, 1),
     ),
     num_steps_frame=600,
     fps=60,
@@ -78,14 +78,15 @@ real_time_cfg = RealTimeCfg(
         show_f_total      = False,
         show_center_mass  = True,
         show_inside       = True,
-        begin_paused      = False,
-        pause_on_high_vel = True,
+        begin_paused      = True,
+        pause_on_high_vel = False,
         cpp_is_debug      = True,
     ),
-    # checkpoint=CheckpointCfg(
-    #     folder_path="checkpoint/data",
-    #     override_cfgs=True,
-    # )
+    checkpoint=CheckpointCfg(
+        # folder_path="ring_intersect/data_high_den/phystem_data",
+        folder_path="ring_intersect/data",
+        override_cfgs=False,
+    )
 )
 print(real_time_cfg.int_cfg.num_col_windows)
 
