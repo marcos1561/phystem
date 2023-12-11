@@ -8,7 +8,7 @@ from phystem.core.run_config import UpdateType, RunType, RealTimeCfg, SaveCfg, C
 from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg
 
 dynamic_cfg = RingCfg(
-    spring_k=12,
+    spring_k=4,
     spring_r=0.7,
     
     area_potencial="target_area",
@@ -77,7 +77,7 @@ real_time_cfg = RealTimeCfg(
         integration_type=IntegrationType.euler,
         update_type=UpdateType.WINDOWS,
         in_pol_checker=InPolCheckerCfg(
-            num_col_windows=3, update_freq=1000, disable=False),
+            num_col_windows=4, update_freq=100, disable=False),
     ),
     num_steps_frame = 500,
     fps = 30,
@@ -89,7 +89,7 @@ real_time_cfg = RealTimeCfg(
         show_f_total     = False,
         show_center_mass = False,
         show_inside      = True,
-        begin_paused     = True,
+        begin_paused     = False,
     ),
     # checkpoint=CheckpointCfg(
     #     folder_path="stress/checkpoint",

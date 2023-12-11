@@ -629,9 +629,56 @@ public:
             area_forces[ring_id][i][1] = fy;
             #endif
 
-
             sum_forces_matrix[ring_id][i][0] += fx;
             sum_forces_matrix[ring_id][i][1] += fy;
+        }
+    }
+
+    void collision_forces() {
+        for (int col_id = 0; col_id < in_pol_checker.num_collisions; col_id++)
+        {
+            if (in_pol_checker.is_col_resolved[col_id] == true) {
+                continue;
+            } 
+
+            auto& col_info = in_pol_checker.collisions[col_id];
+            auto& ring_pos = pos[col_info.ring_id];
+            auto& p = ring_pos[col_info.p_id];
+                    
+            if (in_pol_checker.is_inside_pol(p[0], p[1], col_info.col_ring_id) == false) {
+                in_pol_checker.is_col_resolved[col_id] = true;
+                continue;
+            }
+
+            auto& ring_cm = center_mass[col_info.col_ring_id];
+            
+            // double radius_vec = {p[0] - ring_cm[0], p[1] - ring_cm[1]};
+            // double norm = vector_mod(radius_vec)
+            // double dx = p[0] - ring_cm[0];
+            // double dy = p[1] - ring_cm[1];
+            // double norm = periodic_dist(dx, dy);
+            
+            int after_p_id = col_info.p_id == (num_particles-1) ? 0 : col_info.p_id + 1; 
+            int before_p_id = col_info.p_id == 0 ? (num_particles - 1) : col_info.p_id - 1; 
+            
+            double dx = -(ring_pos[after_p_id][1] - ring_pos[before_p_id][1]);
+            double dy = (ring_pos[after_p_id][0] - ring_pos[before_p_id][0]);
+            double norm = periodic_dist(dx, dy);
+
+            // double sign = -area_debug.area[col_info.ring_id] + area0;
+            // sign = -sign/sign;
+            
+            // double dx = sign * area_forces[col_info.ring_id][col_info.p_id][0];
+            // double dy = sign * area_forces[col_info.ring_id][col_info.p_id][1];
+            // double norm = sqrt(dx*dx + dy*dy);
+            
+            double f_intensity = 15;
+
+            double fx = dx/norm * f_intensity;
+            double fy = dy/norm * f_intensity;
+
+            sum_forces_matrix[col_info.ring_id][col_info.p_id][0] += fx;
+            sum_forces_matrix[col_info.ring_id][col_info.p_id][1] += fy;
         }
     }
 
@@ -1114,6 +1161,10 @@ public:
                 break;
             }
         }
+
+        collision_forces();
+        // if (in_pol_checker.to_calc_forces == true) {
+        // }
     }
 
     void update_windows() {
@@ -1123,9 +1174,9 @@ public:
 
         windows_manager.update_window_members();
 
-        calc_forces_windows();
-        calc_center_mass();
         in_pol_checker.update();
+        calc_center_mass();
+        calc_forces_windows();
 
         switch (integration_type)
         {

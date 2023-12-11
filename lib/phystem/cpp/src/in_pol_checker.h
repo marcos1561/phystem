@@ -8,14 +8,30 @@
 using Vector3d = std::vector<std::vector<std::array<double, 2>>>;
 using Vector2d = std::vector<std::array<double, 2>>;
 
+
+
 class InPolChecker {
 public:
+    struct ColInfo {
+        int ring_id;
+        int p_id;
+        int col_ring_id;
+    };
+
     Vector3d* pols;
     Vector2d* center_mass;
     double space_size;
     int update_freq;
     bool disable;
 
+    // 0: Id do anel intersectador
+    // 1: Id da partícula intersectadora
+    // 2: Id do anel intersectado
+    std::vector<InPolChecker::ColInfo> collisions;
+    std::vector<bool> is_col_resolved;
+    
+    int num_collisions;
+    
     Vector2d inside_points;
     int num_inside_points;
 
@@ -23,7 +39,7 @@ public:
 
     int num_verts;
     int counter;
-
+    bool to_calc_forces;
 
     InPolChecker() {};
 
@@ -34,7 +50,10 @@ public:
         std::cout << "update_freq: " << update_freq << std::endl; 
         num_verts = (*pols)[0].size();
         num_inside_points = 0;
+        num_collisions = 0;
         counter = 1;
+
+        to_calc_forces = false;
     }
 
     bool is_inside_pol(double x, double y, int pol_id) {
@@ -65,17 +84,39 @@ public:
         return is_inside;
     }
 
+    // void check_collision() {
+    //     for (int id = 0; id < num_collisions; id++)
+    //     {
+    //         if (is_col_resolved)
+    //     }
+        
+    // }
+
     void check_intersection(int pol_id, int other_id) {
-        for (auto &p: (*pols)[pol_id]) {
+        Vector2d& pol_i = (*pols)[pol_id];
+
+        for (int p_id = 0; p_id < num_verts; p_id++) {
+        // for (auto &p: (*pols)[pol_id]) {
+            auto &p = pol_i[p_id];
+
             if (is_inside_pol(p[0], p[1], other_id) == true) {
                 if ((int)inside_points.size() > num_inside_points) {
                     inside_points[num_inside_points] = p;
                 } else {
                     inside_points.push_back(p);
                 }
+                
+                if ((int)collisions.size() > num_collisions) {
+                    collisions[num_collisions] = {pol_id, p_id, other_id};
+                    is_col_resolved[num_collisions] = false;
+                } else {
+                    collisions.push_back({pol_id, p_id, other_id});
+                    is_col_resolved.push_back(false);
+                }
 
+                num_collisions += 1;
                 num_inside_points += 1;
-                break;
+                // break;
             }
         }
     }
@@ -85,14 +126,17 @@ public:
             return;
 
         if (counter % (update_freq) == 0) {
+            to_calc_forces = true;
             counter = 1;
         } else {
+            to_calc_forces = false;
             counter ++;
             return;
         }
 
         windows_manager.update_window_members();
         num_inside_points = 0;
+        num_collisions = 0;
 
         for (auto win_id: windows_manager.windows_ids) {
             auto & window = windows_manager.windows[win_id[0]][win_id[1]];
@@ -121,7 +165,6 @@ public:
             } 
         }
     }
-
 };
 
 // void in_pol_checker(Vector3d &pols) {

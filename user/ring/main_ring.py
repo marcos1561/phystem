@@ -19,7 +19,7 @@ dynamic_cfg = RingCfg(
     # p0=4.828427, # Triângulo retângulo
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
-    p0=3.5449077018*1.1, # Círculo
+    p0=3.5449077018*1.06, # Círculo
     # area0=53,
 
     exclusion_vol=1,
@@ -56,7 +56,7 @@ creator_cfg = CreatorCfg(
 seed = 40028922
 seed = None
 
-run_type = RunType.REAL_TIME
+run_type = RunType.SAVE_VIDEO
 
 real_time_cfg = RealTimeCfg(
     int_cfg=IntegrationCfg(
@@ -64,11 +64,11 @@ real_time_cfg = RealTimeCfg(
         # dt = 0.001*5 * 1.55,
         num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
-        integration_type=IntegrationType.verlet,
+        integration_type=IntegrationType.euler,
         update_type=UpdateType.WINDOWS,
-        in_pol_checker=InPolCheckerCfg(4, 1),
+        in_pol_checker=InPolCheckerCfg(3, 30),
     ),
-    num_steps_frame=600,
+    num_steps_frame=400,
     fps=60,
     graph_cfg = GraphCfg(
         show_circles      = True,
@@ -82,11 +82,12 @@ real_time_cfg = RealTimeCfg(
         pause_on_high_vel = False,
         cpp_is_debug      = True,
     ),
-    checkpoint=CheckpointCfg(
-        # folder_path="ring_intersect/data_high_den/phystem_data",
-        folder_path="ring_intersect/data",
-        override_cfgs=False,
-    )
+    # checkpoint=CheckpointCfg(
+    #     folder_path="ring_intersect/data_high_den/phystem_data",
+    #     # folder_path="ring_intersect/data",
+    #     # folder_path="ring_intersect/data_hd_test/phystem_data",
+    #     override_cfgs=False,
+    # )
 )
 print(real_time_cfg.int_cfg.num_col_windows)
 
@@ -127,18 +128,20 @@ collect_data_cfg = CollectDataCfg(
 
 save_cfg = SaveCfg(
     int_cfg=IntegrationCfg(
-        dt = 0.001,
+        dt = 0.001, # max euler
+        # dt = 0.001*5 * 1.55,
         num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
         update_type=UpdateType.WINDOWS,
+        in_pol_checker=InPolCheckerCfg(3, 30),
     ),
     # path = "data/videos/teste2.mp4",
-    path = "./teste_video.mp4",
-    speed=0.5,
-    fps=60, 
-    duration=3,
-    tf=None,
+    path = "./collision_test.mp4",
+    speed=3,
+    fps=30, 
+    # duration=10,
+    tf=60,
     graph_cfg = GraphCfg(
         show_circles  = True,
         show_f_spring = False,

@@ -78,7 +78,7 @@ collect_cfg = CollectDataCfg(
             num_col_windows=4, update_freq=100,
         ),
     ),
-    tf=40,
+    tf=10,
     
     folder_path="data",
     func=pipeline.collect_pipeline,

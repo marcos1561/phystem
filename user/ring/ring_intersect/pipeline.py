@@ -50,4 +50,11 @@ def collect_pipeline(sim: Simulation, collect_cfg):
     in_data_path = os.path.join(collector.path, "in_data.npy")
     np.save(in_data_path, np.array(in_data))
 
+    n = solver.in_pol_checker.num_inside_points
+    last_in_points_path = os.path.join(cfg.folder_path, "inside_points.npy")
+    if n > 0:
+        np.save(last_in_points_path, np.array(solver.in_pol_checker.inside_points[:n]))
+    else:
+        np.save(last_in_points_path, np.array([]))
+
     print("Elapsed time:", timedelta(seconds=t2-t1))

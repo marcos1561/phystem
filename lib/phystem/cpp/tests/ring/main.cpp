@@ -43,8 +43,8 @@ int main() {
     {
         // solver.update_normal();
         solver.update_windows();
-        // auto pos = solver.pos[0][0];
-        // std::cout << pos[0] << ", " << pos[1] << std::endl;
+        auto pos = solver.pos[0][0];
+        std::cout << pos[0] << ", " << pos[1] << std::endl;
         // std::cout << solver.self_prop_angle[0][0] << std::endl;
     }
     
