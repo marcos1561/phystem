@@ -10,7 +10,7 @@ from phystem.systems.ring.ui.graph import GraphCfg
 import pipeline
 
 dynamic_cfg = RingCfg(
-    spring_k=5,
+    spring_k=8,
     spring_r=0.7,
     
     area_potencial="target_area",
@@ -19,7 +19,7 @@ dynamic_cfg = RingCfg(
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
     # p0=3.5449077018, # Círculo
-    p0=3.65, # Círculo
+    p0=3.68, # Círculo
     # area0=53,
 
     exclusion_vol=1,
@@ -29,7 +29,7 @@ dynamic_cfg = RingCfg(
     mobility=1,
     vo=1,
     
-    trans_diff=0.1,
+    trans_diff=0.4,
     rot_diff=0.1,
 )
 
@@ -69,35 +69,40 @@ run_type = RunType.COLLECT_DATA
 num_col_windows = int(0.6 * ceil(space_cfg.size/(dynamic_cfg.diameter*3)))
 collect_cfg = CollectDataCfg(
     int_cfg=IntegrationCfg(
-        dt = 0.001,
+        dt = 0.001*1,
         num_col_windows=num_col_windows,
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
         update_type=UpdateType.WINDOWS,
         in_pol_checker=InPolCheckerCfg(
-            num_col_windows=4, update_freq=100,
+            num_col_windows=4, update_freq=int(100/3),
         ),
     ),
-    tf=10,
+    tf=1000,
+    # tf=0.31,
     
     folder_path="data",
     func=pipeline.collect_pipeline,
     
-    # folder_path="checkpoint",
-    # func=collect_pipelines.checkpoints,
-    # func_cfg=collect_pipelines.CheckPointCfg(
-    #     num_checkpoints=10),
+    # folder_path="init_state",
+    # func=collect_pipelines.last_state,
+
+    checkpoint=CheckpointCfg(
+        folder_path="init_state",
+        override_cfgs=True,
+    ),
 )
 
 real_time_cfg = RealTimeCfg(
     int_cfg=IntegrationCfg(
-        dt = 0.001, # max euler
-        # dt = 0.001*5 * 1.55,
-        num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6),
+        dt = 0.001*1,
+        num_col_windows=num_col_windows,
         windows_update_freq=1,
-        integration_type=IntegrationType.verlet,
+        integration_type=IntegrationType.euler,
         update_type=UpdateType.WINDOWS,
-        in_pol_checker=InPolCheckerCfg(4, 1),
+        in_pol_checker=InPolCheckerCfg(
+            num_col_windows=4, update_freq=int(100/3),
+        ),
     ),
     num_steps_frame=200,
     fps=60,
@@ -105,11 +110,12 @@ real_time_cfg = RealTimeCfg(
         show_circles      = True,
         show_center_mass  = True,
         show_inside       = True,
-        begin_paused      = True,
+        begin_paused      = False,
     ),
+    
     checkpoint=CheckpointCfg(
-        folder_path="data",
-        override_cfgs=False,
+        folder_path="init_state",
+        override_cfgs=True,
     )
 )
 

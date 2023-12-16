@@ -35,7 +35,7 @@ dynamic_cfg = RingCfg(
 from math import pi, ceil
 import numpy as np
 # n = int((15000)**.5) + 1
-n = 5
+n = 10
 k = 1.1
 radius = 20/6 * 1.5
 num_rings = n**2
@@ -77,7 +77,7 @@ real_time_cfg = RealTimeCfg(
         integration_type=IntegrationType.euler,
         update_type=UpdateType.WINDOWS,
         in_pol_checker=InPolCheckerCfg(
-            num_col_windows=4, update_freq=100, disable=False),
+            num_col_windows=8, update_freq=1, disable=False),
     ),
     num_steps_frame = 500,
     fps = 30,

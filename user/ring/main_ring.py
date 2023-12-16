@@ -56,7 +56,7 @@ creator_cfg = CreatorCfg(
 seed = 40028922
 seed = None
 
-run_type = RunType.SAVE_VIDEO
+run_type = RunType.REAL_TIME
 
 real_time_cfg = RealTimeCfg(
     int_cfg=IntegrationCfg(
@@ -66,7 +66,7 @@ real_time_cfg = RealTimeCfg(
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
         update_type=UpdateType.WINDOWS,
-        in_pol_checker=InPolCheckerCfg(3, 30),
+        in_pol_checker=InPolCheckerCfg(3, 200),
     ),
     num_steps_frame=400,
     fps=60,
@@ -83,8 +83,9 @@ real_time_cfg = RealTimeCfg(
         cpp_is_debug      = True,
     ),
     # checkpoint=CheckpointCfg(
-    #     folder_path="ring_intersect/data_high_den/phystem_data",
+    #     # folder_path="ring_intersect/data_high_den/phystem_data",
     #     # folder_path="ring_intersect/data",
+    #     folder_path="ring_intersect/data_anti_col_2/phystem_data",
     #     # folder_path="ring_intersect/data_hd_test/phystem_data",
     #     override_cfgs=False,
     # )

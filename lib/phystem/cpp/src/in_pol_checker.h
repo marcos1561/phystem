@@ -24,22 +24,21 @@ public:
     int update_freq;
     bool disable;
 
-    // 0: Id do anel intersectador
-    // 1: Id da partícula intersectadora
-    // 2: Id do anel intersectado
     std::vector<InPolChecker::ColInfo> collisions;
     std::vector<bool> is_col_resolved;
     
     int num_collisions;
-    
-    Vector2d inside_points;
     int num_inside_points;
-
+    Vector2d inside_points;
+    
     WindowsManager windows_manager;
 
     int num_verts;
+    
     int counter;
     bool to_calc_forces;
+
+    int update_chunk;
 
     InPolChecker() {};
 
@@ -54,6 +53,8 @@ public:
         counter = 1;
 
         to_calc_forces = false;
+
+        update_chunk = (int)(windows_manager.num_cols * windows_manager.num_rows / 16); 
     }
 
     bool is_inside_pol(double x, double y, int pol_id) {
@@ -100,23 +101,26 @@ public:
             auto &p = pol_i[p_id];
 
             if (is_inside_pol(p[0], p[1], other_id) == true) {
-                if ((int)inside_points.size() > num_inside_points) {
-                    inside_points[num_inside_points] = p;
-                } else {
-                    inside_points.push_back(p);
-                }
-                
-                if ((int)collisions.size() > num_collisions) {
-                    collisions[num_collisions] = {pol_id, p_id, other_id};
-                    is_col_resolved[num_collisions] = false;
-                } else {
-                    collisions.push_back({pol_id, p_id, other_id});
-                    is_col_resolved.push_back(false);
-                }
+                #pragma omp critical
+                {
+                    if ((int)inside_points.size() > num_inside_points) {
+                        inside_points[num_inside_points] = p;
+                    } else {
+                        inside_points.push_back(p);
+                    }
+                    
+                    if ((int)collisions.size() > num_collisions) {
+                        collisions[num_collisions] = {pol_id, p_id, other_id};
+                        is_col_resolved[num_collisions] = false;
+                    } else {
+                        collisions.push_back({pol_id, p_id, other_id});
+                        is_col_resolved.push_back(false);
+                    }
 
-                num_collisions += 1;
-                num_inside_points += 1;
-                // break;
+                    num_collisions += 1;
+                    num_inside_points += 1;
+                    // break;
+                }
             }
         }
     }
@@ -138,6 +142,7 @@ public:
         num_inside_points = 0;
         num_collisions = 0;
 
+        #pragma omp parallel for schedule(dynamic, update_chunk)
         for (auto win_id: windows_manager.windows_ids) {
             auto & window = windows_manager.windows[win_id[0]][win_id[1]];
             auto & neighbors = windows_manager.window_neighbor[win_id[0]][win_id[1]];

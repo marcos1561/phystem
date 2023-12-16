@@ -82,7 +82,7 @@ def area(sim: Simulation, collect_cfg: CollectPlCfg):
     
     area_collector.save()
 
-def last_pos(sim: Simulation, collect_cfg):
+def last_state(sim: Simulation, collect_cfg):
     solver: SolverCore = sim.solver
     run_cfg: CollectDataCfg = sim.run_cfg
 
@@ -120,6 +120,6 @@ class FuncID(Enum):
 
 def get_func(func_id: FuncID):
     func_mapping = {
-        FuncID.last_pos: last_pos,
+        FuncID.last_pos: last_state,
     }
     return func_mapping[func_id]
