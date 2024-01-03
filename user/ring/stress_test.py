@@ -35,7 +35,7 @@ dynamic_cfg = RingCfg(
 from math import pi, ceil
 import numpy as np
 # n = int((15000)**.5) + 1
-n = 10
+n = 5
 k = 1.1
 radius = 20/6 * 1.5
 num_rings = n**2

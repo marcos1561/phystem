@@ -78,7 +78,7 @@ real_time_cfg = RealTimeCfg(
         show_f_total      = False,
         show_center_mass  = True,
         show_inside       = True,
-        begin_paused      = True,
+        begin_paused      = False,
         pause_on_high_vel = False,
         cpp_is_debug      = True,
     ),

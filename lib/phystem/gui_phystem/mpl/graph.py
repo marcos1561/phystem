@@ -20,9 +20,10 @@ class ParticlesGraph:
             Axes na qual as partículas serão renderizadas.
         
         pos:
-            Referência a posição das partículas. Deve possui a posição
-            das partículas de forma sequencial, ou seja, pos[i] é a posição
-            da i-ésima partícula.
+            Referência da posição das partículas. As posições devem
+            estar organizadas em uma matriz Nx2, em que N é 
+            o número de partículas, ou seja, pos[i] é a posição da
+            i-ésima partícula.
 
         space_size:
             Lado do espaço.
@@ -33,6 +34,8 @@ class ParticlesGraph:
         self.particles: PatchCollection = None
         
         self.pos = pos
+
+        self.init()
     
     def init(self):
         r = self.space_size/2

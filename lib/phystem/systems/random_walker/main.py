@@ -26,11 +26,13 @@ run_cfg = RealTimeCfg(
 )
 
 # run_cfg = SaveCfg(
-#     path="gif/random_walk.gif",
+#     IntegrationCfg(
+#         dt=0.1,
+#     ),
+#     path="./random_walk.gif",
 #     speed=4,
 #     fps=60,
-#     dt=0.1,
-#     duration=10,
+#     duration=5,
 # ) 
 
 sim = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg)

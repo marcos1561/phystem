@@ -125,7 +125,7 @@ class Solver(SolverCore):
 
 > ℹ️
 >
-> Caso você esteja implementando um sistema físico que necessita de muito poder computacional, implementar o solver puramente no python não é uma ótima escolha. Uma possível solução é realizar a construção do solver em uma linguagem que apresenta ótimo desempenho, e chamá-la no solver do python. Uma das formas de fazer isso é utilizando o [pybind11](https://pybind11.readthedocs.io/en/stable/index.html#), uma biblioteca que permite criar módulos do python que chamam códigos do c++. 
+> Caso você esteja implementando um sistema físico que necessita de muito poder computacional, implementar o solver puramente no python não é uma ótima escolha. Uma possível solução é realizar a construção do solver em uma linguagem que apresenta ótimo desempenho, e chamá-la no solver do python. Uma das formas de fazer isso é utilizando o [pybind11](https://pybind11.readthedocs.io/en/stable/index.html#), uma biblioteca que permite criar módulos do python que chamam códigos feitos em c++. 
 
 ### 3. Configurações
 Normalmente existem diversas configuração utilizadas para explorar um sistema físico, então para facilitar seu gerenciando, o phystem espera que elas estejam encapsuladas em classes. Por padrão, existem 4 tipos de configurações que uma aplicação de simulação espera receber
@@ -157,7 +157,7 @@ class CreatorCfg:
     def __init__(self, speed: float,  size: int) -> None:
         '''
         Parâmetros:
-            vo: 
+            speed: 
                 Rapidez utilizada na velocidade.
             
             size: 
@@ -170,9 +170,6 @@ class SpaceCfg:
     def __init__(self, size: float) -> None:
         '''
         Parâmetros:
-            vo: 
-                Rapidez utilizada na velocidade.
-            
             size: 
                 Lado do espaço físico.
         '''
@@ -194,7 +191,7 @@ Agora só nos resta implementar o sistema que de fato roda a simulação. Existe
 3. Replay de dados
 4. Geração de vídeos
 
-Cada modo necessita que o usuário trabalhe um pouco para realizar sua implementação. Vamos apenas nos concentrar no item 1. A classe base de uma aplicação de simulação é o `SimulationCore`, ela necessita que os métodos `get_solver` e `get_creator` sejam implementados, cujas tarefas são retornar instâncias dos `Solver` e `Creator` que serão utilizados na simulação.
+Cada modo necessita que o usuário trabalhe um pouco para realizar sua implementação. Vamos apenas nos concentrar no item 1. A classe base de uma aplicação de simulação é o `SimulationCore`, ela necessita que os métodos `get_solver` e `get_creator` sejam implementados, cujas tarefas são retornar instâncias dos `Solver` e `Creator` que serão utilizadas na simulação.
 
 ``` python
 # simulation.py
@@ -231,13 +228,9 @@ class Simulation(SimulationCore):
         )
 ```
 
-Como queremos renderização em tempo real, também devemos implementar o método `run_real_time`m cujas funções são as sequintes 
+Como queremos renderização em tempo real, também devemos implementar o método `run_real_time`, cuja função é configurar como o sistema físico é renderizado.
 
-- Configurar a interface visual
-- Instanciar os gráficos que serão utilizados na renderização do sistema.
-- Criar a animação que roda a simulação utlizando o `Solver`.
-
-A interface visual da simulação é totalmente feita utilizando o `matplotlib`. A configuração apenas será um gráfico contendo o caminhante, que pode ser criado da seguinte forma
+O sistema físico é renderizado utilizando o `matplotlib`, então a primeira tarefa a se fazer é criar uma figura do `matplotlib` e os devidos `Axes`. Vamos simplesmente mostrar a partícula andando, dessa forma apenas um `Axe` dará conta do trabalho. A criação desses objetos pode ser feita da seguinte forma:
 
 ``` python
 # simulation.py
@@ -245,7 +238,7 @@ A interface visual da simulação é totalmente feita utilizando o `matplotlib`.
 fig, ax_walker = plt.subplots()      
 ```
 
-Ainda falta decidirmos como renderizar o caminhante. Como ele consiste em apenas uma posição no plano, vamos renderizá-lo como uma partícula. Tal forma de renderização já está implementada no phystem e podemos utilizá-la da seguinte forma
+O phystem já possui um gráfico que renderiza partículas em um plano, que pode ser utilizado da seguinte forma:
 
 ``` python
 # simulation.py
@@ -259,39 +252,33 @@ particles_graph = graph.ParticlesGraph(
 )
 ```
 
-Por fim, precisamos inicializar o gráfico das partículas e gerar uma animação do matplotlib. A animação é do tipo função, ou seja, ela chama uma função a cada quadro da animação. Nessa função, o `Solver` precisa executar um passo temporal e o gráfico precisa ser atualizado.
+Ainda precisamos criar a função que avança o sistema no tempo (essa função é chamada em cada quadro da animação que será gerada). Nessa função, o `Solver` precisa executar um passo temporal e o gráfico precisa ser atualizado.
 
 ``` python
 # simulation.py
-
-particles_graph.init()
 
 def update(frame):
     self.solver.update()
     particles_graph.update()
-
-ani = animation.FuncAnimation(fig, update, interval=1/(real_time_cfg.fps)*1000)
-plt.show()
 ```
+> ℹ️
+>
+> Frequentemente é desejável realizar mais de um passo temporal por quadro, isso pode ser simplesmente feito chamando `solver.update` em um loop. A classe padrão da configuração de execução em tempo real possui o membro `num_steps_frame` que deve ser utilizado justamente para isso.
 
-Frequentemente é desejável realizar mais de um passo temporal por quadro, isso pode ser simplesmente feito chamando `Solver.update` em um loop. A classe padrão da configuração de execução em tempo real possui o membro `num_steps_frame` que deve ser utilizado justamente para isso.
+Por fim, precisamos rodar a aplicação que conterá a animação e mais algumas informações e controles que podem ser modificados ao gosto do usuário. Isso simplesmente é feito chamando o método `run_app` passando a figura criada e a função que avança o sistema no tempo.
 
 ``` python
 # simulation.py
-def update(frame):
-    for _ in range(real_time_cfg.num_steps_frame):
-        self.solver.update()
 
-    particles_graph.update()
+self.run_app(fig, update)
 ```
 
-A implementação completa da aplicação da simulação fica da seguinte forma
+A implementação completa de `Simulation` fica assim:
 
 ``` python
 # simulation.py
 
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 
 from phystem.core.simulation import SimulationCore
 from phystem.core.run_config import RealTimeCfg
@@ -325,37 +312,28 @@ class Simulation(SimulationCore):
         )
 
     def run_real_time(self):
-        real_time_cfg: RealTimeCfg = self.run_cfg
-
-        fig, ax_walker = plt.subplots()
-
-        particles_graph = graph.ParticlesGraph(
-            ax=ax_walker, 
+        fig, ax = plt.subplots() 
+        
+        particle_graph = graph.ParticlesGraph(
+            ax=ax, 
             pos=self.solver.pos, 
             space_size=self.space_cfg.size,
         )
-        
-        particles_graph.init()
 
         def update(frame):
-            # Loop para executar mais de um passo temporal
-            # de acordo com a configuração "num_steps_frame".
-            for _ in range(real_time_cfg.num_steps_frame):
-                self.solver.update()
-            
-            particles_graph.update()
+            self.solver.update()
+            particle_graph.update()
 
-        ani = animation.FuncAnimation(fig, update, interval=1/(real_time_cfg.fps)*1000)
-        plt.show()
+        self.run_app(fig, update)
 ```
 
 ### 5. Como rodar a Simulação?
-Para rodar a simulação precisamos criar uma instância da aplicação da simulação e chamar o método `run`. A aplicação necessita que seja passado as configurações. Além daquelas implementadas no passo 3, também é  necessário passar a configuração de execução do modo de renderização em tempo real, um exemplo de uma possível configuração para uma simulação é a seguinte
+Para rodar a simulação, precisamos criar uma instância da simulação e chamar o método `run`. A instanciação de `Simulation` necessita que sejam passadas as configurações. Além daquelas implementadas no passo 3, também é  necessário passar a configuração de execução do modo de renderização em tempo real, um exemplo de uma possível configuração para uma simulação é a seguinte:
 
 ``` python
 # main.py
 
-from phystem.core.run_config import RealTimeCfg
+from phystem.core.run_config import RealTimeCfg, IntegrationCfg
 
 from configs import *
 from simulation import Simulation
@@ -375,8 +353,10 @@ creator_cfg = CreatorCfg(
 )
 
 run_cfg = RealTimeCfg(
-    dt=0.1,
-    num_steps_frame=1, 
+    IntegrationCfg(
+        dt=0.1,
+    ),
+    num_steps_frame=1,
     fps=60,
 )
 
@@ -391,13 +371,12 @@ Se esse arquivo for executado, aparecerá uma janela com uma animação semelhan
 Poderíamos continuar com a nossa implementação adicionando muitas outras funcionalidades, algumas opções são
 
 1. Cronometrar o tempo de execução dos passos temporais e exibi-lo na GUI.
-2. Adicionar controles na GUI, como um botão para pausar a simulação, ou um slider para controlar a velocidade da animação.
+2. Por padrão existem alguns botões na GUI gerada, mas é necessário implementar suas funcionalidades.
 3. Setar uma pipeline de coleta de dados para realizar alguma análise.
 4. Expandir o gráfico do caminhante para renderizar itens extras auxiliares para a depuração da aplicação, como um seta indicando a velocidade do caminhante.
 5. Colocar múltiplos caminhantes (Talvez adicionar uma dinâmica de interação entre os caminhantes?)
 
-
-Enfim, as possibilidades são infinitas! Mas esse tutorial termina por aqui, espero que ele tenha sido esclarecedor e que proporcione muitas horas de diversão implementado seus sistemas físicos. 
+Enfim, as possibilidades são infinitas! Mas esse tutorial termina por aqui. Espero que ele tenha sido esclarecedor e boa jornada na criação dos seus projetos!. 
 
 ## Como utilizar os sistemas físicos já implementados com o phystem?
 O sub-pacote `phystem.systems` contém os sistemas físicos já implementados com o phystem. 

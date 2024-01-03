@@ -95,10 +95,12 @@ class AppCore:
     def update(self):
         stop_time = 1/self.run_cfg.fps
 
+        frame = 1
         while True:
             time.sleep(stop_time)
             
-            self.update_func()
+            self.update_func(frame)
+            frame += 1
 
             if self.to_run:
                 self.root.event_generate("<<update_ui>>")
