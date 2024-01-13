@@ -91,7 +91,8 @@ public:
     vector<vector<double>> old_self_prop_angle;
 
     RingCfg dynamic_cfg; // Configurações da dinâmica entre as partículas
-    double size; // tamanho de uma dimensão do espaço
+    double height; // tamanho de uma dimensão do espaço
+    double length; // tamanho de uma dimensão do espaço
     double dt; 
     int windows_update_freq; 
     int integration_type;
@@ -159,9 +160,9 @@ public:
     //=========//
 
     Ring(Vector3d &pos0, vector<vector<double>> self_prop_angle0, RingCfg dynamic_cfg, 
-        double size, double dt, int num_col_windows, int seed=-1, int windows_update_freq=1,
+        double height, double length, double dt, int num_col_windows, int seed=-1, int windows_update_freq=1,
         int integration_type=0, InPolCheckerCfg in_pol_checker_cfg=InPolCheckerCfg(3, 1, true)) 
-    : dynamic_cfg(dynamic_cfg), size(size), dt(dt),
+    : dynamic_cfg(dynamic_cfg), height(height), length(length), dt(dt),
     windows_update_freq(windows_update_freq), integration_type(integration_type)
     {
         if (seed != -1.)
@@ -198,15 +199,15 @@ public:
 
         initialize_dynamic();
         
-        SpaceInfo space_info(size);
+        SpaceInfo space_info(height, length);
         windows_manager = WindowsManagerRing(&pos, &rings_ids, &num_active_rings, num_col_windows, 
             num_col_windows, space_info, windows_update_freq);
-        in_pol_checker = InPolChecker(&pos_continuos, &center_mass, &rings_ids, &num_active_rings, size, 
+        in_pol_checker = InPolChecker(&pos_continuos, &center_mass, &rings_ids, &num_active_rings, height, length, 
                         in_pol_checker_cfg.num_cols_windows, in_pol_checker_cfg.update_freq, in_pol_checker_cfg.disable);
         
         #if DEBUG == 1
         rng_manager = RngManager(num_particles, num_rings, 5);
-        intersect = IntersectionCalculator(size);
+        intersect = IntersectionCalculator(height, length);
         #endif
     }
 
@@ -284,7 +285,7 @@ public:
     void add_ring() {
         auto new_ring = pos[0];
         for (size_t p_id = 0; p_id < new_ring.size(); p_id++) {
-            new_ring[p_id][0] += size/3;
+            new_ring[p_id][0] += height/3;
         }
         
         for (size_t i = 0; i < mask.size(); i++) {
@@ -298,6 +299,20 @@ public:
         } 
     }
 
+    void remove_ring(int ring_id) {
+        mask[ring_id] = false;
+        recalculate_ids = true;
+        num_active_rings -= 1;
+    }
+
+    void periodic_border(array<double, 2>& p){
+        if (abs(p[0]) > length/2.f)
+            p[0] -= copysign(length, p[0]);
+        
+        if (abs(p[1]) > height/2.f)
+            p[1] -= copysign(height, p[1]);
+    }
+
     double periodic_dist(double &dx, double &dy) {
         /**
          * Retorna a distância, considerando as bordas periódicas, para a 
@@ -308,11 +323,11 @@ public:
          * NOTE: Quando o espaço não for um quadrado, é necessário
          * usar box_width para o dx e box_height para o dy.       
         */
-        if (abs(dx) > size * 0.5)
-            dx -= copysign(size, dx);
+        if (abs(dx) > length * 0.5)
+            dx -= copysign(length, dx);
 
-        if (abs(dy) > size * 0.5)
-            dy -= copysign(size, dy);
+        if (abs(dy) > height * 0.5)
+            dy -= copysign(height, dy);
 
         return sqrt(dx*dx + dy*dy);
     }
@@ -827,12 +842,19 @@ public:
                 }
                 #endif
 
-                for (int dim = 0; dim < 2.f; dim ++) {
-                    if (pos[ring_id][i][dim] > size/2.f)
-                        pos[ring_id][i][dim] -= size;
-                    else if (pos[ring_id][i][dim] < -size/2.f)
-                        pos[ring_id][i][dim] += size;
-                }
+                periodic_border(pos[ring_id][i]);
+
+                // for (int dim = 0; dim < 2.f; dim ++) {
+                    // if (pos[ring_id][i][0] > height/2.f)
+                    //     pos[ring_id][i][0] -= height;
+                    // else if (pos[ring_id][i][0] < -height/2.f)
+                    //     pos[ring_id][i][0] += height;
+                    
+                    // if (pos[ring_id][i][dim] > height/2.f)
+                    //     pos[ring_id][i][dim] -= height;
+                    // else if (pos[ring_id][i][dim] < -height/2.f)
+                    //     pos[ring_id][i][dim] += height;
+                // }
 
                 #if DEBUG == 1
                 if (isnan(pos[ring_id][i][0]) == true)
@@ -884,12 +906,14 @@ public:
                 }
                 #endif
 
-                for (int dim = 0; dim < 2.f; dim ++) {
-                    if (pos[ring_id][i][dim] > size/2.f)
-                        pos[ring_id][i][dim] -= size;
-                    else if (pos[ring_id][i][dim] < -size/2.f)
-                        pos[ring_id][i][dim] += size;
-                }
+                periodic_border(pos[ring_id][i]);
+
+                // for (int dim = 0; dim < 2.f; dim ++) {
+                //     if (pos[ring_id][i][dim] > height/2.f)
+                //         pos[ring_id][i][dim] -= height;
+                //     else if (pos[ring_id][i][dim] < -height/2.f)
+                //         pos[ring_id][i][dim] += height;
+                // }
 
                 #if DEBUG == 1
                 if (isnan(pos[ring_id][i][0]) == true)
@@ -924,13 +948,15 @@ public:
                 if (isnan(pos[ring_id][i][0]) == true) {
                     std::cout << "Error: pos nan 1" << std::endl;
                 }
-
-                for (int dim = 0; dim < 2.f; dim ++) {
-                    if (pos[ring_id][i][dim] > size/2.f)
-                        pos[ring_id][i][dim] -= size;
-                    else if (pos[ring_id][i][dim] < -size/2.f)
-                        pos[ring_id][i][dim] += size;
-                }
+                
+                periodic_border(pos[ring_id][i]);
+        
+                // for (int dim = 0; dim < 2.f; dim ++) {
+                //     if (pos[ring_id][i][dim] > height/2.f)
+                //         pos[ring_id][i][dim] -= height;
+                //     else if (pos[ring_id][i][dim] < -height/2.f)
+                //         pos[ring_id][i][dim] += height;
+                // }
 
                 #if DEBUG == 1
                 if (isnan(pos[ring_id][i][0]) == true)
@@ -1000,12 +1026,13 @@ public:
                 pos[ring_id][i][1] += vel_i_y * dt * 0.5;
                 self_prop_angle[ring_id][i] += angle_deriv_i * dt * 0.5;
 
-                for (int dim = 0; dim < 2.f; dim ++) {
-                    if (pos[ring_id][i][dim] > size/2.f)
-                        pos[ring_id][i][dim] -= size;
-                    else if (pos[ring_id][i][dim] < -size/2.f)
-                        pos[ring_id][i][dim] += size;
-                }
+                periodic_border(pos[ring_id][i]);
+                // for (int dim = 0; dim < 2.f; dim ++) {
+                //     if (pos[ring_id][i][dim] > height/2.f)
+                //         pos[ring_id][i][dim] -= height;
+                //     else if (pos[ring_id][i][dim] < -height/2.f)
+                //         pos[ring_id][i][dim] += height;
+                // }
 
                 sum_forces_matrix[ring_id][i][0] = 0.f;
                 sum_forces_matrix[ring_id][i][1] = 0.f;
@@ -1025,12 +1052,13 @@ public:
                 pos[ring_id][i][1] = old_pos[ring_id][i][1] + vel_i_y * dt * 0.5;
                 self_prop_angle[ring_id][i] = old_self_prop_angle[ring_id][i] + angle_deriv_i * dt * 0.5;
 
-                for (int dim = 0; dim < 2.f; dim ++) {
-                    if (pos[ring_id][i][dim] > size/2.f)
-                        pos[ring_id][i][dim] -= size;
-                    else if (pos[ring_id][i][dim] < -size/2.f)
-                        pos[ring_id][i][dim] += size;
-                }
+                periodic_border(pos[ring_id][i]);
+                // for (int dim = 0; dim < 2.f; dim ++) {
+                //     if (pos[ring_id][i][dim] > height/2.f)
+                //         pos[ring_id][i][dim] -= height;
+                //     else if (pos[ring_id][i][dim] < -height/2.f)
+                //         pos[ring_id][i][dim] += height;
+                // }
 
                 sum_forces_matrix[ring_id][i][0] = 0.f;
                 sum_forces_matrix[ring_id][i][1] = 0.f;
@@ -1050,12 +1078,13 @@ public:
                 pos[ring_id][i][1] = old_pos[ring_id][i][1] + vel_i_y * dt;
                 self_prop_angle[ring_id][i] = old_self_prop_angle[ring_id][i] + angle_deriv_i * dt;
 
-                for (int dim = 0; dim < 2.f; dim ++) {
-                    if (pos[ring_id][i][dim] > size/2.f)
-                        pos[ring_id][i][dim] -= size;
-                    else if (pos[ring_id][i][dim] < -size/2.f)
-                        pos[ring_id][i][dim] += size;
-                }
+                periodic_border(pos[ring_id][i]);
+                // for (int dim = 0; dim < 2.f; dim ++) {
+                //     if (pos[ring_id][i][dim] > height/2.f)
+                //         pos[ring_id][i][dim] -= height;
+                //     else if (pos[ring_id][i][dim] < -height/2.f)
+                //         pos[ring_id][i][dim] += height;
+                // }
 
                 sum_forces_matrix[ring_id][i][0] = 0.f;
                 sum_forces_matrix[ring_id][i][1] = 0.f;
@@ -1087,12 +1116,13 @@ public:
                 pos[ring_id][i][1] = old_pos[ring_id][i][1] + dt * (1./6. * k1[1] + 1./3. * k2[1] + 1./3. * k3[1] + 1./6. * k4[1]);
                 self_prop_angle[ring_id][i] = old_self_prop_angle[ring_id][i] + dt * (1./6. * k1[2] + 1./3. * k2[2] + 1./3. * k3[2] + 1./6. * k4[2]);
 
-                for (int dim = 0; dim < 2.f; dim ++) {
-                    if (pos[ring_id][i][dim] > size/2.f)
-                        pos[ring_id][i][dim] -= size;
-                    else if (pos[ring_id][i][dim] < -size/2.f)
-                        pos[ring_id][i][dim] += size;
-                }
+                periodic_border(pos[ring_id][i]);
+                // for (int dim = 0; dim < 2.f; dim ++) {
+                //     if (pos[ring_id][i][dim] > height/2.f)
+                //         pos[ring_id][i][dim] -= height;
+                //     else if (pos[ring_id][i][dim] < -height/2.f)
+                //         pos[ring_id][i][dim] += height;
+                // }
             } 
         }
     }
@@ -1221,6 +1251,14 @@ public:
         rng_manager.update();
         #endif
 
+        // if (sim_time > 5.0) {
+        //     add_ring();
+        // }
+        
+        // if (sim_time > 10.0) {
+        //     remove_ring(0);
+        // }
+
         if (recalculate_ids == true) {
             recalculate_ids = false;
             int next_id = 0;
@@ -1295,12 +1333,13 @@ public:
             cm[0] /= num_particles;
             cm[1] /= num_particles;
 
-            for (int dim = 0; dim < 2; dim ++) {
-                if (cm[dim] > size/2.f)
-                    cm[dim] -= size;
-                else if (cm[dim] < -size/2.f)
-                    cm[dim] += size;
-            }
+            periodic_border(cm);
+            // for (int dim = 0; dim < 2; dim ++) {
+            //     if (cm[dim] > height/2.f)
+            //         cm[dim] -= height;
+            //     else if (cm[dim] < -height/2.f)
+            //         cm[dim] += height;
+            // }
         }
     }
 
@@ -1328,13 +1367,13 @@ public:
         double dy = p2[1] - p1[1];
         
         bool calc_intersect = false;
-        if (abs(dx) > size * 0.5) {
+        if (abs(dx) > length * 0.5) {
             calc_intersect = true;
-            dx -= copysign(size, dx);
+            dx -= copysign(length, dx);
         }
-        if (abs(dy) > size * 0.5) {
+        if (abs(dy) > height * 0.5) {
             calc_intersect = true;
-            dy -= copysign(size, dy);
+            dy -= copysign(height, dy);
         }
 
         if (calc_intersect == true) {

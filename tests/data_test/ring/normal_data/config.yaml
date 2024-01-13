@@ -59,4 +59,5 @@ run_cfg: !!python/object:phystem.core.run_config.CollectDataCfg
     windows_update_freq: 1
   tf: 100
 space_cfg: !!python/object:phystem.systems.ring.configs.SpaceCfg
-  size: 30
+  height: 30
+  length: 30

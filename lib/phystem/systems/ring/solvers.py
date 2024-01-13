@@ -28,7 +28,8 @@ class CppSolver:
         self.cpp_solver = cpp_lib.solvers.Ring(
             pos, self_prop_angle, 
             dynamic_cfg, 
-            space_cfg.size, 
+            space_cfg.height, 
+            space_cfg.length, 
             int_cfg.dt, int_cfg.num_col_windows, 
             rng_seed, 
             int_cfg.windows_update_freq, 
@@ -61,6 +62,14 @@ class CppSolver:
     @property
     def pos_t(self):
         return self.cpp_solver.pos_t
+    
+    @property
+    def num_active_rings(self):
+        return self.cpp_solver.num_active_rings
+    
+    @property
+    def rings_ids(self):
+        return self.cpp_solver.rings_ids
     
     @property
     def pos(self):

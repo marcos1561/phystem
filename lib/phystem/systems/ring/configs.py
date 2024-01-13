@@ -127,9 +127,11 @@ class SpaceCfg:
     '''
     Configurações do espaço na qual as partículas se encontram.
     '''    
-    def __init__(self, size:float) -> None:
-        self.size = size
+    def __init__(self, height: float, length: float) -> None:
+        self.height = height
+        self.length = length
     
     def set(self, other):
-        self.size = other.size
+        self.height = other.height
+        self.length = other.length
 

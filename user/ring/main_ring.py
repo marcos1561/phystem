@@ -11,7 +11,7 @@ from phystem.systems.ring.ui.graph import GraphCfg
 
 
 dynamic_cfg = RingCfg(
-    spring_k=2,
+    spring_k=6,
     spring_r=0.7,
     
     area_potencial="target_area",
@@ -34,7 +34,8 @@ dynamic_cfg = RingCfg(
 )
 
 space_cfg = SpaceCfg(
-    size = 30,
+    height = 1*30,
+    length = 2*30,
 )
 
 from math import pi
@@ -62,7 +63,7 @@ real_time_cfg = RealTimeCfg(
     int_cfg=IntegrationCfg(
         dt = 0.001, # max euler
         # dt = 0.001*5 * 1.55,
-        num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6),
+        num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
         update_type=UpdateType.WINDOWS,
@@ -109,7 +110,7 @@ if run_type is RunType.REPLAY_DATA:
 collect_data_cfg = CollectDataCfg(
     int_cfg=IntegrationCfg(
         dt = 0.001,
-        num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6),
+        num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
         update_type=UpdateType.NORMAL,
@@ -131,7 +132,7 @@ save_cfg = SaveCfg(
     int_cfg=IntegrationCfg(
         dt = 0.001, # max euler
         # dt = 0.001*5 * 1.55,
-        num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6),
+        num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
         update_type=UpdateType.WINDOWS,

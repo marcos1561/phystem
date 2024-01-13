@@ -95,7 +95,7 @@ class MainGraph:
         
         self.pos_t_ref = solver.pos_t
 
-        self.ring_ids = solver.cpp_solver.rings_ids
+        self.rings_ids = solver.rings_ids
         self.pos = solver.pos
         self.graph_points = solver.graph_points
 
@@ -107,6 +107,10 @@ class MainGraph:
             return self.pos_t_ref
         else:
             return np.array([np.array(p).T for  p in self.pos]) 
+
+    @property
+    def num_active_rings(self):
+        return self.solver.num_active_rings
 
     def get_segments(self, ring_id: int) -> list:
         n = len(self.pos[ring_id])
@@ -166,28 +170,29 @@ class MainGraph:
         x, y = [], []
         id = len(self.pos[0]) - 1
         # for ring_pos in self.pos:
-        for ring_id in self.ring_ids:
+        for ring_id in self.rings_ids[:self.num_active_rings]:
             ring_pos = self.pos[ring_id]
             x.append(ring_pos[id][0])
             y.append(ring_pos[id][1])
         return x, y
     
     def init(self):
-        r = self.space_cfg.size/2
+        h = self.space_cfg.height/2
+        l = self.space_cfg.length/2
         r_scale = 1
-        self.ax.set_ylim(-r_scale*r, r_scale*r)
-        self.ax.set_xlim(-r_scale*r, r_scale*r)
+        self.ax.set_ylim(-r_scale*h, r_scale*h)
+        self.ax.set_xlim(-r_scale*l, r_scale*l)
 
         self.ax.set_aspect(1)
 
         # Borders
-        self.ax.plot([-r, r], [-r, -r], color="black")
-        self.ax.plot([-r, r], [r, r], color="black")
-        self.ax.plot([r, r], [-r, r], color="black")
-        self.ax.plot([-r, -r], [-r, r], color="black")
+        self.ax.plot([-l, -l], [ h, -h], color="black")
+        self.ax.plot([ l,  l], [ h, -h], color="black")
+        self.ax.plot([ l, -l], [ h,  h], color="black")
+        self.ax.plot([ l, -l], [-h, -h], color="black")
 
-        # self.points = [self.ax.scatter(*ring_pos_t, s=16, zorder=2) for ring_pos_t in self.pos_t]
-        self.points = [self.ax.scatter(*self.pos_t[ring_id], s=16, zorder=2) for ring_id in self.ring_ids]
+        self.points = [self.ax.scatter(*ring_pos_t, s=16, zorder=2) for ring_pos_t in self.pos_t]
+        # self.points = [self.ax.scatter(*self.pos_t[ring_id], s=16, zorder=2) for ring_id in self.rings_ids[:self.num_active_rings]]
         self.ith_points = self.ax.scatter(*self.get_ith_points(), c="black", s=22, zorder=2)
 
         inside_points_arr = np.array(self.solver.in_pol_checker.inside_points).T
@@ -202,13 +207,14 @@ class MainGraph:
             # self.inside_points.remove()
             self.inside_points.set_visible(False)
        
-        self.center_mass = self.ax.scatter(*np.array(self.solver.center_mass)[self.ring_ids].T, c="black")
+        self.center_mass = self.ax.scatter(*np.array(self.solver.center_mass).T, c="black")
+        # self.center_mass = self.ax.scatter(*np.array(self.solver.center_mass)[self.rings_ids[:self.num_active_rings]].T, c="black")
         if not self.graph_cfg.show_center_mass:
             # self.center_mass.remove()
             self.center_mass.set_visible(False)
 
-        # self.points_continuos = [self.ax.scatter(*(np.array(self.solver.pos_continuos[ring_id]).T)) for ring_id in range(self.num_rings)]
-        self.points_continuos = [self.ax.scatter(*(np.array(self.solver.pos_continuos[ring_id]).T)) for ring_id in self.ring_ids]
+        self.points_continuos = [self.ax.scatter(*(np.array(self.solver.pos_continuos[ring_id]).T)) for ring_id in range(self.num_rings)]
+        # self.points_continuos = [self.ax.scatter(*(np.array(self.solver.pos_continuos[ring_id]).T)) for ring_id in self.rings_ids[:self.num_active_rings]]
         if not self.graph_cfg.show_pos_cont:
             # [artist.remove() for artist in self.points_continuos]
             [artist.set_visible(False) for artist in self.points_continuos]
@@ -218,8 +224,8 @@ class MainGraph:
         if self.cpp_is_debug:
             dr = self.dynamic_cfg.spring_r/2
             self.lines = []
-            # for ring_id in range(self.num_rings):
-            for ring_id in self.ring_ids:
+            for ring_id in range(self.num_rings):
+            # for ring_id in self.rings_ids[:self.num_active_rings]:
                 ring_lines = LineCollection(self.get_segments(ring_id),
                     norm=colors.Normalize(self.dynamic_cfg.spring_r - dr , self.dynamic_cfg.spring_r + dr),
                     cmap=colors.LinearSegmentedColormap.from_list("spring_tension", ["blue", "black", "red"]),
@@ -235,8 +241,8 @@ class MainGraph:
         #==
         self.circles = []
         self.circles_col = []
-        # for ring_id in range(self.num_rings):
-        for ring_id in self.ring_ids:
+        for ring_id in range(self.num_rings):
+        # for ring_id in self.rings_ids[:self.num_active_rings]:
             ring_circles = []
             for x_i, y_i in zip(self.pos_t[ring_id][0], self.pos_t[ring_id][1]):
                 ring_circles.append(Circle((x_i, y_i), self.dynamic_cfg.diameter/2, fill=False))
@@ -253,8 +259,8 @@ class MainGraph:
         # Forces
         #==
         if self.cpp_is_debug:
-            # for ring_id in range(self.num_rings):
-            for ring_id in self.ring_ids:
+            for ring_id in range(self.num_rings):
+            # for ring_id in self.rings_ids[:self.num_active_rings]:
                 forces = self.get_forces(ring_id)
                 ring_arrows = {}
                 for f_name, f_value in forces.items():
@@ -332,7 +338,7 @@ class MainGraph:
         if self.graph_cfg.show_center_mass:
             if self.center_mass.get_visible() == False:
                 self.center_mass.set_visible(True)
-            self.center_mass.set_offsets(np.array(self.solver.center_mass)[self.ring_ids])
+            self.center_mass.set_offsets(np.array(self.solver.center_mass)[self.rings_ids[:self.num_active_rings]])
         else:
             if self.center_mass.get_visible() == True:
                 self.center_mass.set_visible(False)
@@ -342,10 +348,16 @@ class MainGraph:
         # Ring lines
         #==
         # for ring_id in range(self.num_rings):
-        for ring_id in self.ring_ids:
+        for i in range(self.num_rings):
+            self.points[i].set_visible(False)
+            self.lines[i].set_visible(False)
+
+        for ring_id in self.rings_ids[:self.num_active_rings]:
+            self.points[ring_id].set_visible(True)
             self.points[ring_id].set_offsets(self.pos[ring_id])
             
             if self.cpp_is_debug:
+                self.lines[ring_id].set_visible(True)
                 self.lines[ring_id].set_segments(self.get_segments(ring_id))
                 self.lines[ring_id].set_array(self.get_distances(ring_id))
 
@@ -367,14 +379,17 @@ class MainGraph:
         #         self.pos_cont_state = False
         
         if self.graph_cfg.show_pos_cont:
+            for i in range(self.num_rings):
+                self.points_continuos[i].set_visible(False)
+
             # for ring_id in range(self.num_rings):
-            for ring_id in self.ring_ids:
+            for ring_id in self.rings_ids[:self.num_active_rings]:
                 self.points_continuos[ring_id].set_visible(True)
                 self.points_continuos[ring_id].set_offsets(
                     self.solver.pos_continuos[ring_id])
         else:
             # for ring_id in range(self.num_rings):
-            for ring_id in self.ring_ids:
+            for ring_id in self.rings_ids[:self.num_active_rings]:
                 self.points_continuos[ring_id].set_visible(False)
 
         #==
@@ -390,15 +405,19 @@ class MainGraph:
         #         self.circles_col[ring_id].set_paths([])
 
         if self.graph_cfg.show_circles:
+            for i in range(self.num_rings):
+                self.circles_col[i].set_visible(False)
+
             # for ring_id in range(self.num_rings):
-            for ring_id in self.ring_ids:
+            for ring_id in self.rings_ids[:self.num_active_rings]:
                 self.circles_col[ring_id].set_visible(True)
 
                 for id in range(len(self.pos_t[ring_id][0])):
                     self.circles[ring_id][id].center = (self.pos_t[ring_id][0][id], self.pos_t[ring_id][1][id])
                 self.circles_col[ring_id].set_paths(self.circles[ring_id])
         else:
-            for ring_id in range(self.num_rings):
+            # for ring_id in range(self.num_rings):
+            for ring_id in self.rings_ids[:self.num_active_rings]:
                 self.circles_col[ring_id].set_visible(False)
 
         #==
@@ -424,15 +443,19 @@ class MainGraph:
             
             for f_name, show_force in self.graph_cfg.get_show_forces().items():
                 if show_force:
+
+                    for i in range(self.num_rings):
+                        self.arrows[i][f_name].set_visible(False)
+                    
                     # for ring_id in range(self.num_rings):
-                    for ring_id in self.ring_ids:
+                    for ring_id in self.rings_ids[:self.num_active_rings]:
                         forces = self.get_force(ring_id, f_name)
                         self.arrows[ring_id][f_name].set_visible(True)
                         self.arrows[ring_id][f_name].set_UVC(U=forces[0], V=forces[1])
                         self.arrows[ring_id][f_name].set_offsets(self.pos[ring_id])
                 else:
                     # for ring_id in range(self.num_rings):
-                    for ring_id in self.ring_ids:
+                    for ring_id in self.rings_ids[:self.num_active_rings]:
                         self.arrows[ring_id][f_name].set_visible(False)
 
         # return (self.lines, self.points, self.circles_col) + tuple(self.arrows.values())

@@ -35,14 +35,15 @@ dynamic_cfg = RingCfg(
 from math import pi, ceil
 import numpy as np
 # n = int((15000)**.5) + 1
-n = 2
+n = 5
 k = 1.1
 radius = 20/6 * 1.5
 num_rings = n**2
 l = 2 * k * radius
 
 space_cfg = SpaceCfg(
-    size = n * l,
+    height = 1.5 * n * l,
+    length = n * l,
 )
 seed = 40028922
 # seed = None
@@ -51,9 +52,9 @@ np.random.seed(seed)
 
 centers = []
 for j in range(n):
-    y = k * radius + j * l - space_cfg.size/2
+    y = k * radius + j * l - space_cfg.length/2
     for i in range(n):
-        x = k * radius + i * l - space_cfg.size/2
+        x = k * radius + i * l - space_cfg.length/2
         centers.append([x, y])
 
 creator_cfg = CreatorCfg(
@@ -67,12 +68,12 @@ creator_cfg = CreatorCfg(
 
 run_type = RunType.REAL_TIME
 
-num_windows = int(0.72 * ceil(space_cfg.size/(dynamic_cfg.diameter*3)))
+num_windows = int(0.72 * ceil(space_cfg.length/(dynamic_cfg.diameter*3)))
 real_time_cfg = RealTimeCfg(
     int_cfg=IntegrationCfg(
         # dt = 0.001*5, # max euler
         dt = 0.001,
-        num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6),
+        num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
         update_type=UpdateType.WINDOWS,
@@ -80,7 +81,7 @@ real_time_cfg = RealTimeCfg(
             num_col_windows=8, update_freq=1, disable=False),
     ),
     num_steps_frame = 500,
-    fps = 30,
+    fps = 60,
     graph_cfg = GraphCfg(
         show_circles     = True,
         show_f_spring    = False,
@@ -100,14 +101,14 @@ real_time_cfg = RealTimeCfg(
 save_cfg = SaveCfg(
     int_cfg=IntegrationCfg(
         dt = 0.001,
-        num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6),
+        num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
         update_type=UpdateType.WINDOWS,
     ),
     path = "stress/video_test2.mp4",
     speed=2,
-    fps=30, 
+    fps=60, 
     # duration=0.01,
     tf=7,
     num_frames=1*15,
@@ -128,7 +129,7 @@ def quick_collect(sim: Simulation, cfg=None):
 collect_cfg = CollectDataCfg(
     int_cfg=IntegrationCfg(
         dt = 0.001,
-        num_col_windows=int(ceil(space_cfg.size/(dynamic_cfg.diameter*1.2)) * 0.6),
+        num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
         update_type=UpdateType.WINDOWS,

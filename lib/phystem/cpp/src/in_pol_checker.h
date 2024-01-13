@@ -22,7 +22,6 @@ public:
     Vector2d* center_mass;
     vector<int>* ids;
     int* num_active;
-    double space_size;
     int update_freq;
     bool disable;
 
@@ -44,11 +43,11 @@ public:
 
     InPolChecker() {};
 
-    InPolChecker(Vector3d *pols, Vector2d *center_mass, vector<int> *ids, int *num_active, double space_size, 
-        int num_col_windows, int update_freq=1, bool disable=false)
-    : pols(pols), center_mass(center_mass), ids(ids), num_active(num_active), space_size(space_size), 
+    InPolChecker(Vector3d *pols, Vector2d *center_mass, vector<int> *ids, int *num_active, 
+        double height, double length, int num_col_windows, int update_freq=1, bool disable=false)
+    : pols(pols), center_mass(center_mass), ids(ids), num_active(num_active),
     update_freq(update_freq), disable(disable) {
-        SpaceInfo space_info(space_size);
+        SpaceInfo space_info(height, length);
         windows_manager = WindowsManager(center_mass, ids, num_active, num_col_windows, num_col_windows, space_info);
         std::cout << "update_freq: " << update_freq << std::endl; 
         num_verts = (*pols)[0].size();

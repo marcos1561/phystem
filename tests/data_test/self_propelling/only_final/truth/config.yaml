@@ -34,4 +34,5 @@ run_cfg: !!python/object:phystem.core.run_config.CollectDataCfg
     - 1
   tf: 20
 space_cfg: !!python/object:phystem.systems.szabo.configs.SpaceCfg
-  size: 30
+  height: 30
+  length: 30

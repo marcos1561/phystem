@@ -11,10 +11,11 @@ class IntersectionCalculator {
  */
 
 public:
-    double size; // Lado do quadrado
+    double height; // Lado do quadrado
+    double length; // Lado do quadrado
     
     IntersectionCalculator() { };
-    IntersectionCalculator(double size): size(size) { };
+    IntersectionCalculator(double height, double length): height(height), length(length) { };
 
     void calc_points(array<double, 2> &p1, array<double, 2> &p2, array<array<double, 2>, 2> &intersect) {
         /**
@@ -57,25 +58,25 @@ public:
         }
 
         if (a == 0) {
-            intersect[0][0] = -size/2.;
+            intersect[0][0] = -length/2.;
             intersect[0][1] = c/b;
             
             intersect[1][0] = -intersect[0][0];
             intersect[1][1] = intersect[0][1];
         } else if (b == 0) {
             intersect[0][0] = c/a;
-            intersect[0][1] = -size/2.;
+            intersect[0][1] = -height/2.;
             
             intersect[1][0] = intersect[0][0];
             intersect[1][1] = -intersect[0][1];
         } else {
-            // Coordenada y dos pontos de intersecção com x=+-size/2
-            double x1_ycoord = c +  a * size / 2.;
-            double x2_ycoord = c -  a * size / 2.;
+            // Coordenada y dos pontos de intersecção com x=+-length/2
+            double x1_ycoord = c +  a * length / 2.;
+            double x2_ycoord = c -  a * length / 2.;
             
-            // Coordenada x dos pontos de intersecção com y=+-size/2
-            double y1_xcoord = (c + size / 2.) / a;
-            double y2_xcoord = (c - size / 2.) / a;
+            // Coordenada x dos pontos de intersecção com y=+-heigth/2
+            double y1_xcoord = (c + height / 2.) / a;
+            double y2_xcoord = (c - height / 2.) / a;
             
             array<double, 4> coord_test = {x1_ycoord, x2_ycoord, y1_xcoord, y2_xcoord};
             array<int, 4> coord_id = {0, 0, 1, 1}; // 0: linha vertical, 1: linha horizontal
@@ -87,14 +88,22 @@ public:
                 double coord = coord_test[count];
 
                 // Condição para que o ponto seja da intersecção do quadrado.
-                if (abs(coord) <= size/2.) {
+                double is_x = coord_id[count] == 0; 
+
+                double is_correct;
+                if (is_x == true)
+                    is_correct = abs(coord) <= height/2.;
+                else
+                    is_correct = abs(coord) <= length/2.;
+
+                if (is_correct == true) {
                     double x, y;
-                    if (coord_id[count] == 0) {
-                        x = size / 2 * sinal[count];
+                    if (is_x == true) {
+                        x = length / 2 * sinal[count];
                         y = coord;
                     } else {
                         x = coord;
-                        y = size / 2 * sinal[count];
+                        y = height / 2 * sinal[count];
                     }
                     intersect[num_points][0] = x;
                     intersect[num_points][1] = y;

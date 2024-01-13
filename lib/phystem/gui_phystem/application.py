@@ -110,14 +110,26 @@ class AppCore:
             t2 = time.time()
             
             elapsed_time = t2 - t1
-            self.info.fps = 1/elapsed_time
             wait_time = stop_time - elapsed_time
             if wait_time > 0:
                 time.sleep(stop_time)
+                elapsed_time += stop_time
+
+            self.info.fps = 1/(elapsed_time)
+            
 
     def update_ui(self, *args):
-        self.canvas.draw()
+        canvas_t1 = time.time()
+        if not self.control.control_mng.is_paused:
+            self.canvas.draw()
+        canvas_t2 = time.time()
+        
+        info_t1 = time.time()
         self.info.update()
+        info_t2 = time.time()
+        
+        # print("canvas: ", 1/(canvas_t2-canvas_t1))
+        # print("info:   ", 1/(info_t2-info_t1))
 
     def run(self):
         self.to_run = True

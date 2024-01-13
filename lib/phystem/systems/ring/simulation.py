@@ -80,7 +80,7 @@ class Simulation(SimulationCore):
                     self.time_it.decorator(self.solver.update)
                     i += 1
 
-            particles_graph.update()
+                particles_graph.update()
 
         if self.run_cfg.id is RunType.SAVE_VIDEO:
             self.save_video(fig, update, ui_components.Control)

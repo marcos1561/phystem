@@ -26,7 +26,7 @@ class TestRing(unittest.TestCase):
         int_cfg: IntegrationCfg = run_cfg.int_cfg
 
         from math import ceil
-        size = cfg["space_cfg"].size
+        size = cfg["space_cfg"].length
         diameter = cfg["dynamic_cfg"].diameter
 
         run_cfg.folder_path = folder_path
