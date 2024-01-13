@@ -8,6 +8,8 @@ user/ring/checkpoint
 user/ring/stress
 user/ring/ring_intersect
 
+tests/data_test/ring/test
+
 lib/phystem/cpp/tests_ui/build
 lib/phystem/cpp/tests_ui/ui/build
 lib/phystem/cpp/tests_ui/ui/deps

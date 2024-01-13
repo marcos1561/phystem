@@ -11,8 +11,8 @@ int main() {
     SolverCfg solver_cfg;
     
     solver_cfg.dt = 0.01;
-    solver_cfg.size = 80;
-    solver_cfg.n = 2000;
+    solver_cfg.size = 80*10;
+    solver_cfg.n = 20000;
     solver_cfg.seed = -1;
 
     solver_cfg.num_cols_windows = 10;
@@ -30,6 +30,9 @@ int main() {
     solver_cfg.dynamic_cfg = self_prop_cfg;
 
     PointsCfg graph_cfg;
+        graph_cfg.color[0] = 1.0;
+        graph_cfg.color[1] = 127.0/255.0;
+        graph_cfg.color[2] = 0.0;
 
     RunCfg run_cfg;
         run_cfg.speed = 10;

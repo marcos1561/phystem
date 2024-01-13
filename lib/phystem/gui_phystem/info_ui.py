@@ -9,6 +9,8 @@ class InfoCore:
     def __init__(self, main_frame: ttk.Frame, cfgs: dict, solver: SolverCore, timer: TimeIt) -> None:
         self.main_frame = main_frame
         
+        self.fps = 0
+
         self.cfgs = cfgs
         self.solver = solver
         self.timer = timer
@@ -17,7 +19,8 @@ class InfoCore:
     
     def get_info(self) -> str:
         return (
-            f"$\Delta$T (ms): {self.timer.mean_time():.3f}\n\n"
+            f"fps    : {self.fps:.3f}\n"
+            f"dt (ms): {self.timer.mean_time():.3f}\n\n"
             f"t : {self.solver.time:.3f}\n"
             f"dt: {self.solver.dt:.5f}\n"
         )

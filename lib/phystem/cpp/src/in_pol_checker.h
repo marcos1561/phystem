@@ -20,6 +20,8 @@ public:
 
     Vector3d* pols;
     Vector2d* center_mass;
+    vector<int>* ids;
+    int* num_active;
     double space_size;
     int update_freq;
     bool disable;
@@ -42,10 +44,12 @@ public:
 
     InPolChecker() {};
 
-    InPolChecker(Vector3d *pols, Vector2d *center_mass, double space_size, int num_col_windows, int update_freq=1,
-        bool disable=false)
-    : pols(pols), center_mass(center_mass), space_size(space_size), update_freq(update_freq), disable(disable) {
-        windows_manager = WindowsManager(center_mass, num_col_windows, num_col_windows, space_size);
+    InPolChecker(Vector3d *pols, Vector2d *center_mass, vector<int> *ids, int *num_active, double space_size, 
+        int num_col_windows, int update_freq=1, bool disable=false)
+    : pols(pols), center_mass(center_mass), ids(ids), num_active(num_active), space_size(space_size), 
+    update_freq(update_freq), disable(disable) {
+        SpaceInfo space_info(space_size);
+        windows_manager = WindowsManager(center_mass, ids, num_active, num_col_windows, num_col_windows, space_info);
         std::cout << "update_freq: " << update_freq << std::endl; 
         num_verts = (*pols)[0].size();
         num_inside_points = 0;
@@ -142,7 +146,7 @@ public:
         num_inside_points = 0;
         num_collisions = 0;
 
-        #pragma omp parallel for schedule(dynamic, update_chunk)
+        // #pragma omp parallel for schedule(dynamic, update_chunk)
         for (auto win_id: windows_manager.windows_ids) {
             auto & window = windows_manager.windows[win_id[0]][win_id[1]];
             auto & neighbors = windows_manager.window_neighbor[win_id[0]][win_id[1]];
@@ -171,7 +175,3 @@ public:
         }
     }
 };
-
-// void in_pol_checker(Vector3d &pols) {
-
-// }

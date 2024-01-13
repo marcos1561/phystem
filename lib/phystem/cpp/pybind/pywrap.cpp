@@ -14,6 +14,7 @@ PYBIND11_MAKE_OPAQUE(vector<vector<vector<double*>>>);
 PYBIND11_MAKE_OPAQUE(vector<vector<double*>>);
 PYBIND11_MAKE_OPAQUE(vector<vector<double>>);
 PYBIND11_MAKE_OPAQUE(vector<double>);
+PYBIND11_MAKE_OPAQUE(vector<int>);
 
 using List = vector<double>;
 using List2d = vector<vector<double>>;
@@ -33,6 +34,7 @@ PYBIND11_MODULE(cpp_lib, m) {
     //==
     // Data Types
     //==
+    py::bind_vector<vector<int>>(data_types, "ListInt");
     py::bind_vector<Vector3d>(data_types, "Vector3d");
     py::bind_vector<VecList>(data_types, "PosVec");
     py::bind_vector<List>(data_types, "List");
@@ -64,8 +66,11 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def_readonly("random_nums", &RngManager::random_nums, byref)
         ;
 
+    py::class_<SpaceInfo>(managers, "SpaceInfo")
+        .def(py::init<double, double, std::array<double, 2>>());
+
     py::class_<WindowsManager>(managers, "WindowsManager")
-        .def(py::init<VecList*, int, int, double>())
+        .def(py::init<VecList*, vector<int>*, int*,  int, int, SpaceInfo>())
         .def("update_window_members", &WindowsManager::update_window_members)
         .def_readonly("col_size", &WindowsManager::col_size)
         .def_readonly("row_size", &WindowsManager::row_size)
@@ -75,8 +80,19 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def_readonly("window_neighbor", &WindowsManager::window_neighbor)
         ;
     
+    py::class_<WindowsManagerRing>(managers, "WindowsManagerRing")
+        .def(py::init<vector<vector<array<double, 2>>>*, vector<int>*, int*, int, int, SpaceInfo>())
+        .def("update_window_members", &WindowsManagerRing::update_window_members)
+        .def_readonly("col_size", &WindowsManagerRing::col_size)
+        .def_readonly("row_size", &WindowsManagerRing::row_size)
+        .def_readonly("windows", &WindowsManagerRing::windows)
+        .def_readonly("capacity", &WindowsManagerRing::capacity)
+        .def_readonly("windows_ids", &WindowsManagerRing::windows_ids)
+        .def_readonly("window_neighbor", &WindowsManagerRing::window_neighbor)
+        ;
+    
     py::class_<InPolChecker>(managers, "InPolChecker")
-        .def(py::init<Vector3d*, VecList*, int, double, bool>())
+        .def(py::init<Vector3d*, VecList*, vector<int>*, int*, int, double, bool>())
         .def_readonly("num_inside_points", &InPolChecker::num_inside_points)
         .def_readonly("inside_points", &InPolChecker::inside_points)
         ;
@@ -132,6 +148,7 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def_readonly("num_rings", &Ring::num_rings, byref)
         .def_readonly("num_particles", &Ring::num_particles, byref)
         .def_readonly("num_time_steps", &Ring::num_time_steps, byref)
+        .def_readonly("rings_ids", &Ring::rings_ids, byref)
         .def_readonly("pos", &Ring::pos, byref)
         .def_readonly("self_prop_angle", &Ring::self_prop_angle, byref)
         .def_readonly("pos_continuos", &Ring::pos_continuos, byref)

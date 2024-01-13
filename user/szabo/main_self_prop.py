@@ -20,11 +20,11 @@ space_cfg = SpaceCfg(
     # size = 18.2574185,
     # size = 57.73502691, # 0.3
     # size = 40.824829046, # 0.6
-    size = 40, # 0.6
+    size = 40*10, # 0.6
 )
 
 creator_cfg = CreatorCfg(
-    n = 1000,
+    n = 10000,
     r = space_cfg.size/2,
     type = CreateType.SQUARE,
 )

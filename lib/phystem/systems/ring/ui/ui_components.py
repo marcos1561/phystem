@@ -108,6 +108,7 @@ class Info(InfoCore):
 
     def get_info(self) -> str:
         return (
+            f"fps         : {self.fps:.1f}\n"
             f"Delta T (ms): {self.timer.mean_time():.3f}\n\n"
             f"t : {self.solver.time:.3f}\n"
             f"dt: {self.solver.dt:.5f}\n"

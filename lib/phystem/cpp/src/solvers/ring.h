@@ -83,6 +83,10 @@ public:
     Vector3d pos; // Posições das partículas
     vector<vector<double>> self_prop_angle; // Ângulo da direção da velocidade auto propulsora
     
+    int num_active_rings;
+    vector<bool> mask;
+    vector<int> rings_ids;
+
     Vector3d old_pos; 
     vector<vector<double>> old_self_prop_angle;
 
@@ -112,6 +116,8 @@ public:
     InPolChecker in_pol_checker;
 
     Vector2d center_mass;
+    
+    bool recalculate_ids = false;
 
     //==
     // Area Potencial
@@ -155,7 +161,7 @@ public:
     Ring(Vector3d &pos0, vector<vector<double>> self_prop_angle0, RingCfg dynamic_cfg, 
         double size, double dt, int num_col_windows, int seed=-1, int windows_update_freq=1,
         int integration_type=0, InPolCheckerCfg in_pol_checker_cfg=InPolCheckerCfg(3, 1, true)) 
-    : pos(pos0), self_prop_angle(self_prop_angle0), dynamic_cfg(dynamic_cfg), size(size), dt(dt),
+    : dynamic_cfg(dynamic_cfg), size(size), dt(dt),
     windows_update_freq(windows_update_freq), integration_type(integration_type)
     {
         if (seed != -1.)
@@ -163,9 +169,24 @@ public:
         else
             srand(time(0));
 
+        pos = pos0;
+        self_prop_angle = self_prop_angle0;
+        num_active_rings = pos0.size();
+
+        for (int i = 0; i < num_active_rings; i++)
+        {
+            mask.push_back(true);
+            rings_ids.push_back(i);
+        }
+        
+        // pos.push_back(pos[0]);
+        // self_prop_angle.push_back(self_prop_angle0[0]);
+        // mask.push_back(false);
+        // rings_ids.push_back(0);
+
 
         num_particles = pos0[0].size();
-        num_rings = pos0.size();
+        num_rings = pos.size();
         sim_time = 0.0;
         num_time_steps = 0;
         
@@ -177,8 +198,10 @@ public:
 
         initialize_dynamic();
         
-        windows_manager = WindowsManagerRing(&pos, num_col_windows, num_col_windows, size, windows_update_freq);
-        in_pol_checker = InPolChecker(&pos_continuos, &center_mass, size, 
+        SpaceInfo space_info(size);
+        windows_manager = WindowsManagerRing(&pos, &rings_ids, &num_active_rings, num_col_windows, 
+            num_col_windows, space_info, windows_update_freq);
+        in_pol_checker = InPolChecker(&pos_continuos, &center_mass, &rings_ids, &num_active_rings, size, 
                         in_pol_checker_cfg.num_cols_windows, in_pol_checker_cfg.update_freq, in_pol_checker_cfg.disable);
         
         #if DEBUG == 1
@@ -225,6 +248,7 @@ public:
 
         center_mass = Vector2d(num_rings);
 
+        // rk4 stuff
         auto deriv_particles = vector<array<double, 3>>(num_particles, {0., 0., 0.});
         auto deriv_rings = vector<vector<array<double, 3>>>(num_rings, deriv_particles);
         k_matrix = vector<vector<vector<array<double, 3>>>>(4, deriv_rings);
@@ -255,6 +279,23 @@ public:
         
         update_graph_points();
         #endif
+    }
+
+    void add_ring() {
+        auto new_ring = pos[0];
+        for (size_t p_id = 0; p_id < new_ring.size(); p_id++) {
+            new_ring[p_id][0] += size/3;
+        }
+        
+        for (size_t i = 0; i < mask.size(); i++) {
+            if (mask[i] == false) {
+                pos[i] = new_ring;
+                mask[i] = true;
+                num_active_rings += 1;
+                recalculate_ids = true;
+                return;
+            }
+        } 
     }
 
     double periodic_dist(double &dx, double &dy) {
@@ -409,7 +450,6 @@ public:
         spring_forces[ring_id][p_id][1] += spring_fy;
         #endif
     }
-
 
     double calc_differences(int ring_id) {
         double perimeter = 0;
@@ -770,7 +810,10 @@ public:
         // #endif
 
         #pragma omp parallel for schedule(dynamic, 10)
-        for (int ring_id = 0; ring_id < num_rings; ring_id++) {
+        // for (int ring_id = 0; ring_id < num_rings; ring_id++) {
+        for (int i = 0; i < num_active_rings; i++)
+        {
+            int ring_id = rings_ids[i];
             for (int i=0; i < num_particles; i++) {
                 calc_derivate(vel_i[0], vel_i[1], angle_deriv_i, ring_id, i);
 
@@ -1096,7 +1139,10 @@ public:
    
     void calc_forces_windows() {
         #if DEBUG == 1
-        for (int ring_id = 0; ring_id < num_rings; ring_id++) {
+        // for (int ring_id = 0; ring_id < num_rings; ring_id++) {
+        for (int i = 0; i < num_active_rings; i++) 
+        {
+            int ring_id = rings_ids[i];
             for (int i = 0; i < num_particles; i++) {
                 spring_forces[ring_id][i][0] = 0.;
                 spring_forces[ring_id][i][1] = 0.;
@@ -1135,9 +1181,12 @@ public:
             }
         }
 
+        // for (int ring_id = 0; ring_id < num_rings; ring_id++)
         #pragma omp parallel for schedule(dynamic, 10)
-        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        for (int i = 0; i < num_active_rings; i++) 
         {
+            int ring_id = rings_ids[i];
+
             // Springs
             for (int p_id = 0; p_id < num_particles; p_id ++) {
                 int id_left = (p_id == 0) ? num_particles-1 : p_id-1;
@@ -1172,10 +1221,25 @@ public:
         rng_manager.update();
         #endif
 
+        if (recalculate_ids == true) {
+            recalculate_ids = false;
+            int next_id = 0;
+            for (int i = 0; i < num_rings; i++)
+            {
+                if (mask[i] == true) {
+                    rings_ids[next_id] = i;
+                    next_id += 1;
+                }
+            }
+            num_active_rings = next_id;
+        }
+
         windows_manager.update_window_members();
 
         in_pol_checker.update();
+        
         calc_center_mass();
+        
         calc_forces_windows();
 
         switch (integration_type)
@@ -1212,8 +1276,11 @@ public:
     }
 
     void calc_center_mass() {
-        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        // for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        for (int i = 0; i < num_active_rings; i++) 
         {
+            int ring_id = rings_ids[i];
+
             auto &ring = pos_continuos[ring_id];
 
             auto &cm = center_mass[ring_id];
@@ -1303,7 +1370,11 @@ public:
     }
 
     void update_graph_points() {
-        for (int ring_id = 0; ring_id < num_rings; ring_id++) {
+        // for (int ring_id = 0; ring_id < num_rings; ring_id++) {
+        for (int i = 0; i < num_active_rings; i++) 
+        {
+            int ring_id = rings_ids[i];
+
             graph_points[ring_id][0][0] = pos[ring_id][0][0];
             graph_points[ring_id][0][1] = pos[ring_id][0][1];
             
@@ -1329,87 +1400,3 @@ public:
         }
     }
 };
-
-
-// void advance_time_old(int ring_id) {
-//         for (int i=0; i < num_particles; i++) {
-//             pos[ring_id][i][0] += dt * vel[ring_id][i][0];
-//             pos[ring_id][i][1] += dt * vel[ring_id][i][1];
-
-//             #if DEBUG == 1
-//             if (vel[ring_id][i][0] > 1e6) {
-//                 std::cout << "Error: High velocity" << std::endl;
-//             }
-            
-//             if (isnan(pos[ring_id][i][0]) == true) {
-//                 std::cout << "Error: pos nan 1" << std::endl;
-//             }
-//             #endif
-
-//             #if DEBUG == 1    
-//                 auto& rng_nums = rng_manager.get_random_num(i, ring_id);
-//                 double rng_rot = (double)rng_nums[0]/(double)RAND_MAX * 2. - 1.;
-//                 double rng_trans_x = (double)rng_nums[1]/(double)RAND_MAX * 2. - 1.;
-//                 double rng_trans_y = (double)rng_nums[2]/(double)RAND_MAX * 2. - 1.;
-//             #else
-//                 double rng_rot = (double)rand()/(double)RAND_MAX * 2. - 1.;
-//                 double rng_trans_x = (double)rand()/(double)RAND_MAX * 2. - 1.;
-//                 double rng_trans_y = (double)rand()/(double)RAND_MAX * 2. - 1.;
-//             #endif
-
-//             double noise_rot = rng_rot * sqrt(2. * rot_diff) / sqrt(dt); 
-//             double noise_trans_x = rng_trans_x * sqrt(2. * trans_diff) / sqrt(dt); 
-//             double noise_trans_y = rng_trans_y * sqrt(2. * trans_diff) / sqrt(dt); 
-
-//             double speed = sqrt(vel[ring_id][i][0]*vel[ring_id][i][0] + vel[ring_id][i][1]*vel[ring_id][i][1]);
-            
-//             double angle_derivate;
-//             if (speed == 0.) {
-//                 update_debug.count_zero_speed += 1;
-//                 angle_derivate = 0.;
-//             } else {
-//                 double cross_prod = self_prop_vel[ring_id][i][0] * vel[ring_id][i][1]/speed - self_prop_vel[ring_id][i][1] * vel[ring_id][i][0]/speed;
-                
-//                 if (abs(cross_prod) > 1) {
-//                     #if DEBUG == 1
-//                     std::cout << "Error: cross_prod | " << cross_prod << std::endl;
-//                     #endif
-//                     cross_prod = copysign(1, cross_prod);
-//                 }
-
-//                 angle_derivate = 1. / relax_time * asin(cross_prod) + noise_rot;
-//             }
-            
-//             self_prop_angle[ring_id][i] += angle_derivate * dt;
-
-//             vel[ring_id][i][0] = vo * self_prop_vel[ring_id][i][0] + mobility * sum_forces_matrix[ring_id][i][0] + noise_trans_x;
-//             vel[ring_id][i][1] = vo * self_prop_vel[ring_id][i][1] + mobility * sum_forces_matrix[ring_id][i][1] + noise_trans_y;
-
-//             self_prop_vel[ring_id][i][0] = cos(self_prop_angle[ring_id][i]);
-//             self_prop_vel[ring_id][i][1] = sin(self_prop_angle[ring_id][i]);
-
-//             // for (int i = 0; i < num_particles; i++)
-//             // {
-//             //     pos[i][0] = remainder(pos[i][0] + size/2., size) + size/2.; 
-//             //     pos[i][1] = remainder(pos[i][1] + size/2., size) + size/2.; 
-//             // }
-            
-//             for (int dim = 0; dim < 2.f; dim ++) {
-//                 if (pos[ring_id][i][dim] > size/2.f)
-//                     pos[ring_id][i][dim] -= size;
-//                 else if (pos[ring_id][i][dim] < -size/2.f)
-//                     pos[ring_id][i][dim] += size;
-//             }
-
-//             #if DEBUG == 1
-//             if (isnan(pos[ring_id][i][0]) == true)
-//                 std::cout << "Error: pos_nan 2" << std::endl;
-
-//             total_forces[ring_id][i][0] = sum_forces_matrix[ring_id][i][0];
-//             total_forces[ring_id][i][1] = sum_forces_matrix[ring_id][i][1];
-//             #endif
-
-//             sum_forces_matrix[ring_id][i][0] = 0.f;
-//             sum_forces_matrix[ring_id][i][1] = 0.f;
-//         }        
-//     }

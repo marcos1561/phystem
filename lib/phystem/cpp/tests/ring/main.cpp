@@ -38,8 +38,8 @@ int main() {
     auto solver = Ring(data.pos, data.self_prop_angle, cfg, size, dt, num_cols_windows, 12415, 1, 0,
         InPolCheckerCfg(3, 10));
 
-    for (int i = 0; i < 100000; i++)
-    // while (true)
+    // for (int i = 0; i < 10; i++)
+    while (true)
     {
         // solver.update_normal();
         solver.update_windows();

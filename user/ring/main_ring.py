@@ -69,7 +69,7 @@ real_time_cfg = RealTimeCfg(
         in_pol_checker=InPolCheckerCfg(3, 200),
     ),
     num_steps_frame=400,
-    fps=60,
+    fps=600,
     graph_cfg = GraphCfg(
         show_circles      = True,
         show_f_spring     = False,
@@ -85,7 +85,7 @@ real_time_cfg = RealTimeCfg(
     # checkpoint=CheckpointCfg(
     #     # folder_path="ring_intersect/data_high_den/phystem_data",
     #     # folder_path="ring_intersect/data",
-    #     folder_path="ring_intersect/data_anti_col_2/phystem_data",
+    #     folder_path="ring_intersect/data_cluster/data_max_windows/phystem_data",
     #     # folder_path="ring_intersect/data_hd_test/phystem_data",
     #     override_cfgs=False,
     # )

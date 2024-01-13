@@ -10,6 +10,21 @@
 
 using namespace std;
 
+struct SpaceInfo
+    {
+        double height;
+        double length;
+        std::array<double, 2> center;
+        
+        SpaceInfo() { };
+
+        SpaceInfo(double size, std::array<double, 2> center={{0.0, 0.0}}) :
+            height(size), length(size), center(center) { }
+        
+        SpaceInfo(double height, double length, std::array<double, 2> center={{0.0, 0.0}}) :
+            height(height), length(length), center(center) { }
+    };
+
 class WindowsManager {
 public:
     double col_size;
@@ -21,22 +36,26 @@ public:
     vector<vector<vector<array<int, 2>>>> window_neighbor;
 
     vector<array<double, 2>> *point_pos;
+    vector<int> *ids;
+    int *num_active;
     int num_cols;
     int num_rows;
     int num_points;
-    double space_size;
+
+    SpaceInfo space_info;
     int update_freq;
 
     int counter;
 
+
 public:
     WindowsManager() {};
 
-    WindowsManager(vector<array<double, 2>> *p_pos, int num_cols, int num_rows, double space_size) : 
-    point_pos(p_pos), num_cols(num_cols), num_rows(num_rows), space_size(space_size) {
+    WindowsManager(vector<array<double, 2>> *p_pos, vector<int> *ids , int *num_active, int num_cols, int num_rows, SpaceInfo space_info) : 
+    point_pos(p_pos), ids(ids), num_active(num_active), num_cols(num_cols), num_rows(num_rows), space_info(space_info) {
         num_points = point_pos->size();
-        col_size = space_size/(double)num_cols;
-        row_size = space_size/(double)num_rows;
+        col_size = space_info.length/(double)num_cols;
+        row_size = space_info.height/(double)num_rows;
 
         counter = 0;
 
@@ -77,9 +96,12 @@ public:
             }
         }
 
-        for (int p_id=0; p_id < num_points; p_id ++) {
-            int col_pos = (int)(((*point_pos)[p_id][0] + space_size/2.) / col_size);
-            int row_pos = (int)(((*point_pos)[p_id][1] + space_size/2.) / row_size);
+        // for (int p_id=0; p_id < num_points; p_id ++) {
+        for (int i = 0; i < *num_active; i++)
+        {
+            int p_id = (*ids)[i];
+            int col_pos = (int)(((*point_pos)[p_id][0] - space_info.center[0] + space_info.length/2.) / col_size);
+            int row_pos = (int)(((*point_pos)[p_id][1] - space_info.center[1] + space_info.height/2.) / row_size);
 
             if (row_pos == num_rows)
                 row_pos -= 1;
@@ -99,6 +121,7 @@ public:
     }
 };
 
+
 class WindowsManagerRing {
 public:
     double col_size;
@@ -110,10 +133,13 @@ public:
     vector<vector<vector<array<int, 2>>>> window_neighbor;
 
     vector<vector<array<double, 2>>> *point_pos;
+    vector<int> *ids;
+    int *num_active;
     int num_cols;
     int num_rows;
     int num_entitys;
     int num_points;
+    SpaceInfo space_info;
     double space_size;
     int update_freq;
 
@@ -122,13 +148,14 @@ public:
 public:
     WindowsManagerRing() {};
 
-    WindowsManagerRing(vector<vector<array<double, 2>>> *p_pos, int num_cols, int num_rows, double space_size,
-        int update_freq=1) : point_pos(p_pos), num_cols(num_cols), num_rows(num_rows), space_size(space_size),
-        update_freq(update_freq) {
+    WindowsManagerRing(vector<vector<array<double, 2>>> *p_pos, vector<int> *ids, int *num_active, int num_cols, 
+        int num_rows, SpaceInfo space_info, int update_freq=1) 
+        : point_pos(p_pos), ids(ids), num_active(num_active), num_cols(num_cols), num_rows(num_rows), 
+        space_info(space_info), update_freq(update_freq) {
         num_entitys = point_pos->size();
         num_points = (*point_pos)[0].size();
-        col_size = space_size/(double)num_cols;
-        row_size = space_size/(double)num_rows;
+        col_size = space_info.length/(double)num_cols;
+        row_size = space_info.height/(double)num_rows;
 
         counter = 0;
 
@@ -143,8 +170,6 @@ public:
                 windows_ids.push_back({i, j});
             }
         }
-        
-
         
         window_neighbor = vector<vector<vector<array<int, 2>>>>(num_rows, vector<vector<array<int, 2>>>(num_cols));
         for (int i = 0; i < num_rows; i++) {
@@ -161,30 +186,6 @@ public:
                 }
             }
         }
-        
-        // window_neighbor = vector<vector<vector<array<int, 2>>>>(num_rows, vector<vector<array<int, 2>>>(num_cols));
-        // for (int i = 0; i < num_rows; i++) {
-        //     auto possible_neighbors = vector<array<int, 2>>();
-        //     for (int j = 0; j < num_cols; j++) {
-        //         possible_neighbors.push_back({i, (j+1)%num_cols});
-        //         possible_neighbors.push_back({(i+1)%num_rows, j});
-        //         possible_neighbors.push_back({(i+1)%num_rows, (j+1)%num_cols});
-
-        //         if ((j-1) == -1) {
-        //             possible_neighbors.push_back({(i+1)%num_rows, num_cols-1});
-        //         }
-        //         else {
-        //             possible_neighbors.push_back({(i+1)%num_rows, (j-1)});
-        //         }
-
-        //         for (auto neighbor: possible_neighbors) {
-        //             if ((neighbor[0] == i) & (neighbor[1] == j)) {
-        //                 continue;
-        //             }
-        //             window_neighbor[i][j].push_back(neighbor);
-        //         }
-        //     }
-        // }
     }
 
     void update_window_members() {
@@ -201,12 +202,14 @@ public:
             }
         }
 
-        for (int entity_id = 0; entity_id < num_entitys; entity_id++)
+        // for (int entity_id = 0; entity_id < num_entitys; entity_id++)
+        for (int i = 0; i < *num_active; i++)
         {
+            int entity_id = (*ids)[i];
             for (int p_id=0; p_id < num_points; p_id ++) 
             {
-                int col_pos = (int)(((*point_pos)[entity_id][p_id][0] + space_size/2.) / col_size);
-                int row_pos = (int)(((*point_pos)[entity_id][p_id][1] + space_size/2.) / row_size);
+                int col_pos = (int)(((*point_pos)[entity_id][p_id][0] - space_info.center[0] + space_info.length/2.) / col_size);
+                int row_pos = (int)(((*point_pos)[entity_id][p_id][1] - space_info.center[1] + space_info.height/2.) / row_size);
 
                 if (row_pos == num_rows)
                     row_pos -= 1;

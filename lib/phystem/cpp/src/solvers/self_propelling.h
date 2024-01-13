@@ -48,6 +48,9 @@ public:
 
     double sim_time;
 
+    vector<int> ids;
+    int num_active;
+
     // Debug
     RngManager rng_manager;
     double random_number;
@@ -71,8 +74,16 @@ public:
 
         n = pos0.size();
         sim_time = 0;
+
+        ids = vector<int>(pos0.size());
+        num_active = pos0.size();
+        for (size_t i = 0; i < pos0.size(); i++)
+        {
+            ids[i] = i;
+        }
         
-        windows_manager = WindowsManager(&pos, num_col_windows, num_col_windows, size);
+        
+        windows_manager = WindowsManager(&pos, &ids, &num_active, num_col_windows, num_col_windows, size);
 
         initialize_propelling();
 

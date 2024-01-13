@@ -97,7 +97,7 @@ class AppCore:
 
         frame = 1
         while True:
-            time.sleep(stop_time)
+            t1 = time.time()
             
             self.update_func(frame)
             frame += 1
@@ -106,6 +106,14 @@ class AppCore:
                 self.root.event_generate("<<update_ui>>")
             else:
                 return
+            
+            t2 = time.time()
+            
+            elapsed_time = t2 - t1
+            self.info.fps = 1/elapsed_time
+            wait_time = stop_time - elapsed_time
+            if wait_time > 0:
+                time.sleep(stop_time)
 
     def update_ui(self, *args):
         self.canvas.draw()

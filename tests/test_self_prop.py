@@ -87,14 +87,20 @@ class TestWindows(unittest.TestCase):
         import numpy as np
 
         n = 40
-        size = 20
+        length = 20
+        height = 20
+        
         num_cols = 5
         num_rows = num_cols
 
-        pos = np.random.random((n, 2))*size - size/2
+        pos = np.random.random((n, 2))*2 - 1
+        pos[:,0] *= length/2
+        pos[:,1] *= height/2
+
         pos = cpp_lib.data_types.PosVec(pos)
 
-        wm = cpp_lib.managers.WindowsManager(pos, num_cols, num_cols, size)
+        space_info = cpp_lib.managers.SpaceInfo(height, length, [0, 0])
+        wm = cpp_lib.managers.WindowsManager(pos, num_cols, num_cols, space_info)
 
         correct_neighbors = self.get_correct_neighbors(num_cols, num_rows)
         
