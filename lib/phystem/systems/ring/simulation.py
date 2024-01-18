@@ -43,7 +43,8 @@ class Simulation(SimulationCore):
         else:
             init_data = self.creator.create()
         
-        solver = CppSolver(**init_data.get_data(), dynamic_cfg=self.dynamic_cfg, space_cfg=self.space_cfg,
+        solver = CppSolver(**init_data.get_data(), num_particles=self.creator_cfg.num_p, 
+            dynamic_cfg=self.dynamic_cfg, space_cfg=self.space_cfg,
             int_cfg=self.run_cfg.int_cfg, rng_seed=self.rng_seed)
         
         return solver
@@ -65,11 +66,19 @@ class Simulation(SimulationCore):
 
         if graph_cfg.cpp_is_debug:
             self.solver.update_visual_aids()
+            particles_graph.update()
 
         def update(frame=None):
+            control_mng: ui_components.ControlMng
             control_mng = self.app.control.control_mng
 
-            if not control_mng.is_paused:
+            if control_mng.is_paused and control_mng.advance_once:
+               control_mng.is_paused = False 
+            elif not control_mng.is_paused and control_mng.advance_once:
+               control_mng.advance_once = False 
+               control_mng.is_paused = True 
+
+            if not control_mng.is_paused or control_mng.advance_once:
                 i = 0
                 while i < real_time_cfg.num_steps_frame:
                     if graph_cfg.pause_on_high_vel:
@@ -79,7 +88,7 @@ class Simulation(SimulationCore):
 
                     self.time_it.decorator(self.solver.update)
                     i += 1
-
+                
                 particles_graph.update()
 
         if self.run_cfg.id is RunType.SAVE_VIDEO:

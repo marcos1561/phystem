@@ -20,6 +20,8 @@ class ControlMng(ControlManagerCore):
         if self.graph_cfg.begin_paused:
             self.is_paused = True
 
+        self.advance_once = False
+
     def add_vars(self):
         self.vars["show_circles"] = BooleanVar(value=self.graph_cfg.show_circles)
         self.vars["f_springs"] = BooleanVar(value=self.graph_cfg.show_f_spring)
@@ -29,6 +31,9 @@ class ControlMng(ControlManagerCore):
         self.vars["pos_cont"] = BooleanVar(value=self.graph_cfg.show_pos_cont)
         self.vars["center_mass"] = BooleanVar(value=self.graph_cfg.show_center_mass)
         self.vars["inside_points"] = BooleanVar(value=self.graph_cfg.show_inside)
+
+    def advance_once_callback(self):
+        self.advance_once = True
 
     def show_circles(self):
         self.graph_cfg.show_circles = self.vars["show_circles"].get()
@@ -57,6 +62,7 @@ class Control(ControlCore):
     def configure_ui(self):
         f_main_frame = super().configure_ui()
     
+    
         show_circles = ttk.Checkbutton(f_main_frame, command=self.control_mng.show_circles,
             text="Show circles", variable=self.control_mng.vars["show_circles"])
 
@@ -82,6 +88,9 @@ class Control(ControlCore):
         
         inside_points = ttk.Checkbutton(cb_frame, text="Inside Points", 
             variable=self.control_mng.vars["inside_points"], command=self.control_mng.show_inside_points)
+        
+        advance_button = ttk.Button(f_main_frame, command=self.control_mng.advance_once_callback,
+            text="Avançar", width=20)
 
         show_circles.grid(column=0, row=2, sticky=W)
         
@@ -94,6 +103,8 @@ class Control(ControlCore):
         cb_frame.grid(column=0, row=5, sticky=W, pady=15)
         center_mass.grid(column=0, row=0)
         inside_points.grid(column=1, row=0, padx=10)
+        
+        advance_button.grid(column=0, row=6, sticky=W, pady=15)
 
 
 class Info(InfoCore):
@@ -114,6 +125,7 @@ class Info(InfoCore):
             f"dt: {self.solver.dt:.5f}\n"
             f"Area = {self.solver.cpp_solver.area_debug.area[0]:.3f}\n"
             "\n"
+            f"num_active: {self.solver.num_active_rings}\n"
             f"spring_overlap: {self.solver.spring_debug.count_overlap}\n"
             f"vol_overlap   : {self.solver.excluded_vol_debug.count_overlap}\n"
             f"area_overlap  : {self.solver.area_debug.count_overlap}\n"

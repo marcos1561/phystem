@@ -53,7 +53,7 @@ public:
         num_verts = (*pols)[0].size();
         num_inside_points = 0;
         num_collisions = 0;
-        counter = 1;
+        counter = 0;
 
         to_calc_forces = false;
 

@@ -119,17 +119,10 @@ class AppCore:
             
 
     def update_ui(self, *args):
-        canvas_t1 = time.time()
         if not self.control.control_mng.is_paused:
             self.canvas.draw()
-        canvas_t2 = time.time()
         
-        info_t1 = time.time()
         self.info.update()
-        info_t2 = time.time()
-        
-        # print("canvas: ", 1/(canvas_t2-canvas_t1))
-        # print("info:   ", 1/(info_t2-info_t1))
 
     def run(self):
         self.to_run = True

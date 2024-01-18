@@ -9,7 +9,8 @@ ring::Data ring::init_cfg(int num_rings, int num_p, double r, double vo) {
     data.self_prop_angle = vector<vector<double>>(2);
     
     double rings_center[] = {-1.3 * r, 1.3 * r};
-    double rings_self_prop_angle[] = {0, M_PI};
+    // double rings_self_prop_angle[] = {0, M_PI};
+    double rings_self_prop_angle[] = {0, 0};
 
     for (int ring_id = 0; ring_id < 2; ring_id++)
     {

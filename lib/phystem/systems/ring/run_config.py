@@ -1,7 +1,24 @@
-from enum import Enum
+from enum import Enum, auto
 
 from phystem.core import run_config
 from phystem.core.run_config import SolverType, UpdateType
+
+class UpdateType(Enum):
+    '''
+    Modo de integração a ser utilizado pelo solver.
+
+    Variants:
+    ---------
+        NORMAL:
+            Integração normal, sem mágicas envolvidas.
+        
+        WINDOWS:
+            Divide o espaço em janelas e mantém atualizado quem está em cada
+            janela.
+    '''
+    NORMAL = auto()
+    WINDOWS = auto()
+    STOKES = auto()
 
 class IntegrationType(Enum):
     euler=0

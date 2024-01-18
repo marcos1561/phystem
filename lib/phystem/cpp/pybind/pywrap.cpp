@@ -77,6 +77,7 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def_readonly("windows", &WindowsManager::windows)
         .def_readonly("capacity", &WindowsManager::capacity)
         .def_readonly("windows_ids", &WindowsManager::windows_ids)
+        .def_readonly("windows_center", &WindowsManager::windows_center)
         .def_readonly("window_neighbor", &WindowsManager::window_neighbor)
         ;
     
@@ -138,20 +139,23 @@ PYBIND11_MODULE(cpp_lib, m) {
         ;      
 
     py::class_<Ring>(solvers, "Ring")
-        .def(py::init<Vector3d&, vector<vector<double>>&, RingCfgPy, 
-            double, double, double, int, int, int, int, InPolCheckerCfg>(), py::arg("pos0"), py::arg("self_prop_angle0"), 
+        .def(py::init<Vector3d&, vector<vector<double>>&, int, RingCfgPy,
+            double, double, double, int, int, int, int, InPolCheckerCfg>(), py::arg("pos0"), py::arg("self_prop_angle0"), py::arg("num_particles"),  
             py::arg("dynamic_cfg"), py::arg("height"), py::arg("length"), py::arg("dt"), py::arg("num_col_windows"), py::arg("seed")=-1,
             py::arg("windows_update_freq")=0, py::arg("integration_type")=0, py::arg("InPolChecker"))
         .def("update_normal", &Ring::update_normal, py::call_guard<py::gil_scoped_release>())
         .def("update_windows", &Ring::update_windows, py::call_guard<py::gil_scoped_release>())
+        .def("update_stokes", &Ring::update_stokes, py::call_guard<py::gil_scoped_release>())
         .def("update_visual_aids", &Ring::update_visual_aids, py::call_guard<py::gil_scoped_release>())
-        .def_readonly("num_rings", &Ring::num_rings, byref)
-        .def_readonly("num_active_rings", &Ring::num_active_rings, byref)
-        .def_readonly("num_particles", &Ring::num_particles, byref)
+        .def_readonly("sim_time", &Ring::sim_time, byref)
         .def_readonly("num_time_steps", &Ring::num_time_steps, byref)
+        .def_readonly("num_rings", &Ring::num_rings, byref)
+        .def_readonly("num_particles", &Ring::num_particles, byref)
+        .def_readonly("num_active_rings", &Ring::num_active_rings, byref)
         .def_readonly("rings_ids", &Ring::rings_ids, byref)
         .def_readonly("pos", &Ring::pos, byref)
         .def_readonly("self_prop_angle", &Ring::self_prop_angle, byref)
+        .def_readonly("obstacle_r", &Ring::obstacle_r, byref)
         .def_readonly("pos_continuos", &Ring::pos_continuos, byref)
         .def_readonly("pos_t", &Ring::pos_t, byref)
         .def_readonly("graph_points", &Ring::graph_points, byref)

@@ -1,12 +1,12 @@
 import numpy as np
 
-from phystem.core.run_config import ReplayDataCfg, UpdateType
+from phystem.core.run_config import ReplayDataCfg
 from phystem.systems.ring.configs import RingCfg, SpaceCfg
-from phystem.systems.ring.run_config import IntegrationCfg
+from phystem.systems.ring.run_config import IntegrationCfg, UpdateType
 from phystem import cpp_lib
 
 class CppSolver:
-    def __init__(self, pos: np.ndarray, self_prop_angle: np.ndarray, 
+    def __init__(self, pos: np.ndarray, self_prop_angle: np.ndarray, num_particles: int,
         dynamic_cfg: RingCfg, space_cfg: SpaceCfg, int_cfg: IntegrationCfg, rng_seed=None) -> None:
         if rng_seed is None:
             rng_seed = -1
@@ -27,6 +27,7 @@ class CppSolver:
 
         self.cpp_solver = cpp_lib.solvers.Ring(
             pos, self_prop_angle, 
+            num_particles,
             dynamic_cfg, 
             space_cfg.height, 
             space_cfg.length, 
@@ -40,6 +41,7 @@ class CppSolver:
         update_type_to_func = {
             UpdateType.NORMAL: self.cpp_solver.update_normal,
             UpdateType.WINDOWS: self.cpp_solver.update_windows,
+            UpdateType.STOKES: self.cpp_solver.update_stokes,
         }
         self.update_func = update_type_to_func[int_cfg.update_type]
 

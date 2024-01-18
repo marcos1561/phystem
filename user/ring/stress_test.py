@@ -4,8 +4,8 @@ from phystem.systems.ring.configs import *
 from phystem.systems.ring.ui.graph import GraphCfg
 from phystem.systems.ring import collect_pipelines
 
-from phystem.core.run_config import UpdateType, RunType, RealTimeCfg, SaveCfg, CollectDataCfg
-from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg
+from phystem.core.run_config import RunType, RealTimeCfg, SaveCfg, CollectDataCfg, CheckpointCfg
+from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType
 
 dynamic_cfg = RingCfg(
     spring_k=8,
@@ -35,18 +35,18 @@ dynamic_cfg = RingCfg(
 from math import pi, ceil
 import numpy as np
 # n = int((15000)**.5) + 1
-n = 5
+n = 4
 k = 1.1
 radius = 20/6 * 1.5
 num_rings = n**2
 l = 2 * k * radius
 
 space_cfg = SpaceCfg(
-    height = 1.5 * n * l,
+    height = n * l,
     length = n * l,
 )
-seed = 40028922
-# seed = None
+# seed = 40028922
+seed = None
 
 np.random.seed(seed)
 
@@ -78,7 +78,7 @@ real_time_cfg = RealTimeCfg(
         integration_type=IntegrationType.euler,
         update_type=UpdateType.WINDOWS,
         in_pol_checker=InPolCheckerCfg(
-            num_col_windows=8, update_freq=1, disable=False),
+            num_col_windows=n, update_freq=1, disable=False),
     ),
     num_steps_frame = 500,
     fps = 60,
@@ -93,8 +93,8 @@ real_time_cfg = RealTimeCfg(
         begin_paused     = False,
     ),
     # checkpoint=CheckpointCfg(
-    #     folder_path="stress/checkpoint",
-    #     override_cfgs=True,
+    #     folder_path="texture/data",
+    #     override_cfgs=False,
     # ),
 )
 
@@ -133,10 +133,12 @@ collect_cfg = CollectDataCfg(
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
         update_type=UpdateType.WINDOWS,
+        in_pol_checker=InPolCheckerCfg(
+            num_col_windows=n, update_freq=1, disable=False),
     ),
-    tf = 10,
-    folder_path= "stress/checkpoint",
-    func=quick_collect,
+    tf = 30,
+    folder_path= "texture/data",
+    func=collect_pipelines.last_state,
 )
 
 run_type_to_cfg = {

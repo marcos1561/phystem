@@ -8,8 +8,8 @@ using namespace std;
 
 int main() {
     int n = 30;
-    double size = 20;
-    double r = size/6.0;
+    double size = 60;
+    double r = 20/6.0;
     int num_cols_windows = 4;
     double dt = 0.0001;
 
@@ -35,16 +35,17 @@ int main() {
     auto data = ring::init_cfg(2, n, r, cfg.vo);
 
     num_cols_windows=8;
-    auto solver = Ring(data.pos, data.self_prop_angle, cfg, size, dt, num_cols_windows, 12415, 1, 0,
+    auto solver = Ring(data.pos, data.self_prop_angle, n, cfg, size, size, dt, num_cols_windows, 12415, 1, 0,
         InPolCheckerCfg(3, 10));
 
     // for (int i = 0; i < 10; i++)
     while (true)
     {
         // solver.update_normal();
-        solver.update_windows();
+        solver.update_stokes();
         auto pos = solver.pos[0][0];
         std::cout << pos[0] << ", " << pos[1] << std::endl;
+        std::cout << "Num active: " << solver.num_active_rings << std::endl;
         // std::cout << solver.self_prop_angle[0][0] << std::endl;
     }
     

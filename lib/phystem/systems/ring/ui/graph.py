@@ -236,6 +236,8 @@ class MainGraph:
 
                 self.ax.add_collection(ring_lines)
 
+        self.ax.add_patch(Circle((0, 0), self.solver.cpp_solver.obstacle_r, fill=False))
+
         #==
         # Circles
         #==

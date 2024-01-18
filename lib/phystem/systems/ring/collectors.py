@@ -74,11 +74,11 @@ class StateCheckpoint(collectors.Collector):
             "time": 0,
         }
 
-        self.file_path = self.get_file_path(self.path)
+        self.file_path = self.get_files_path(self.path)
         self.save()
     
     @staticmethod
-    def get_file_path(path):
+    def get_files_path(path):
         return [
             os.path.join(path, "pos.npy"),
             os.path.join(path, "angle.npy"),
@@ -105,17 +105,17 @@ class StateCheckpoint(collectors.Collector):
     def load(path: str):
         from phystem.systems.ring.creators import InitData
 
-        file_path = StateCheckpoint.get_file_path(path)
-        pos = np.load(file_path[0]) 
-        angle = np.load(file_path[1])
+        files_path = StateCheckpoint.get_files_path(path)
+        pos = np.load(files_path[0]) 
+        angle = np.load(files_path[1])
         
-        with open(file_path[2], "rb") as f:
-            metadata = pickle.load(f)
-        
+        metadata = None
+        if os.path.exists(files_path[2]):
+            with open(files_path[2], "rb") as f:
+                metadata = pickle.load(f)
+
         init_data = InitData(pos, angle)
         return init_data, metadata
-
-
 
 class LastState(collectors.Collector):
     '''
@@ -134,5 +134,5 @@ class LastState(collectors.Collector):
         super().save()
         pos_path = os.path.join(self.path, "pos.npy")
         angle_path = os.path.join(self.path, "angle.npy")
-        np.save(pos_path, np.array(self.solver.pos))
-        np.save(angle_path, np.array(self.solver.self_prop_angle))
+        np.save(pos_path, np.array(self.solver.pos)[self.solver.rings_ids])
+        np.save(angle_path, np.array(self.solver.self_prop_angle)[self.solver.rings_ids])

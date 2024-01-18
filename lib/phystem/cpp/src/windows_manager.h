@@ -10,20 +10,19 @@
 
 using namespace std;
 
-struct SpaceInfo
-    {
-        double height;
-        double length;
-        std::array<double, 2> center;
-        
-        SpaceInfo() { };
+struct SpaceInfo {
+    double height;
+    double length;
+    std::array<double, 2> center;
+    
+    SpaceInfo() { };
 
-        SpaceInfo(double size, std::array<double, 2> center={{0.0, 0.0}}) :
-            height(size), length(size), center(center) { }
-        
-        SpaceInfo(double height, double length, std::array<double, 2> center={{0.0, 0.0}}) :
-            height(height), length(length), center(center) { }
-    };
+    SpaceInfo(double size, std::array<double, 2> center={{0.0, 0.0}}) :
+        height(size), length(size), center(center) { }
+    
+    SpaceInfo(double height, double length, std::array<double, 2> center={{0.0, 0.0}}) :
+        height(height), length(length), center(center) { }
+};
 
 class WindowsManager {
 public:
@@ -33,7 +32,11 @@ public:
     vector<vector<int>> capacity;
 
     vector<array<int, 2>> windows_ids;
+    vector<vector<array<double, 2>>> windows_center;
     vector<vector<vector<array<int, 2>>>> window_neighbor;
+
+    double window_length;
+    double window_height;
 
     vector<array<double, 2>> *point_pos;
     vector<int> *ids;
@@ -43,10 +46,9 @@ public:
     int num_points;
 
     SpaceInfo space_info;
+
     int update_freq;
-
     int counter;
-
 
 public:
     WindowsManager() {};
@@ -62,17 +64,29 @@ public:
         int average_num_points = num_points/(num_cols*num_rows);
         auto row = vector<vector<int>>(num_cols, vector<int>(average_num_points));
         windows = vector<vector<vector<int>>>(num_rows, row);
-
         capacity = vector<vector<int>>(num_rows, vector<int>(num_cols, 0));
+        
+        auto row_center = vector<array<double, 2>>(num_cols);
+        windows_center = vector<vector<array<double, 2>>>(num_rows, row_center);
 
+        window_height = space_info.height/(double)num_rows; 
+        window_length = space_info.length/(double)num_cols; 
+
+        double center_x, center_y;
         for (int i = 0; i < num_rows; i++) {
+            center_y = space_info.height/2. + window_height * (0.5 - (double)(i + 1));
+            center_y += space_info.center[1];
+            
             for (int j = 0; j < num_cols; j++) {
                 windows_ids.push_back({i, j});
+            
+                center_x = -space_info.length/2. + window_length * (-0.5 + (double)(j + 1));
+                center_x += space_info.center[0];
+                windows_center[i][j] = {center_x, center_y};
             }
         }
-        
-        window_neighbor = vector<vector<vector<array<int, 2>>>>(num_rows, vector<vector<array<int, 2>>>(num_cols));
 
+        window_neighbor = vector<vector<vector<array<int, 2>>>>(num_rows, vector<vector<array<int, 2>>>(num_cols));
         for (int i = 0; i < num_rows; i++) {
             for (int j = 0; j < num_cols; j++) {
                 window_neighbor[i][j].push_back({i, (j+1)%num_cols});
@@ -89,6 +103,33 @@ public:
         }
     }
 
+    void update_point(int p_id) {
+        int col_pos = (int)(((*point_pos)[p_id][0] - space_info.center[0] + space_info.length/2.) / col_size);
+        int row_pos = (int)(((*point_pos)[p_id][1] - space_info.center[1] + space_info.height/2.) / row_size);
+
+        if (row_pos == num_rows)
+            row_pos -= 1;
+        if (col_pos == num_cols)
+            col_pos -= 1;
+
+        if ((row_pos >= num_rows) | (row_pos < 0)) {
+            std::cout << "(Normal) row_pos out_of_bounds | " << row_pos  << std::endl;
+        }
+        if ((col_pos >= num_cols) | (col_pos < 0)) {
+            std::cout << "(Normal) col_pos out_of_bounds | " << col_pos  << std::endl;
+        }
+
+        size_t id = capacity[row_pos][col_pos];
+        
+        if (id < windows[row_pos][col_pos].size()) {
+            windows[row_pos][col_pos][id] = p_id;
+        } else {
+            windows[row_pos][col_pos].push_back(p_id);
+        }
+        
+        capacity[row_pos][col_pos] += 1;
+    }
+
     void update_window_members() {
         for (int i = 0; i < num_rows; i ++) {
             for (int j = 0; j < num_cols; j ++) {
@@ -100,23 +141,7 @@ public:
         for (int i = 0; i < *num_active; i++)
         {
             int p_id = (*ids)[i];
-            int col_pos = (int)(((*point_pos)[p_id][0] - space_info.center[0] + space_info.length/2.) / col_size);
-            int row_pos = (int)(((*point_pos)[p_id][1] - space_info.center[1] + space_info.height/2.) / row_size);
-
-            if (row_pos == num_rows)
-                row_pos -= 1;
-            if (col_pos == num_cols)
-                col_pos -= 1;
-
-            size_t id = capacity[row_pos][col_pos];
-            
-            if (id < windows[row_pos][col_pos].size()) {
-                windows[row_pos][col_pos][id] = p_id;
-            } else {
-                windows[row_pos][col_pos].push_back(p_id);
-            }
-            
-            capacity[row_pos][col_pos] += 1;
+            update_point(p_id);
         }
     }
 };
@@ -130,7 +155,11 @@ public:
     vector<vector<int>> capacity;
 
     vector<array<int, 2>> windows_ids;
+    vector<vector<array<double, 2>>> windows_center;
     vector<vector<vector<array<int, 2>>>> window_neighbor;
+
+    double window_length;
+    double window_height;
 
     vector<vector<array<double, 2>>> *point_pos;
     vector<int> *ids;
@@ -186,6 +215,54 @@ public:
                 }
             }
         }
+
+        auto row_center = vector<array<double, 2>>(num_cols);
+        windows_center = vector<vector<array<double, 2>>>(num_rows, row_center);
+
+        window_height = space_info.height/(double)num_rows; 
+        window_length = space_info.length/(double)num_cols; 
+
+        double center_x, center_y;
+        for (int i = 0; i < num_rows; i++) {
+            center_y = space_info.height/2. + window_height * (0.5 - (double)(i + 1));
+            center_y += space_info.center[1];
+            
+            for (int j = 0; j < num_cols; j++) {
+                center_x = -space_info.length/2. + window_length * (-0.5 + (double)(j + 1));
+                center_x += space_info.center[0];
+                windows_center[i][j] = {center_x, center_y};
+            }
+        }
+    }
+
+    void update_entity(int entity_id) {
+        for (int p_id=0; p_id < num_points; p_id ++) 
+        {
+            int col_pos = (int)(((*point_pos)[entity_id][p_id][0] - space_info.center[0] + space_info.length/2.) / col_size);
+            int row_pos = (int)(((*point_pos)[entity_id][p_id][1] - space_info.center[1] + space_info.height/2.) / row_size);
+
+            if (row_pos == num_rows)
+                row_pos -= 1;
+            if (col_pos == num_cols)
+                col_pos -= 1;
+
+            if ((row_pos >= num_rows) | (row_pos < 0)) {
+                std::cout << "(Ring) row_pos out_of_bounds | " << row_pos  << std::endl;
+            }
+            if ((col_pos >= num_cols) | (col_pos < 0)) {
+                std::cout << "(Ring) col_pos out_of_bounds | " << col_pos  << std::endl;
+            }
+
+            size_t id = capacity[row_pos][col_pos];
+            
+            if (id < windows[row_pos][col_pos].size()) {
+                windows[row_pos][col_pos][id] = {entity_id, p_id};
+            } else {
+                windows[row_pos][col_pos].push_back({entity_id, p_id});
+            }
+            
+            capacity[row_pos][col_pos] += 1;
+        }
     }
 
     void update_window_members() {
@@ -206,26 +283,7 @@ public:
         for (int i = 0; i < *num_active; i++)
         {
             int entity_id = (*ids)[i];
-            for (int p_id=0; p_id < num_points; p_id ++) 
-            {
-                int col_pos = (int)(((*point_pos)[entity_id][p_id][0] - space_info.center[0] + space_info.length/2.) / col_size);
-                int row_pos = (int)(((*point_pos)[entity_id][p_id][1] - space_info.center[1] + space_info.height/2.) / row_size);
-
-                if (row_pos == num_rows)
-                    row_pos -= 1;
-                if (col_pos == num_cols)
-                    col_pos -= 1;
-
-                size_t id = capacity[row_pos][col_pos];
-                
-                if (id < windows[row_pos][col_pos].size()) {
-                    windows[row_pos][col_pos][id] = {entity_id, p_id};
-                } else {
-                    windows[row_pos][col_pos].push_back({entity_id, p_id});
-                }
-                
-                capacity[row_pos][col_pos] += 1;
-            }
+            update_entity(entity_id);
         }
     }
 };
