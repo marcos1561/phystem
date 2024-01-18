@@ -85,6 +85,27 @@ class RingCfg:
             f"\n"
         )
 
+class StokesCfg:
+    def __init__(self, obstacle_r: float, obstacle_x: float, obstacle_y: float,
+        create_length: float, remove_length: float, num_max_rings: int
+    ) -> None:
+        self.obstacle_r = obstacle_r
+        self.obstacle_x = obstacle_x
+        self.obstacle_y = obstacle_y
+        self.create_length = create_length
+        self.remove_length = remove_length
+        self.num_max_rings = num_max_rings
+
+    def cpp_constructor_args(self):
+        return {
+            "obstacle_r": self.obstacle_r,
+            "obstacle_x": self.obstacle_x,
+            "obstacle_y": self.obstacle_y,
+            "create_length": self.create_length,
+            "remove_length": self.remove_length,
+            "num_max_rings": self.num_max_rings,
+        }
+
 class CreatorCfg:
     '''
     Configurações passada ao construtor de configuração inicial.

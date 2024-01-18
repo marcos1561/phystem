@@ -55,3 +55,17 @@ public:
             throw std::invalid_argument("Nome do potencial de area incorreto.");
     };
 };
+
+class StokesCfgPy: public StokesCfg {
+public:
+    StokesCfgPy(py::dict values) {
+        obstacle_r = py::float_(values["obstacle_r"]);
+        obstacle_x = py::float_(values["obstacle_x"]);
+        obstacle_y = py::float_(values["obstacle_y"]);
+        
+        create_length = py::float_(values["create_length"]);
+        remove_length = py::float_(values["remove_length"]);
+
+        num_max_rings = py::int_(values["num_max_rings"]);
+    }
+};

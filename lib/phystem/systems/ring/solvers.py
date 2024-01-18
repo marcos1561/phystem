@@ -1,13 +1,13 @@
 import numpy as np
 
 from phystem.core.run_config import ReplayDataCfg
-from phystem.systems.ring.configs import RingCfg, SpaceCfg
+from phystem.systems.ring.configs import RingCfg, SpaceCfg, StokesCfg
 from phystem.systems.ring.run_config import IntegrationCfg, UpdateType
 from phystem import cpp_lib
 
 class CppSolver:
     def __init__(self, pos: np.ndarray, self_prop_angle: np.ndarray, num_particles: int,
-        dynamic_cfg: RingCfg, space_cfg: SpaceCfg, int_cfg: IntegrationCfg, rng_seed=None) -> None:
+        dynamic_cfg: RingCfg, space_cfg: SpaceCfg, int_cfg: IntegrationCfg, stokes_cfg: StokesCfg=None, rng_seed=None) -> None:
         if rng_seed is None:
             rng_seed = -1
         if int_cfg.num_col_windows is None:
@@ -15,6 +15,11 @@ class CppSolver:
 
         dynamic_cfg = cpp_lib.configs.RingCfg(dynamic_cfg.cpp_constructor_args())
         
+        if stokes_cfg is None:
+            raise Exception("Informe a configuração do fluxo de stokes")
+        
+        stokes_cfg = cpp_lib.configs.StokesCfgPy(stokes_cfg.cpp_constructor_args())
+
         in_pol_checker_cfg = cpp_lib.configs.InPolCheckerCfg(
             int_cfg.in_pol_checker.num_col_windows, int_cfg.in_pol_checker.update_freq,
             int_cfg.in_pol_checker.disable)
@@ -35,6 +40,7 @@ class CppSolver:
             rng_seed, 
             int_cfg.windows_update_freq, 
             int_cfg.integration_type.value,
+            stokes_cfg,
             in_pol_checker_cfg,
         )
 
@@ -50,8 +56,8 @@ class CppSolver:
         self.n = len(self_prop_angle)
 
     @property
-    def num_rings(self):
-        return self.cpp_solver.num_rings
+    def num_max_rings(self):
+        return self.cpp_solver.num_max_rings
     
     @property
     def num_particles(self):

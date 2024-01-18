@@ -69,7 +69,7 @@ class MainGraph:
         '''
         Gráfico das partículas com a opção de desenhar os círculos dos raios de interação.
         '''
-        self.num_rings = solver.num_rings
+        self.num_rings = solver.num_max_rings
 
         self.ax = ax
         self.space_cfg = space_cfg

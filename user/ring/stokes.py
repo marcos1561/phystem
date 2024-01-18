@@ -33,10 +33,12 @@ dynamic_cfg = RingCfg(
     rot_diff=0.1,
 )
 
+
 space_cfg = SpaceCfg(
-    height = 2.5*30,
-    length = 4*30,
+    height = 1*30,
+    length = 2*30,
 )
+
 
 from math import pi
 radius = 20/6 * 1.1
@@ -52,6 +54,15 @@ creator_cfg = CreatorCfg(
         [a * radius, -a * radius], 
         [-a * radius, a * radius], 
     ]
+)
+
+stokes_cfg = StokesCfg(
+    obstacle_r  = space_cfg.length/8,
+    obstacle_x  = space_cfg.length/8/2,
+    obstacle_y  = space_cfg.length/8/2,
+    create_length = radius * 4,
+    remove_length = radius * 4,
+    num_max_rings = 100, 
 )
 
 seed = 40028922
@@ -165,5 +176,6 @@ run_type_to_cfg = {
     RunType.SAVE_VIDEO: save_cfg,
 }
 
-sim = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type], rng_seed=seed)
+sim = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type],
+    other_cfgs={"stokes": stokes_cfg}, rng_seed=seed)
 sim.run()

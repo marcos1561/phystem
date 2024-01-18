@@ -110,7 +110,7 @@ public:
     double sim_time;
     int num_time_steps;
 
-    int num_rings; 
+    int num_max_rings; 
     double ring_radius;
     
     Vector3d sum_forces_matrix; // Matrix com a soma das forças sobre cada partícula
@@ -124,12 +124,13 @@ public:
     //==
     // Stokes
     //==
+    StokesCfg stokes_cfg;
+
     vector<array<int, 2>> begin_windows_ids;
     vector<array<int, 2>> obstacle_windows_ids;
     vector<Vector2d> stokes_init_pos;
     vector<double> stokes_init_self_angle;
 
-    double obstacle_r;
     double create_border;
     double remove_border;
 
@@ -172,33 +173,37 @@ public:
     AreaDebug area_debug = {0};
     //=========//
 
-    Ring(Vector3d &pos0, vector<vector<double>> self_prop_angle0, int num_particles, RingCfg dynamic_cfg, 
+    Ring(Vector3d &pos0, vector<vector<double>>& self_prop_angle0, int num_particles, RingCfg dynamic_cfg, 
         double height, double length, double dt, int num_col_windows, int seed=-1, int windows_update_freq=1,
-        int integration_type=0, InPolCheckerCfg in_pol_checker_cfg=InPolCheckerCfg(3, 1, true)) 
+        int integration_type=0, StokesCfg stokes_cfg=StokesCfg(), 
+        InPolCheckerCfg in_pol_checker_cfg=InPolCheckerCfg(3, 1, true)) 
     : num_particles(num_particles), dynamic_cfg(dynamic_cfg), height(height), length(length), dt(dt),
-    windows_update_freq(windows_update_freq), integration_type(integration_type)
+    windows_update_freq(windows_update_freq), integration_type(integration_type), stokes_cfg(stokes_cfg)
     {
         if (seed != -1.)
             srand(seed);
         else
             srand(time(0));
 
-
         // Inicialização dos anéis na memória
-        int num_total_rings = 100;
+        if (stokes_cfg.num_max_rings > 0) {
+            num_max_rings = stokes_cfg.num_max_rings;
+        } else {
+            num_max_rings = pos0.size(); 
+        }
+
         num_active_rings = pos0.size();
         
         auto zero_vector_1d = vector<double>(num_particles, 0.); 
         auto zero_vector_2d = vector<array<double, 2>>(num_particles, {0., 0.}); 
 
-        pos = Vector3d(num_total_rings, zero_vector_2d);
-        self_prop_angle =  vector<vector<double>>(num_total_rings, zero_vector_1d);
+        pos = Vector3d(num_max_rings, zero_vector_2d);
+        self_prop_angle =  vector<vector<double>>(num_max_rings, zero_vector_1d);
 
-        rings_ids = vector<int>(num_total_rings);
-        mask = vector<bool>(num_total_rings);
+        rings_ids = vector<int>(num_max_rings);
+        mask = vector<bool>(num_max_rings);
 
-        num_active_rings = 0;
-        for (int i = 0; i < num_total_rings; i++)
+        for (int i = 0; i < num_max_rings; i++)
         {   
             if (i < num_active_rings) {
                 pos[i] = pos0[i];
@@ -211,7 +216,7 @@ public:
             }
         }
         
-        num_rings = pos.size();
+        num_max_rings = pos.size();
         ring_radius = dynamic_cfg.diameter / sqrt(2. * (1. - cos(2.*M_PI/((double)num_particles))));
 
         std::cout << "ring_radius: " << ring_radius << std::endl;
@@ -237,7 +242,7 @@ public:
         init_stokes();
         
         #if DEBUG == 1
-        rng_manager = RngManager(num_particles, num_rings, 5);
+        rng_manager = RngManager(num_particles, num_max_rings, 5);
         intersect = IntersectionCalculator(height, length);
         #endif
     }
@@ -270,19 +275,19 @@ public:
         auto zero_vector_1d = vector<double>(num_particles, 0.); 
         auto zero_vector_2d = vector<array<double, 2>>(num_particles, {0., 0.}); 
 
-        old_pos = Vector3d(num_rings, zero_vector_2d);
-        old_self_prop_angle = vector<vector<double>>(num_rings, zero_vector_1d);
+        old_pos = Vector3d(num_max_rings, zero_vector_2d);
+        old_self_prop_angle = vector<vector<double>>(num_max_rings, zero_vector_1d);
         
-        sum_forces_matrix = Vector3d(num_rings, zero_vector_2d);
+        sum_forces_matrix = Vector3d(num_max_rings, zero_vector_2d);
         
-        differences = Vector3d(num_rings, zero_vector_2d);
-        pos_continuos = Vector3d(num_rings, zero_vector_2d);
+        differences = Vector3d(num_max_rings, zero_vector_2d);
+        pos_continuos = Vector3d(num_max_rings, zero_vector_2d);
 
-        center_mass = Vector2d(num_rings);
+        center_mass = Vector2d(num_max_rings);
 
         // rk4 stuff
         auto deriv_particles = vector<array<double, 3>>(num_particles, {0., 0., 0.});
-        auto deriv_rings = vector<vector<array<double, 3>>>(num_rings, deriv_particles);
+        auto deriv_rings = vector<vector<array<double, 3>>>(num_max_rings, deriv_particles);
         k_matrix = vector<vector<vector<array<double, 3>>>>(4, deriv_rings);
 
         #if DEBUG == 1
@@ -291,15 +296,15 @@ public:
         //     rng_manager.update();
         // }
 
-        spring_forces = Vector3d(num_rings, zero_vector_2d);
-        vol_forces = Vector3d(num_rings, zero_vector_2d);
-        area_forces = Vector3d(num_rings, zero_vector_2d);
-        total_forces = Vector3d(num_rings, zero_vector_2d);
+        spring_forces = Vector3d(num_max_rings, zero_vector_2d);
+        vol_forces = Vector3d(num_max_rings, zero_vector_2d);
+        area_forces = Vector3d(num_max_rings, zero_vector_2d);
+        total_forces = Vector3d(num_max_rings, zero_vector_2d);
 
-        area_debug.area = vector<double>(num_rings);
+        area_debug.area = vector<double>(num_max_rings);
 
-        pos_t = vector<vector<vector<double*>>>(num_rings, vector<vector<double*>>(2));
-        for (int i=0; i < num_rings; i ++) {
+        pos_t = vector<vector<vector<double*>>>(num_max_rings, vector<vector<double*>>(2));
+        for (int i=0; i < num_max_rings; i ++) {
             for (int j = 0; j < num_particles; j++)
             {
                 pos_t[i][0].push_back(&pos[i][j][0]);
@@ -307,18 +312,18 @@ public:
             }
         }
 
-        graph_points = Vector3d(num_rings, vector<array<double, 2>>(3*num_particles, {0., 0.}));
+        graph_points = Vector3d(num_max_rings, vector<array<double, 2>>(3*num_particles, {0., 0.}));
         
         update_graph_points();
         #endif
     }
 
     void init_stokes() {
-        create_border = -length/2 + ring_radius * 2.5;
-        remove_border = +length/2 - ring_radius * 2.0;
+        // create_border = -length/2 + ring_radius * 2.5;
+        // remove_border = +length/2 - ring_radius * 2.0;
+        create_border = -length/2 + stokes_cfg.create_length;
+        remove_border = length/2 - stokes_cfg.remove_length;
 
-        obstacle_r = height/4.0;
-        
         for (auto window_id: windows_manager.windows_ids) {
             auto center_pos =  windows_manager.windows_center[window_id[0]][window_id[1]];
             if ((center_pos[0] - windows_manager.window_length/2.) < create_border)
@@ -330,8 +335,7 @@ public:
             if ((center_pos[0] - windows_manager.window_length/2.) < create_border)
                 begin_windows_ids.push_back(window_id);
         
-        
-            if (abs(center_pos[0] - windows_manager.window_length/2.) < (obstacle_r + diameter*2.))
+            if (abs(center_pos[0] - stokes_cfg.obstacle_x) < (stokes_cfg.obstacle_r + diameter*2.))
                 obstacle_windows_ids.push_back(window_id);
         }
         std::cout << "Num begin_windows: " << begin_windows_ids.size() << std::endl;
@@ -373,7 +377,7 @@ public:
     void recalculate_rings_ids() {
         to_recalculate_ids = false;
         int next_id = 0;
-        for (int i = 0; i < num_rings; i++)
+        for (int i = 0; i < num_max_rings; i++)
         {
             if (mask[i] == true) {
                 rings_ids[next_id] = i;
@@ -613,7 +617,7 @@ public:
     }
 
     void calc_center_mass() {
-        // for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        // for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
         #pragma omp parallel for schedule(dynamic, 10)
         for (int i = 0; i < num_active_rings; i++) 
         {
@@ -843,7 +847,7 @@ public:
     void calc_forces_normal(int ring_id) {
         // Excluded volume
         for (int p_id = 0; p_id < num_particles; p_id ++) {
-            for (int other_ring_id = 0; other_ring_id < num_rings; other_ring_id++)
+            for (int other_ring_id = 0; other_ring_id < num_max_rings; other_ring_id++)
             {
                 if (other_ring_id == ring_id) {
                     for (int other_id = 0; other_id < num_particles; other_id ++) {
@@ -887,7 +891,7 @@ public:
 
     void calc_forces_windows() {
         #if DEBUG == 1
-        // for (int ring_id = 0; ring_id < num_rings; ring_id++) {
+        // for (int ring_id = 0; ring_id < num_max_rings; ring_id++) {
         for (int i = 0; i < num_active_rings; i++) 
         {
             int ring_id = rings_ids[i];
@@ -929,7 +933,7 @@ public:
             }
         }
 
-        // for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        // for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
         #pragma omp parallel for schedule(dynamic, 10)
         for (int i = 0; i < num_active_rings; i++) 
         {
@@ -1032,7 +1036,7 @@ public:
 
         // if (is_low_dt == false) {
         //     double max_force = 0;
-        //     for (int ring_id = 0; ring_id < num_rings; ring_id++) {
+        //     for (int ring_id = 0; ring_id < num_max_rings; ring_id++) {
         //         for (auto& f: total_forces[ring_id]) {
         //             double f_mod = vector_mod(f);
         //             if (f_mod > max_force) {
@@ -1052,7 +1056,7 @@ public:
         // #endif
 
         #pragma omp parallel for schedule(dynamic, 10)
-        // for (int ring_id = 0; ring_id < num_rings; ring_id++) {
+        // for (int ring_id = 0; ring_id < num_max_rings; ring_id++) {
         for (int i = 0; i < num_active_rings; i++)
         {
             int ring_id = rings_ids[i];
@@ -1130,15 +1134,19 @@ public:
                 //
                 // Colisões com o obstáculo
                 //
-                double radius_sqr = p_pos[0] * p_pos[0] + p_pos[1] * p_pos[1];
-                if (radius_sqr < (obstacle_r * obstacle_r)) {
-                    double dot_pos_vel = dot_prod(p_pos, vel_i);
+                double dx = p_pos[0] - stokes_cfg.obstacle_x;
+                double dy = p_pos[1] - stokes_cfg.obstacle_y;
+                Vec2d radius_pos = {dx, dy};
+
+                double radius_sqr = dx * dx + dy * dy;
+                if (radius_sqr < (stokes_cfg.obstacle_r * stokes_cfg.obstacle_r)) {
+                    double dot_pos_vel = dot_prod(radius_pos, vel_i);
 
                     if (dot_pos_vel < 0.0) {
                         // double pos_length = sqrt(radius_sqr);
 
-                        vel_i[0] -= p_pos[0]/(radius_sqr)*dot_pos_vel;
-                        vel_i[1] -= p_pos[1]/(radius_sqr)*dot_pos_vel;
+                        vel_i[0] -= radius_pos[0]/(radius_sqr)*dot_pos_vel;
+                        vel_i[1] -= radius_pos[1]/(radius_sqr)*dot_pos_vel;
                     }
                 }
 
@@ -1175,7 +1183,7 @@ public:
     }
 
     void advance_time_verlet() {
-        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
         {
             for (int i=0; i < num_particles; i++) {
                 auto& vel_x = k_matrix[0][ring_id][i][0];
@@ -1233,7 +1241,7 @@ public:
 
         double angle_deriv_2;
         Vec2d vel2;
-        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
         {
             for (int i=0; i < num_particles; i++) {
                 calc_derivate(vel2[0], vel2[1], angle_deriv_2, ring_id, i);
@@ -1288,7 +1296,7 @@ public:
 
         // if (is_low_dt == false) {
         //     double max_force = 0;
-        //     for (int ring_id = 0; ring_id < num_rings; ring_id++) {
+        //     for (int ring_id = 0; ring_id < num_max_rings; ring_id++) {
         //         for (auto& f: total_forces[ring_id]) {
         //             double f_mod = vector_mod(f);
         //             if (f_mod > max_force) {
@@ -1307,7 +1315,7 @@ public:
         // }
 
         
-        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
         {
             for (int p_id = 0; p_id < num_particles; p_id++)
             {
@@ -1317,7 +1325,7 @@ public:
             }
         }
         
-        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
         {
             for (int i=0; i < num_particles; i++) {
                 double& vel_i_x = k_matrix[0][ring_id][i][0];
@@ -1343,7 +1351,7 @@ public:
             } 
         }
         calc_forces_windows();
-        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
         {
             for (int i=0; i < num_particles; i++) {
                 double& vel_i_x = k_matrix[1][ring_id][i][0];
@@ -1369,7 +1377,7 @@ public:
             } 
         }
         calc_forces_windows();
-        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
         {
             for (int i=0; i < num_particles; i++) {
                 double& vel_i_x = k_matrix[2][ring_id][i][0];
@@ -1395,7 +1403,7 @@ public:
             } 
         }
         calc_forces_windows();
-        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
         {
             for (int i=0; i < num_particles; i++) {
                 double& vel_i_x = k_matrix[3][ring_id][i][0];
@@ -1408,7 +1416,7 @@ public:
             } 
         }
         
-        for (int ring_id = 0; ring_id < num_rings; ring_id++)
+        for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
         {
             for (int i=0; i < num_particles; i++) {
                 auto& k1 = k_matrix[0][ring_id][i];
@@ -1436,7 +1444,7 @@ public:
         rng_manager.update();
         #endif
 
-        for (int ring_id = 0; ring_id < num_rings; ring_id++) {
+        for (int ring_id = 0; ring_id < num_max_rings; ring_id++) {
             #if DEBUG == 1
             for (int i = 0; i < num_particles; i++) {
                 spring_forces[ring_id][i][0] = 0.;
@@ -1644,7 +1652,7 @@ public:
     }
 
     void update_graph_points() {
-        // for (int ring_id = 0; ring_id < num_rings; ring_id++) {
+        // for (int ring_id = 0; ring_id < num_max_rings; ring_id++) {
         for (int i = 0; i < num_active_rings; i++) 
         {
             int ring_id = rings_ids[i];

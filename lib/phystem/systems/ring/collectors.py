@@ -63,7 +63,7 @@ class StateCheckpoint(collectors.Collector):
         
         self.num_saves = 0
 
-        num_rings = self.solver.num_rings
+        num_rings = self.solver.num_max_rings
         num_particles = self.solver.num_particles
 
         self.pos = np.zeros((num_rings, num_particles, 2), dtype=np.float64),

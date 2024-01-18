@@ -13,6 +13,16 @@ int main() {
     int num_cols_windows = 4;
     double dt = 0.0001;
 
+    StokesCfg stokes_cfg;
+    stokes_cfg.obstacle_r = size * 0.5 * 0.5;
+    stokes_cfg.obstacle_x = 0.0;
+    stokes_cfg.obstacle_y = 0.0;
+    stokes_cfg.create_length = 2.5 * r;
+    stokes_cfg.remove_length = 0.0;
+    stokes_cfg.num_max_rings = 100;
+
+    std::cout << stokes_cfg.num_max_rings << std::endl;
+
     auto cfg = RingCfg();
     cfg.spring_k = 1.;
     cfg.spring_r = 2;
@@ -33,10 +43,12 @@ int main() {
     cfg.diameter = 1.;
 
     auto data = ring::init_cfg(2, n, r, cfg.vo);
+    data.pos = Vector3d(0);
+    data.self_prop_angle = std::vector<vector<double>>(0);
 
     num_cols_windows=8;
     auto solver = Ring(data.pos, data.self_prop_angle, n, cfg, size, size, dt, num_cols_windows, 12415, 1, 0,
-        InPolCheckerCfg(3, 10));
+        stokes_cfg, InPolCheckerCfg(3, 10));
 
     // for (int i = 0; i < 10; i++)
     while (true)

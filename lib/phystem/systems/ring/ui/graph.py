@@ -70,7 +70,7 @@ class MainGraph:
         '''
         Gráfico das partículas com a opção de desenhar os círculos dos raios de interação.
         '''
-        self.num_rings = solver.num_rings
+        self.num_rings = solver.num_max_rings
 
         self.ax = ax
         self.space_cfg = space_cfg
@@ -236,7 +236,8 @@ class MainGraph:
 
                 self.ax.add_collection(ring_lines)
 
-        self.ax.add_patch(Circle((0, 0), self.solver.cpp_solver.obstacle_r, fill=False))
+        stokes_cfg = self.solver.cpp_solver.stokes_cfg
+        self.ax.add_patch(Circle((stokes_cfg.obstacle_x, stokes_cfg.obstacle_y), stokes_cfg.obstacle_r, fill=False))
 
         #==
         # Circles

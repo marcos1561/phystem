@@ -37,6 +37,25 @@ public:
     diameter(diameter) {};
 };
  
+class StokesCfg {
+public:    
+    double obstacle_r;
+    double obstacle_x;
+    double obstacle_y;
+
+    double create_length;
+    double remove_length;
+
+    int num_max_rings;
+
+    StokesCfg(): num_max_rings(-1) { };
+    
+    StokesCfg(double obstacle_r, double obstacle_x, double obstacle_y,
+        double create_length, double remove_length, int num_max_rings)
+    : obstacle_r(obstacle_r), obstacle_x(obstacle_x), obstacle_y(obstacle_y), 
+    create_length(create_length), remove_length(remove_length), num_max_rings(num_max_rings) { };
+};
+
 struct InPolCheckerCfg {
     int num_cols_windows;
     int update_freq;
