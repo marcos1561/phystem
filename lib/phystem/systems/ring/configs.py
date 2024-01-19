@@ -96,6 +96,17 @@ class StokesCfg:
         self.remove_length = remove_length
         self.num_max_rings = num_max_rings
 
+    @staticmethod
+    def get_null_cpp_cfg():
+        return {
+            "obstacle_r": 0,
+            "obstacle_x": 0,
+            "obstacle_y": 0,
+            "create_length": 0,
+            "remove_length": 0,
+            "num_max_rings": -1,
+        }
+
     def cpp_constructor_args(self):
         return {
             "obstacle_r": self.obstacle_r,

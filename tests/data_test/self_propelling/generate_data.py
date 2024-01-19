@@ -4,8 +4,8 @@ from phystem.systems.szabo.simulation import Simulation
 from phystem.systems.szabo import collect_pipelines
 
 from phystem.systems.szabo.configs import *
-from phystem.systems.szabo.run_config import IntegrationCfg
-from phystem.core.run_config import CollectDataCfg, SolverType, UpdateType
+from phystem.systems.szabo.run_config import IntegrationCfg, UpdateType
+from phystem.core.run_config import CollectDataCfg, SolverType
 from phystem.systems.szabo.collect_pipelines import CollectPlCfg
 
 current_folder = os.path.dirname(__file__)

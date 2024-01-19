@@ -1,7 +1,8 @@
 import numpy as np
 from math import atan2
 
-from phystem.core.run_config import UpdateType, ReplayDataCfg
+from phystem.core.run_config import ReplayDataCfg
+from phystem.systems.szabo.run_config import UpdateType
 from phystem.systems.szabo.configs import SelfPropellingCfg
 import phystem.cpp_lib as cpp_lib
 

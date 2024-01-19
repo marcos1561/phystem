@@ -73,7 +73,7 @@ collect_cfg = CollectDataCfg(
         num_col_windows=num_col_windows,
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
-        update_type=UpdateType.WINDOWS,
+        update_type=UpdateType.PERIODIC_WINDOWS,
         in_pol_checker=InPolCheckerCfg(
             num_col_windows=4, update_freq=int(100/3),
         ),
@@ -99,7 +99,7 @@ real_time_cfg = RealTimeCfg(
         num_col_windows=num_col_windows,
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
-        update_type=UpdateType.WINDOWS,
+        update_type=UpdateType.PERIODIC_WINDOWS,
         in_pol_checker=InPolCheckerCfg(
             num_col_windows=4, update_freq=int(100/3),
         ),

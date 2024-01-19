@@ -71,7 +71,7 @@ collect_cfg = CollectDataCfg(
         num_col_windows=num_col_windows,
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
-        update_type=UpdateType.WINDOWS,
+        update_type=UpdateType.PERIODIC_WINDOWS,
     ),
     tf = 10,
     folder_path="data",

@@ -6,8 +6,8 @@ from phystem.systems.ring.simulation import Simulation
 from phystem.systems.ring.configs import *
 from phystem.systems.ring.ui.graph import GraphCfg
 
-from phystem.core.run_config import UpdateType, RunType
-from phystem.systems.ring.run_config import RealTimeCfg, IntegrationType
+from phystem.core.run_config import RunType
+from phystem.systems.ring.run_config import RealTimeCfg, IntegrationType, UpdateType
 
 from pipeline import Pipeline
 
@@ -88,7 +88,7 @@ real_time_cfg = RealTimeCfg(
         cpp_is_debug  = True,
     ),
     num_col_windows=num_windows,
-    update_type      = UpdateType.WINDOWS,
+    update_type      = UpdateType.PERIODIC_WINDOWS,
     integration_type = IntegrationType.euler,
 )
 print(real_time_cfg.num_col_windows)

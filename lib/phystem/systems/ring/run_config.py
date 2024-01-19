@@ -1,7 +1,7 @@
 from enum import Enum, auto
 
 from phystem.core import run_config
-from phystem.core.run_config import SolverType, UpdateType
+from phystem.core.run_config import SolverType
 
 class UpdateType(Enum):
     '''
@@ -16,8 +16,8 @@ class UpdateType(Enum):
             Divide o espaço em janelas e mantém atualizado quem está em cada
             janela.
     '''
-    NORMAL = auto()
-    WINDOWS = auto()
+    PERIODIC_NORMAL = auto()
+    PERIODIC_WINDOWS = auto()
     STOKES = auto()
 
 class IntegrationType(Enum):
@@ -33,12 +33,13 @@ class InPolCheckerCfg:
 
 class IntegrationCfg(run_config.IntegrationCfg):
     def __init__(self, dt: float, num_col_windows: int=None, windows_update_freq=1, 
-        integration_type=IntegrationType.euler, solver_type=SolverType.CPP, update_type=UpdateType.NORMAL,
+        integration_type=IntegrationType.euler, solver_type=SolverType.CPP, update_type=UpdateType.PERIODIC_NORMAL,
         in_pol_checker=InPolCheckerCfg(3, 1, True)) -> None:
-        if update_type == UpdateType.WINDOWS and num_col_windows is None:
+        if update_type == UpdateType.PERIODIC_WINDOWS and num_col_windows is None:
             raise ValueError("'num_windows' deve ser especificado.")
 
-        super().__init__(dt, solver_type, update_type)
+        super().__init__(dt, solver_type)
+        self.update_type = update_type
         self.num_col_windows = num_col_windows
         self.windows_update_freq = windows_update_freq
         self.integration_type = integration_type

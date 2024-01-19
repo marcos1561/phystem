@@ -76,7 +76,7 @@ real_time_cfg = RealTimeCfg(
         num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
-        update_type=UpdateType.WINDOWS,
+        update_type=UpdateType.PERIODIC_WINDOWS,
         in_pol_checker=InPolCheckerCfg(
             num_col_windows=n, update_freq=1, disable=False),
     ),
@@ -104,7 +104,7 @@ save_cfg = SaveCfg(
         num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
-        update_type=UpdateType.WINDOWS,
+        update_type=UpdateType.PERIODIC_WINDOWS,
     ),
     path = "stress/video_test2.mp4",
     speed=2,
@@ -132,7 +132,7 @@ collect_cfg = CollectDataCfg(
         num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
-        update_type=UpdateType.WINDOWS,
+        update_type=UpdateType.PERIODIC_WINDOWS,
         in_pol_checker=InPolCheckerCfg(
             num_col_windows=n, update_freq=1, disable=False),
     ),

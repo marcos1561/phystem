@@ -63,21 +63,21 @@ class SolverType(Enum):
     PYTHON = auto()
     CPP = auto()
 
-class UpdateType(Enum):
-    '''
-    Modo de integração a ser utilizado pelo solver.
+# class UpdateType(Enum):
+#     '''
+#     Modo de integração a ser utilizado pelo solver.
 
-    Variants:
-    ---------
-        NORMAL:
-            Integração normal, sem mágicas envolvidas.
+#     Variants:
+#     ---------
+#         NORMAL:
+#             Integração normal, sem mágicas envolvidas.
         
-        WINDOWS:
-            Divide o espaço em janelas e mantém atualizado quem está em cada
-            janela.
-    '''
-    NORMAL = auto()
-    WINDOWS = auto()
+#         WINDOWS:
+#             Divide o espaço em janelas e mantém atualizado quem está em cada
+#             janela.
+#     '''
+#     PERIODIC_NORMAL = auto()
+#     PERIODIC_WINDOWS = auto()
 
 class CheckpointCfg:
     def __init__(self, folder_path: str, override_cfgs: bool = False) -> None:
@@ -95,7 +95,7 @@ class CheckpointCfg:
         self.configs: dict = None
 
 class IntegrationCfg:
-    def __init__(self, dt: float, solver_type=SolverType.CPP, update_type=UpdateType.NORMAL) -> None:
+    def __init__(self, dt: float, solver_type=SolverType.CPP) -> None:
         '''
         Parameters:
         -----------
@@ -104,13 +104,9 @@ class IntegrationCfg:
             
             solver_type:
                 Tipo do solver a ser utilizado.
-            
-            update_type:
-                Tipo de integração a ser utilizado pelo solver.
         '''
         self.dt = dt
         self.solver_type = solver_type
-        self.update_type = update_type
 
 class UiSettings:
     def __init__(self, window_scale=0.83, dpi=190, left_pannel_size=0.3) -> None:

@@ -96,7 +96,8 @@ public:
     double length; // tamanho de uma dimensão do espaço
     double dt; 
     int windows_update_freq; 
-    int integration_type;
+    RingUpdateType update_type;
+    RingIntegrationType integration_type;
 
     //==
     // dt variável (não utilizado no momento)
@@ -112,7 +113,9 @@ public:
 
     int num_max_rings; 
     double ring_radius;
-    
+
+    Vector3d* continuos_ring_positions;
+
     Vector3d sum_forces_matrix; // Matrix com a soma das forças sobre cada partícula
     Vector2d center_mass;
 
@@ -175,11 +178,18 @@ public:
 
     Ring(Vector3d &pos0, vector<vector<double>>& self_prop_angle0, int num_particles, RingCfg dynamic_cfg, 
         double height, double length, double dt, int num_col_windows, int seed=-1, int windows_update_freq=1,
-        int integration_type=0, StokesCfg stokes_cfg=StokesCfg(), 
-        InPolCheckerCfg in_pol_checker_cfg=InPolCheckerCfg(3, 1, true)) 
+        RingUpdateType update_type=RingUpdateType::periodic_borders, RingIntegrationType integration_type=RingIntegrationType::euler, 
+        StokesCfg stokes_cfg=StokesCfg(), InPolCheckerCfg in_pol_checker_cfg=InPolCheckerCfg(3, 1, true)) 
     : num_particles(num_particles), dynamic_cfg(dynamic_cfg), height(height), length(length), dt(dt),
-    windows_update_freq(windows_update_freq), integration_type(integration_type), stokes_cfg(stokes_cfg)
+    windows_update_freq(windows_update_freq), update_type(update_type), integration_type(integration_type), 
+    stokes_cfg(stokes_cfg) 
     {
+        if ((update_type == RingUpdateType::stokes) && 
+            (dynamic_cfg.area_potencial != AreaPotencialType::target_area)) 
+        {
+            throw std::invalid_argument("O modo 'stokes' apenas suporta 'area_potencial' = 'target_area'.");
+        }
+
         if (seed != -1.)
             srand(seed);
         else
@@ -218,6 +228,10 @@ public:
         
         num_max_rings = pos.size();
         ring_radius = dynamic_cfg.diameter / sqrt(2. * (1. - cos(2.*M_PI/((double)num_particles))));
+        
+        continuos_ring_positions = &pos_continuos;
+        if (update_type == RingUpdateType::stokes)
+            continuos_ring_positions = &pos;
 
         std::cout << "ring_radius: " << ring_radius << std::endl;
 
@@ -236,10 +250,11 @@ public:
         windows_manager = WindowsManagerRing(&pos, &rings_ids, &num_active_rings, num_col_windows, 
             num_col_windows, space_info, windows_update_freq);
         
-        in_pol_checker = InPolChecker(&pos_continuos, &center_mass, &rings_ids, &num_active_rings, height, length, 
+        in_pol_checker = InPolChecker(continuos_ring_positions, &center_mass, &rings_ids, &num_active_rings, height, length, 
                         in_pol_checker_cfg.num_cols_windows, in_pol_checker_cfg.update_freq, in_pol_checker_cfg.disable);
         
-        init_stokes();
+        if (update_type == RingUpdateType::stokes)
+            init_stokes();
         
         #if DEBUG == 1
         rng_manager = RngManager(num_particles, num_max_rings, 5);
@@ -255,8 +270,6 @@ public:
         p0 = dynamic_cfg.p0;
         area0 = dynamic_cfg.area0;
         p_target = p0 * sqrt(area0);
-
-        // area0 = calc_area(pos[0]);
 
         mobility = dynamic_cfg.mobility;
         relax_time = dynamic_cfg.relax_time;
@@ -275,20 +288,33 @@ public:
         auto zero_vector_1d = vector<double>(num_particles, 0.); 
         auto zero_vector_2d = vector<array<double, 2>>(num_particles, {0., 0.}); 
 
-        old_pos = Vector3d(num_max_rings, zero_vector_2d);
-        old_self_prop_angle = vector<vector<double>>(num_max_rings, zero_vector_1d);
+        if ((integration_type == RingIntegrationType::verlet) | 
+            (integration_type == RingIntegrationType::rk4)
+        ) {
+            old_pos = Vector3d(num_max_rings, zero_vector_2d);
+            old_self_prop_angle = vector<vector<double>>(num_max_rings, zero_vector_1d);
+        }
         
         sum_forces_matrix = Vector3d(num_max_rings, zero_vector_2d);
         
-        differences = Vector3d(num_max_rings, zero_vector_2d);
-        pos_continuos = Vector3d(num_max_rings, zero_vector_2d);
+        if (update_type != RingUpdateType::stokes) {
+            pos_continuos = Vector3d(num_max_rings, zero_vector_2d);
+            differences = Vector3d(num_max_rings, zero_vector_2d);
+        } else {
+            #if DEBUG == 1
+            differences = Vector3d(num_max_rings, zero_vector_2d);
+            #endif
+        }
+        
 
         center_mass = Vector2d(num_max_rings);
 
         // rk4 stuff
-        auto deriv_particles = vector<array<double, 3>>(num_particles, {0., 0., 0.});
-        auto deriv_rings = vector<vector<array<double, 3>>>(num_max_rings, deriv_particles);
-        k_matrix = vector<vector<vector<array<double, 3>>>>(4, deriv_rings);
+        if (integration_type == RingIntegrationType::rk4) {
+            auto deriv_particles = vector<array<double, 3>>(num_particles, {0., 0., 0.});
+            auto deriv_rings = vector<vector<array<double, 3>>>(num_max_rings, deriv_particles);
+            k_matrix = vector<vector<vector<array<double, 3>>>>(4, deriv_rings);
+        }
 
         #if DEBUG == 1
         // for (int i = 0; i < num_skip_steps; i++)
@@ -365,9 +391,9 @@ public:
         
         stokes_init_self_angle = vector<double>(num_particles, 0.0);
 
-        for (int i = 0; i < num_active_rings; i++) {
-            calc_continuos_pos(rings_ids[i]);
-        }
+        // for (int i = 0; i < num_active_rings; i++) {
+        //     calc_continuos_pos(rings_ids[i]);
+        // }
 
         calc_center_mass();
         windows_manager.update_window_members();
@@ -411,7 +437,7 @@ public:
                 num_active_rings += 1;
                 to_recalculate_ids = true;
                 
-                calc_continuos_pos(i);
+                // calc_continuos_pos(i);
                 calc_ring_center_mass(i);
                 windows_manager.update_entity(i);
                 in_pol_checker.windows_manager.update_point(i);
@@ -599,7 +625,7 @@ public:
     }
 
     void calc_ring_center_mass(int ring_id) {
-        auto &ring = pos_continuos[ring_id];
+        auto& ring = (*continuos_ring_positions)[ring_id];
 
         auto &cm = center_mass[ring_id];
         cm[0] = 0;
@@ -704,8 +730,8 @@ public:
     void target_perimeter_forces(int ring_id) {
         double perimeter = calc_continuos_pos(ring_id);
 
-        double area = calc_area(pos_continuos[ring_id]);
         #if DEBUG
+        double area = calc_area(pos_continuos[ring_id]);
         area_debug.area[ring_id] = area;
         #endif
 
@@ -754,9 +780,11 @@ public:
     }
 
     void target_area_forces(int ring_id) {
-        calc_continuos_pos(ring_id);
+        if (update_type == RingUpdateType::periodic_borders) {
+            calc_continuos_pos(ring_id);
+        }
 
-        double area = calc_area(pos_continuos[ring_id]);
+        double area = calc_area((*continuos_ring_positions)[ring_id]);
         #if DEBUG
         area_debug.area[ring_id] = area;
         #endif
@@ -812,8 +840,8 @@ public:
                 continue;
             }
 
-            auto& ring_cm = center_mass[col_info.col_ring_id];
             
+            // auto& ring_cm = center_mass[col_info.col_ring_id];
             // double radius_vec = {p[0] - ring_cm[0], p[1] - ring_cm[1]};
             // double norm = vector_mod(radius_vec)
             // double dx = p[0] - ring_cm[0];
@@ -968,6 +996,54 @@ public:
         // }
     }
 
+    void stokes_resolve_collisions(Vec2d& p_pos, Vec2d& p_vel) {
+        //
+        // Colisões com as paredes
+        //
+        if (p_pos[1] > height/2.) {
+            if (p_vel[1] > 0.0) 
+                p_vel[1] = 0.0;
+                
+            // if ((p_angle > 0.0) && (p_angle < M_PI/2)) {
+            //     p_angle = 0.0;
+            // } else if (p_angle < M_PI) {
+            //     p_angle = M_PI;
+            // } 
+        }
+        else if (p_pos[1] < -height/2.) {
+            if (p_vel[1] < 0.0)
+                p_vel[1] = 0.0;
+
+            // if ((p_angle > 0.0) && (p_angle < M_PI/2)) {
+            //     p_angle = 0.0;
+            // } else if (p_angle < M_PI) {
+            //     p_angle = M_PI;
+            // }
+        }
+        
+        if ((p_pos[0] < -length/2.) && (p_vel[0] < 0.0))
+            p_vel[0] = 0.0f;
+
+        //
+        // Colisões com o obstáculo
+        //
+        double dx = p_pos[0] - stokes_cfg.obstacle_x;
+        double dy = p_pos[1] - stokes_cfg.obstacle_y;
+        Vec2d radius_pos = {dx, dy};
+
+        double radius_sqr = dx * dx + dy * dy;
+        if (radius_sqr < (stokes_cfg.obstacle_r * stokes_cfg.obstacle_r)) {
+            double dot_pos_vel = dot_prod(radius_pos, p_vel);
+
+            if (dot_pos_vel < 0.0) {
+                // double pos_length = sqrt(radius_sqr);
+
+                p_vel[0] -= radius_pos[0]/(radius_sqr)*dot_pos_vel;
+                p_vel[1] -= radius_pos[1]/(radius_sqr)*dot_pos_vel;
+            }
+        }
+    }
+
     void calc_derivate(double &vel_x, double &vel_y, double &angle_deriv_i, int ring_id, int particle_id) {
         int i = particle_id;
         Vec2d self_vel_i = {cos(self_prop_angle[ring_id][i]), sin(self_prop_angle[ring_id][i])};
@@ -988,8 +1064,12 @@ public:
         
         double vel_x_i = vo * self_vel_i[0] + mobility * sum_forces_matrix[ring_id][i][0] + noise_trans_x;
         double vel_y_i = vo * self_vel_i[1] + mobility * sum_forces_matrix[ring_id][i][1] + noise_trans_y;
+        Vec2d vel_i = {vel_x_i, vel_y_i};
 
-        double speed = sqrt(vel_x_i*vel_x_i + vel_y_i * vel_y_i);
+        if (update_type == RingUpdateType::stokes)
+            stokes_resolve_collisions(pos[ring_id][particle_id], vel_i);
+
+        double speed = sqrt(vel_i[0]*vel_i[0] + vel_i[1] * vel_i[1]);
 
         #if DEBUG == 1
         if (speed > 1e6) {
@@ -1003,7 +1083,7 @@ public:
             update_debug.count_zero_speed += 1;
             angle_derivate = 0.;
         } else {
-            double cross_prod = self_vel_i[0] * vel_y_i/speed - self_vel_i[1] * vel_x_i/speed;
+            double cross_prod = self_vel_i[0] * vel_i[1]/speed - self_vel_i[1] * vel_i[0]/speed;
             
             if (abs(cross_prod) > 1) {
                 #if DEBUG == 1
@@ -1015,8 +1095,8 @@ public:
             angle_derivate = 1. / relax_time * asin(cross_prod) + noise_rot;
         }
 
-        vel_x = vel_x_i;
-        vel_y = vel_y_i;
+        vel_x = vel_i[0];
+        vel_y = vel_i[1];
         angle_deriv_i = angle_derivate;
     }
 
@@ -1104,51 +1184,51 @@ public:
                 double& p_angle = self_prop_angle[ring_id][i];
                 auto& p_pos = pos[ring_id][i];
 
-                //
-                // Colisões com as paredes
-                //
-                if (p_pos[1] > height/2.) {
-                    if (vel_i[1] > 0.0) 
-                        vel_i[1] = 0.0;
+                // //
+                // // Colisões com as paredes
+                // //
+                // if (p_pos[1] > height/2.) {
+                //     if (vel_i[1] > 0.0) 
+                //         vel_i[1] = 0.0;
                         
-                    // if ((p_angle > 0.0) && (p_angle < M_PI/2)) {
-                    //     p_angle = 0.0;
-                    // } else if (p_angle < M_PI) {
-                    //     p_angle = M_PI;
-                    // } 
-                }
-                else if (p_pos[1] < -height/2.) {
-                    if (vel_i[1] < 0.0)
-                        vel_i[1] = 0.0;
+                //     // if ((p_angle > 0.0) && (p_angle < M_PI/2)) {
+                //     //     p_angle = 0.0;
+                //     // } else if (p_angle < M_PI) {
+                //     //     p_angle = M_PI;
+                //     // } 
+                // }
+                // else if (p_pos[1] < -height/2.) {
+                //     if (vel_i[1] < 0.0)
+                //         vel_i[1] = 0.0;
 
-                    // if ((p_angle > 0.0) && (p_angle < M_PI/2)) {
-                    //     p_angle = 0.0;
-                    // } else if (p_angle < M_PI) {
-                    //     p_angle = M_PI;
-                    // }
-                }
+                //     // if ((p_angle > 0.0) && (p_angle < M_PI/2)) {
+                //     //     p_angle = 0.0;
+                //     // } else if (p_angle < M_PI) {
+                //     //     p_angle = M_PI;
+                //     // }
+                // }
                 
-                if ((p_pos[0] < -length/2.) && (vel_i[0] < 0.0))
-                    vel_i[0] = 0.0f;
+                // if ((p_pos[0] < -length/2.) && (vel_i[0] < 0.0))
+                //     vel_i[0] = 0.0f;
 
-                //
-                // Colisões com o obstáculo
-                //
-                double dx = p_pos[0] - stokes_cfg.obstacle_x;
-                double dy = p_pos[1] - stokes_cfg.obstacle_y;
-                Vec2d radius_pos = {dx, dy};
+                // //
+                // // Colisões com o obstáculo
+                // //
+                // double dx = p_pos[0] - stokes_cfg.obstacle_x;
+                // double dy = p_pos[1] - stokes_cfg.obstacle_y;
+                // Vec2d radius_pos = {dx, dy};
 
-                double radius_sqr = dx * dx + dy * dy;
-                if (radius_sqr < (stokes_cfg.obstacle_r * stokes_cfg.obstacle_r)) {
-                    double dot_pos_vel = dot_prod(radius_pos, vel_i);
+                // double radius_sqr = dx * dx + dy * dy;
+                // if (radius_sqr < (stokes_cfg.obstacle_r * stokes_cfg.obstacle_r)) {
+                //     double dot_pos_vel = dot_prod(radius_pos, vel_i);
 
-                    if (dot_pos_vel < 0.0) {
-                        // double pos_length = sqrt(radius_sqr);
+                //     if (dot_pos_vel < 0.0) {
+                //         // double pos_length = sqrt(radius_sqr);
 
-                        vel_i[0] -= radius_pos[0]/(radius_sqr)*dot_pos_vel;
-                        vel_i[1] -= radius_pos[1]/(radius_sqr)*dot_pos_vel;
-                    }
-                }
+                //         vel_i[0] -= radius_pos[0]/(radius_sqr)*dot_pos_vel;
+                //         vel_i[1] -= radius_pos[1]/(radius_sqr)*dot_pos_vel;
+                //     }
+                // }
 
                 pos[ring_id][i][0] += vel_i[0] * dt;
                 pos[ring_id][i][1] += vel_i[1] * dt;
@@ -1460,13 +1540,13 @@ public:
 
         switch (integration_type)
         {
-        case 0:
+        case RingIntegrationType::euler:
             advance_time();
             break;
-        case 1:
+        case RingIntegrationType::verlet:
             advance_time_verlet();
             break;
-        case 2:
+        case RingIntegrationType::rk4:
             advance_time_rk4();
             break;
         }
@@ -1505,13 +1585,13 @@ public:
 
         switch (integration_type)
         {
-        case 0:
+        case RingIntegrationType::euler:
             advance_time();
             break;
-        case 1:
+        case RingIntegrationType::verlet:
             advance_time_verlet();
             break;
-        case 2:
+        case RingIntegrationType::rk4:
             advance_time_rk4();
             break;
         }
@@ -1527,6 +1607,10 @@ public:
     void update_stokes() {
         #if DEBUG == 1
         rng_manager.update();
+
+        for (auto ring_id: rings_ids) {
+            calc_differences(ring_id);
+        }
         #endif
 
         bool crete_new_ring = true;
@@ -1546,6 +1630,7 @@ public:
             recalculate_rings_ids();
         }
         
+
         windows_manager.update_window_members();
         in_pol_checker.windows_manager.update_window_members();    
         in_pol_checker.update();
@@ -1554,18 +1639,6 @@ public:
         calc_center_mass();
         
         advance_time_stokes();
-        // switch (integration_type)
-        // {
-        // case 0:
-        //     advance_time();
-        //     break;
-        // case 1:
-        //     advance_time_verlet();
-        //     break;
-        // case 2:
-        //     advance_time_rk4();
-        //     break;
-        // }
 
         #if DEBUG == 1
         update_graph_points();   

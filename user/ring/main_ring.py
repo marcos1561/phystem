@@ -4,9 +4,9 @@ from phystem.systems.ring.simulation import Simulation
 from phystem.systems.ring import collect_pipelines
 
 from phystem.systems.ring.configs import *
-from phystem.core.run_config import UpdateType, RunType, CheckpointCfg
+from phystem.core.run_config import RunType, CheckpointCfg
 from phystem.core.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, ReplayDataCfg
-from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg
+from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType
 from phystem.systems.ring.ui.graph import GraphCfg
 
 
@@ -66,7 +66,7 @@ real_time_cfg = RealTimeCfg(
         num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
-        update_type=UpdateType.WINDOWS,
+        update_type=UpdateType.PERIODIC_WINDOWS,
         in_pol_checker=InPolCheckerCfg(3, 200),
     ),
     num_steps_frame=400,
@@ -113,7 +113,7 @@ collect_data_cfg = CollectDataCfg(
         num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
-        update_type=UpdateType.NORMAL,
+        update_type=UpdateType.PERIODIC_NORMAL,
     ),
     tf=3,
     folder_path="checkpoint/data",
@@ -135,7 +135,7 @@ save_cfg = SaveCfg(
         num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
-        update_type=UpdateType.WINDOWS,
+        update_type=UpdateType.PERIODIC_WINDOWS,
         in_pol_checker=InPolCheckerCfg(3, 30),
     ),
     # path = "data/videos/teste2.mp4",

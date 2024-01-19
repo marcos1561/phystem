@@ -30,7 +30,7 @@ run_cfg: !!python/object:phystem.core.run_config.CollectDataCfg
     num_col_windows: 15
     solver_type: !!python/object/apply:phystem.core.run_config.SolverType
     - 2
-    update_type: !!python/object/apply:phystem.core.run_config.UpdateType
+    update_type: !!python/object/apply:phystem.systems.szabo.run_config.UpdateType
     - 1
   tf: 20
 space_cfg: !!python/object:phystem.systems.szabo.configs.SpaceCfg

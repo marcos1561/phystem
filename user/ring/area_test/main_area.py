@@ -93,7 +93,7 @@ collect_data_cfg = CollectDataCfg(
         only_last=False, 
     ),
     solver_type=SolverType.CPP,
-    update_type=UpdateType.WINDOWS,
+    update_type=UpdateType.PERIODIC_WINDOWS,
 )
 
 save_cfg = SaveCfg(

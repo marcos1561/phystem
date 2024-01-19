@@ -1,9 +1,9 @@
 from phystem.systems.szabo.simulation import Simulation
 import phystem.systems.szabo.collect_pipelines as collect_pipelines
 from phystem.systems.szabo.configs import *
-from phystem.core.run_config import UpdateType, SolverType, ReplayDataCfg, RunType
+from phystem.core.run_config import SolverType, ReplayDataCfg, RunType
 from phystem.core.run_config import CollectDataCfg, RealTimeCfg, SaveCfg
-from phystem.systems.szabo.run_config import GraphCfg, IntegrationCfg
+from phystem.systems.szabo.run_config import GraphCfg, IntegrationCfg, UpdateType
 
 self_propelling_cfg = SelfPropellingCfg(
     mobility = 1.,

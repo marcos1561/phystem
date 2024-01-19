@@ -213,7 +213,10 @@ class MainGraph:
             # self.center_mass.remove()
             self.center_mass.set_visible(False)
 
-        self.points_continuos = [self.ax.scatter(*(np.array(self.solver.pos_continuos[ring_id]).T)) for ring_id in range(self.num_rings)]
+
+        # self.points_continuos = [self.ax.scatter(*(np.array(self.solver.pos_continuos[ring_id]).T)) for ring_id in range(self.num_rings)]
+        self.points_continuos = [self.ax.scatter(*(np.array(self.solver.pos[ring_id]).T)) for ring_id in range(self.num_rings)]
+        
         # self.points_continuos = [self.ax.scatter(*(np.array(self.solver.pos_continuos[ring_id]).T)) for ring_id in self.rings_ids[:self.num_active_rings]]
         if not self.graph_cfg.show_pos_cont:
             # [artist.remove() for artist in self.points_continuos]
@@ -353,7 +356,8 @@ class MainGraph:
         # for ring_id in range(self.num_rings):
         for i in range(self.num_rings):
             self.points[i].set_visible(False)
-            self.lines[i].set_visible(False)
+            if self.cpp_is_debug:
+                self.lines[i].set_visible(False)
 
         for ring_id in self.rings_ids[:self.num_active_rings]:
             self.points[ring_id].set_visible(True)

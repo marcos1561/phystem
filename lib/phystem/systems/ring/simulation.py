@@ -43,8 +43,12 @@ class Simulation(SimulationCore):
         else:
             init_data = self.creator.create()
         
+        stokes_cfg = None
+        if self.other_cfgs is not None:
+            stokes_cfg = self.other_cfgs.get("stokes", None)
+
         solver = CppSolver(**init_data.get_data(), num_particles=self.creator_cfg.num_p, 
-            dynamic_cfg=self.dynamic_cfg, stokes_cfg=self.other_cfgs.get("stokes", None), space_cfg=self.space_cfg,
+            dynamic_cfg=self.dynamic_cfg, stokes_cfg=stokes_cfg, space_cfg=self.space_cfg,
             int_cfg=self.run_cfg.int_cfg, rng_seed=self.rng_seed)
         
         return solver

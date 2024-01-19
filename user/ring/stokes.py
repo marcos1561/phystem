@@ -92,7 +92,7 @@ real_time_cfg = RealTimeCfg(
         show_inside       = True,
         begin_paused      = False,
         pause_on_high_vel = True,
-        cpp_is_debug      = True,
+        cpp_is_debug      = True
     ),
     # checkpoint=CheckpointCfg(
     #     # folder_path="ring_intersect/data_high_den/phystem_data",
@@ -130,7 +130,7 @@ collect_data_cfg = CollectDataCfg(
         num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
-        update_type=UpdateType.NORMAL,
+        update_type=UpdateType.PERIODIC_NORMAL,
     ),
     tf=3,
     folder_path="checkpoint/data",
@@ -152,7 +152,7 @@ save_cfg = SaveCfg(
         num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
         windows_update_freq=1,
         integration_type=IntegrationType.euler,
-        update_type=UpdateType.WINDOWS,
+        update_type=UpdateType.PERIODIC_WINDOWS,
         in_pol_checker=InPolCheckerCfg(3, 30),
     ),
     # path = "data/videos/teste2.mp4",

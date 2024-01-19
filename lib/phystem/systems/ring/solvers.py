@@ -2,12 +2,15 @@ import numpy as np
 
 from phystem.core.run_config import ReplayDataCfg
 from phystem.systems.ring.configs import RingCfg, SpaceCfg, StokesCfg
-from phystem.systems.ring.run_config import IntegrationCfg, UpdateType
+from phystem.systems.ring.run_config import IntegrationCfg, UpdateType, IntegrationType
 from phystem import cpp_lib
 
 class CppSolver:
     def __init__(self, pos: np.ndarray, self_prop_angle: np.ndarray, num_particles: int,
         dynamic_cfg: RingCfg, space_cfg: SpaceCfg, int_cfg: IntegrationCfg, stokes_cfg: StokesCfg=None, rng_seed=None) -> None:
+        if stokes_cfg is None and int_cfg.update_type is UpdateType.STOKES:
+            raise Exception("Informe a configuração do fluxo de stokes")
+        
         if rng_seed is None:
             rng_seed = -1
         if int_cfg.num_col_windows is None:
@@ -15,21 +18,32 @@ class CppSolver:
 
         dynamic_cfg = cpp_lib.configs.RingCfg(dynamic_cfg.cpp_constructor_args())
         
-        if stokes_cfg is None:
-            raise Exception("Informe a configuração do fluxo de stokes")
-        
-        stokes_cfg = cpp_lib.configs.StokesCfgPy(stokes_cfg.cpp_constructor_args())
+        if stokes_cfg is not None:
+            stokes_cfg = cpp_lib.configs.StokesCfgPy(stokes_cfg.cpp_constructor_args())
+        else:
+            stokes_cfg = cpp_lib.configs.StokesCfgPy(StokesCfg.get_null_cpp_cfg())
 
         in_pol_checker_cfg = cpp_lib.configs.InPolCheckerCfg(
             int_cfg.in_pol_checker.num_col_windows, int_cfg.in_pol_checker.update_freq,
             int_cfg.in_pol_checker.disable)
+
+        integration_type_to_cpp_type = {
+            IntegrationType.euler: cpp_lib.configs.RingIntegrationType.euler, 
+            IntegrationType.verlet: cpp_lib.configs.RingIntegrationType.verlet, 
+            IntegrationType.rk4: cpp_lib.configs.RingIntegrationType.rk4, 
+        }
+        update_type_to_cpp_type = {
+            UpdateType.PERIODIC_NORMAL: cpp_lib.configs.RingUpdateType.periodic_borders, 
+            UpdateType.PERIODIC_WINDOWS: cpp_lib.configs.RingUpdateType.periodic_borders, 
+            UpdateType.STOKES: cpp_lib.configs.RingUpdateType.stokes, 
+        }
 
         pos_in = [cpp_lib.data_types.PosVec(ring_pos) for ring_pos in pos]
         angle_in = [cpp_lib.data_types.List(ring_angle) for ring_angle in self_prop_angle]
 
         pos = cpp_lib.data_types.Vector3d(pos_in)
         self_prop_angle = cpp_lib.data_types.List2d(angle_in)
-
+        
         self.cpp_solver = cpp_lib.solvers.Ring(
             pos, self_prop_angle, 
             num_particles,
@@ -39,14 +53,15 @@ class CppSolver:
             int_cfg.dt, int_cfg.num_col_windows, 
             rng_seed, 
             int_cfg.windows_update_freq, 
-            int_cfg.integration_type.value,
+            update_type_to_cpp_type[int_cfg.update_type],
+            integration_type_to_cpp_type[int_cfg.integration_type],
             stokes_cfg,
             in_pol_checker_cfg,
         )
 
         update_type_to_func = {
-            UpdateType.NORMAL: self.cpp_solver.update_normal,
-            UpdateType.WINDOWS: self.cpp_solver.update_windows,
+            UpdateType.PERIODIC_NORMAL: self.cpp_solver.update_normal,
+            UpdateType.PERIODIC_WINDOWS: self.cpp_solver.update_windows,
             UpdateType.STOKES: self.cpp_solver.update_stokes,
         }
         self.update_func = update_type_to_func[int_cfg.update_type]

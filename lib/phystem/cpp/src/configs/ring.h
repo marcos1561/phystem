@@ -6,6 +6,17 @@ enum class AreaPotencialType {
     target_area,
 };
 
+enum class RingUpdateType {
+    stokes,
+    periodic_borders,
+};
+
+enum class RingIntegrationType {
+    euler,
+    verlet,
+    rk4,
+};
+
 class RingCfg
 {
 public:

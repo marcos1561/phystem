@@ -54,7 +54,7 @@ run_cfg: !!python/object:phystem.core.run_config.CollectDataCfg
     num_col_windows: null
     solver_type: !!python/object/apply:phystem.core.run_config.SolverType
     - 2
-    update_type: !!python/object/apply:phystem.core.run_config.UpdateType
+    update_type: !!python/object/apply:phystem.systems.ring.run_config.UpdateType
     - 1
     windows_update_freq: 1
   tf: 100

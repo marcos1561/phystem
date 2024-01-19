@@ -27,7 +27,7 @@ int main() {
     cfg.spring_k = 1.;
     cfg.spring_r = 2;
     
-    cfg.area_potencial = AreaPotencialType::target_perimeter;
+    cfg.area_potencial = AreaPotencialType::target_area;
     cfg.k_bend = 1.;
     cfg.p0 = 3.544907;
     cfg.area0 = 10;
@@ -47,8 +47,8 @@ int main() {
     data.self_prop_angle = std::vector<vector<double>>(0);
 
     num_cols_windows=8;
-    auto solver = Ring(data.pos, data.self_prop_angle, n, cfg, size, size, dt, num_cols_windows, 12415, 1, 0,
-        stokes_cfg, InPolCheckerCfg(3, 10));
+    auto solver = Ring(data.pos, data.self_prop_angle, n, cfg, size, size, dt, num_cols_windows, 12415, 1, 
+        RingUpdateType::stokes, RingIntegrationType::euler, stokes_cfg, InPolCheckerCfg(3, 10));
 
     // for (int i = 0; i < 10; i++)
     while (true)

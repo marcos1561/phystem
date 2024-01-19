@@ -5,8 +5,8 @@ from phystem.systems.ring.simulation import Simulation
 from phystem.systems.ring import collect_pipelines
 
 from phystem.systems.ring.configs import *
-from phystem.systems.ring.run_config import IntegrationCfg
-from phystem.core.run_config import CollectDataCfg, UpdateType
+from phystem.systems.ring.run_config import IntegrationCfg, UpdateType
+from phystem.core.run_config import CollectDataCfg
 
 current_folder = os.path.dirname(__file__)
 
@@ -33,7 +33,7 @@ class TestRing(unittest.TestCase):
         int_cfg.num_col_windows = int(ceil(size/(diameter*1.2)) * 0.6) 
         # run_cfg.num_col_windows = 3
         int_cfg.windows_update_freq = 1
-        int_cfg.update_type = UpdateType.WINDOWS
+        int_cfg.update_type = UpdateType.PERIODIC_WINDOWS
 
         print(f"\nwindows_cols: {int_cfg.num_col_windows}\n")
 

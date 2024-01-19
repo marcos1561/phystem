@@ -1,11 +1,10 @@
 from phystem.systems.ring.simulation import Simulation
 
 from phystem.systems.ring.configs import RingCfg, CreatorCfg, SpaceCfg
-from phystem.systems.ring.run_config import IntegrationCfg
+from phystem.systems.ring.run_config import IntegrationCfg, UpdateType
 from phystem.systems.ring import collect_pipelines
 
-from phystem.core.run_config import CollectDataCfg
-from phystem.core.run_config import UpdateType, SolverType
+from phystem.core.run_config import CollectDataCfg, SolverType
 
 
 def generate_normal_data():
