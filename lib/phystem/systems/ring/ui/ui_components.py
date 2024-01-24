@@ -1,5 +1,6 @@
 from tkinter import ttk
 from tkinter import BooleanVar, W
+from tkinter.ttk import Frame
 from phystem.core.run_config import RealTimeCfg
 
 from phystem.systems.ring.solvers import CppSolver
@@ -60,8 +61,8 @@ class Control(ControlCore):
         return ControlMng(run_cfg)
 
     def configure_ui(self):
+        self.slider_lims = [1, 1000]
         f_main_frame = super().configure_ui()
-    
     
         show_circles = ttk.Checkbutton(f_main_frame, command=self.control_mng.show_circles,
             text="Show circles", variable=self.control_mng.vars["show_circles"])

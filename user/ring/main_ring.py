@@ -6,7 +6,7 @@ from phystem.systems.ring import collect_pipelines
 from phystem.systems.ring.configs import *
 from phystem.core.run_config import RunType, CheckpointCfg
 from phystem.core.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, ReplayDataCfg
-from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType
+from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType, ParticleWindows
 from phystem.systems.ring.ui.graph import GraphCfg
 
 
@@ -19,11 +19,13 @@ dynamic_cfg = RingCfg(
     # p0=4.828427, # Triângulo retângulo
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
-    p0=3.5449077018*1.06, # Círculo
+    p0=3.5449077018*1.000, # Círculo
     # area0=53,
 
-    exclusion_vol=1,
-    diameter=1,
+    diameter  = 1,
+    max_dist  = 1 + 0.1666,
+    rep_force = 30,
+    adh_force = 0.75,
     
     relax_time=1,
     mobility=1,
@@ -59,15 +61,17 @@ seed = None
 
 run_type = RunType.REAL_TIME
 
+num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6)
 real_time_cfg = RealTimeCfg(
     int_cfg=IntegrationCfg(
         dt = 0.001, # max euler
         # dt = 0.001*5 * 1.55,
-        num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
-        windows_update_freq=1,
+        particle_win_cfg=ParticleWindows(
+            num_cols=num_col_windows, num_rows=num_col_windows,
+            update_freq=1),
         integration_type=IntegrationType.euler,
         update_type=UpdateType.PERIODIC_WINDOWS,
-        in_pol_checker=InPolCheckerCfg(3, 200),
+        in_pol_checker=InPolCheckerCfg(3, 3, 200),
     ),
     num_steps_frame=400,
     fps=600,
@@ -91,8 +95,6 @@ real_time_cfg = RealTimeCfg(
     #     override_cfgs=False,
     # )
 )
-print(real_time_cfg.int_cfg.num_col_windows)
-
 replay_data_cfg = None
 if run_type is RunType.REPLAY_DATA:
     replay_data_cfg = ReplayDataCfg(
@@ -110,8 +112,6 @@ if run_type is RunType.REPLAY_DATA:
 collect_data_cfg = CollectDataCfg(
     int_cfg=IntegrationCfg(
         dt = 0.001,
-        num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
-        windows_update_freq=1,
         integration_type=IntegrationType.euler,
         update_type=UpdateType.PERIODIC_NORMAL,
     ),
@@ -132,11 +132,12 @@ save_cfg = SaveCfg(
     int_cfg=IntegrationCfg(
         dt = 0.001, # max euler
         # dt = 0.001*5 * 1.55,
-        num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
-        windows_update_freq=1,
+        particle_win_cfg=ParticleWindows(
+            num_cols=num_col_windows, num_rows=num_col_windows,
+            update_freq=1),
         integration_type=IntegrationType.euler,
         update_type=UpdateType.PERIODIC_WINDOWS,
-        in_pol_checker=InPolCheckerCfg(3, 30),
+        in_pol_checker=InPolCheckerCfg(3, 3, 30),
     ),
     # path = "data/videos/teste2.mp4",
     path = "./collision_test.mp4",

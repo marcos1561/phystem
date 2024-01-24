@@ -40,9 +40,12 @@ public:
         trans_diff = py::float_(values["trans_diff"]);
         rot_diff = py::float_(values["rot_diff"]);
 
-        exclusion_vol = py::float_(values["exclusion_vol"]);
+        // exclusion_vol = py::float_(values["exclusion_vol"]);
         diameter = py::float_(values["diameter"]);
-
+        max_dist = py::float_(values["max_dist"]);
+        rep_force = py::float_(values["rep_force"]);
+        adh_force = py::float_(values["adh_force"]);
+        
         std::string area_potencial_name = py::str(values["area_potencial"]);
 
         if (area_potencial_name == "format")
@@ -65,6 +68,8 @@ public:
         
         create_length = py::float_(values["create_length"]);
         remove_length = py::float_(values["remove_length"]);
+        
+        flux_force = py::float_(values["flux_force"]);
 
         num_max_rings = py::int_(values["num_max_rings"]);
     }

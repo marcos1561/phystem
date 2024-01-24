@@ -10,8 +10,12 @@ int main() {
     int n = 30;
     double size = 60;
     double r = 20/6.0;
-    int num_cols_windows = 4;
     double dt = 0.0001;
+
+    ParticleWindowsCfg p_win_cfg;
+    p_win_cfg.num_cols = 4;
+    p_win_cfg.num_rows = 5;
+    p_win_cfg.update_freq = 1;
 
     StokesCfg stokes_cfg;
     stokes_cfg.obstacle_r = size * 0.5 * 0.5;
@@ -39,16 +43,17 @@ int main() {
     cfg.trans_diff = 0.1;
     cfg.rot_diff = 0.1;
 
-    cfg.exclusion_vol = 1.;
     cfg.diameter = 1.;
+    cfg.max_dist = 1. + 0.16;
+    cfg.adh_force = -.75;
+    cfg.rep_force = 30.;
 
     auto data = ring::init_cfg(2, n, r, cfg.vo);
     data.pos = Vector3d(0);
     data.self_prop_angle = std::vector<vector<double>>(0);
 
-    num_cols_windows=8;
-    auto solver = Ring(data.pos, data.self_prop_angle, n, cfg, size, size, dt, num_cols_windows, 12415, 1, 
-        RingUpdateType::stokes, RingIntegrationType::euler, stokes_cfg, InPolCheckerCfg(3, 10));
+    auto solver = Ring(data.pos, data.self_prop_angle, n, cfg, size, size, dt, p_win_cfg, 
+        RingUpdateType::stokes, RingIntegrationType::euler, stokes_cfg, InPolCheckerCfg(3, 4, 10));
 
     // for (int i = 0; i < 10; i++)
     while (true)

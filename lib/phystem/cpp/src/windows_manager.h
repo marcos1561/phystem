@@ -112,12 +112,12 @@ public:
         if (col_pos == num_cols)
             col_pos -= 1;
 
-        if ((row_pos >= num_rows) | (row_pos < 0)) {
-            std::cout << "(Normal) row_pos out_of_bounds | " << row_pos  << std::endl;
-        }
-        if ((col_pos >= num_cols) | (col_pos < 0)) {
-            std::cout << "(Normal) col_pos out_of_bounds | " << col_pos  << std::endl;
-        }
+        // if ((row_pos >= num_rows) | (row_pos < 0)) {
+        //     std::cout << "(Normal) row_pos out_of_bounds | " << row_pos  << std::endl;
+        // }
+        // if ((col_pos >= num_cols) | (col_pos < 0)) {
+        //     std::cout << "(Normal) col_pos out_of_bounds | " << col_pos  << std::endl;
+        // }
 
         size_t id = capacity[row_pos][col_pos];
         
@@ -246,12 +246,12 @@ public:
             if (col_pos == num_cols)
                 col_pos -= 1;
 
-            if ((row_pos >= num_rows) | (row_pos < 0)) {
-                std::cout << "(Ring) row_pos out_of_bounds | " << row_pos  << std::endl;
-            }
-            if ((col_pos >= num_cols) | (col_pos < 0)) {
-                std::cout << "(Ring) col_pos out_of_bounds | " << col_pos  << std::endl;
-            }
+            // if ((row_pos >= num_rows) | (row_pos < 0)) {
+            //     std::cout << "(Ring) row_pos out_of_bounds | " << row_pos  << std::endl;
+            // }
+            // if ((col_pos >= num_cols) | (col_pos < 0)) {
+            //     std::cout << "(Ring) col_pos out_of_bounds | " << col_pos  << std::endl;
+            // }
 
             size_t id = capacity[row_pos][col_pos];
             

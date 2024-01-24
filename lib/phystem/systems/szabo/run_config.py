@@ -9,7 +9,7 @@ class UpdateType(Enum):
 
 class IntegrationCfg(run_config.IntegrationCfg):
     def __init__(self, dt: float, num_col_windows: int=None, 
-        solver_type=SolverType.CPP, update_type=UpdateType.PERIODIC_NORMAL) -> None:
+        solver_type=SolverType.CPP, update_type=UpdateType.WINDOWS) -> None:
         if update_type == UpdateType.WINDOWS and num_col_windows is None:
             raise ValueError("'num_windows' deve ser especificado.")
 

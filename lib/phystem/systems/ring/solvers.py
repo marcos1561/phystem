@@ -2,7 +2,7 @@ import numpy as np
 
 from phystem.core.run_config import ReplayDataCfg
 from phystem.systems.ring.configs import RingCfg, SpaceCfg, StokesCfg
-from phystem.systems.ring.run_config import IntegrationCfg, UpdateType, IntegrationType
+from phystem.systems.ring.run_config import IntegrationCfg, UpdateType, IntegrationType, ParticleWindows
 from phystem import cpp_lib
 
 class CppSolver:
@@ -13,8 +13,8 @@ class CppSolver:
         
         if rng_seed is None:
             rng_seed = -1
-        if int_cfg.num_col_windows is None:
-            int_cfg.num_col_windows = 1
+        if int_cfg.particle_win_cfg is None:
+            int_cfg.particle_win_cfg = ParticleWindows(-1, -1, -1)
 
         dynamic_cfg = cpp_lib.configs.RingCfg(dynamic_cfg.cpp_constructor_args())
         
@@ -23,9 +23,13 @@ class CppSolver:
         else:
             stokes_cfg = cpp_lib.configs.StokesCfgPy(StokesCfg.get_null_cpp_cfg())
 
+        particle_win_cfg = cpp_lib.configs.ParticleWindowsCfg(
+            int_cfg.particle_win_cfg.num_cols, int_cfg.particle_win_cfg.num_rows,
+            int_cfg.particle_win_cfg.update_freq)
+        
         in_pol_checker_cfg = cpp_lib.configs.InPolCheckerCfg(
-            int_cfg.in_pol_checker.num_col_windows, int_cfg.in_pol_checker.update_freq,
-            int_cfg.in_pol_checker.disable)
+            int_cfg.in_pol_checker.num_col_windows, int_cfg.in_pol_checker.num_rows_windows, 
+            int_cfg.in_pol_checker.update_freq, int_cfg.in_pol_checker.disable)
 
         integration_type_to_cpp_type = {
             IntegrationType.euler: cpp_lib.configs.RingIntegrationType.euler, 
@@ -50,13 +54,13 @@ class CppSolver:
             dynamic_cfg, 
             space_cfg.height, 
             space_cfg.length, 
-            int_cfg.dt, int_cfg.num_col_windows, 
-            rng_seed, 
-            int_cfg.windows_update_freq, 
+            int_cfg.dt, 
+            particle_win_cfg,
             update_type_to_cpp_type[int_cfg.update_type],
             integration_type_to_cpp_type[int_cfg.integration_type],
             stokes_cfg,
             in_pol_checker_cfg,
+            rng_seed, 
         )
 
         update_type_to_func = {

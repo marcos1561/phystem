@@ -74,7 +74,7 @@ class SimulationCore(ABC):
             self.configs["run_cfg"].func = "nao salvo"
 
         self.app: AppCore = None
-        self.time_it = TimeIt(num_samples=200)
+        self.time_it = TimeIt(num_samples=600)
 
         self.init_sim()    
 

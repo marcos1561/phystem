@@ -10,9 +10,11 @@ from phystem.utils.timer import TimeIt
 from phystem.gui_phystem.control_mng import ControlManagerCore
 
 class ControlCore():
-    def __init__(self, main_frame: ttk.Frame, run_cfg: RealTimeCfg) -> None:
+    def __init__(self, main_frame: ttk.Frame, run_cfg: RealTimeCfg, slider_lims=[1, 100]) -> None:
         self.main_frame = main_frame
         self.control_mng = self.get_control_mng(run_cfg)
+
+        self.slider_lims = slider_lims
 
     def get_control_mng(self, run_cfg: RealTimeCfg):
         return ControlManagerCore(run_cfg)
@@ -23,7 +25,7 @@ class ControlCore():
         frequency = self.control_mng.vars["frequency"]
         speed_frame = ttk.Frame(f_main_frame)
         speed_label = ttk.Label(speed_frame, text="Speed")        
-        speed = ttk.Scale(speed_frame, from_=1, to=100, orient=HORIZONTAL,
+        speed = ttk.Scale(speed_frame, from_=self.slider_lims[0], to=self.slider_lims[1], orient=HORIZONTAL,
                             command=self.control_mng.speed_callback, variable=frequency,
                             length=300)
 

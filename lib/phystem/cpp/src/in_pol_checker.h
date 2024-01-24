@@ -8,8 +8,6 @@
 using Vector3d = std::vector<std::vector<std::array<double, 2>>>;
 using Vector2d = std::vector<std::array<double, 2>>;
 
-
-
 class InPolChecker {
 public:
     struct ColInfo {
@@ -44,11 +42,11 @@ public:
     InPolChecker() {};
 
     InPolChecker(Vector3d *pols, Vector2d *center_mass, vector<int> *ids, int *num_active, 
-        double height, double length, int num_col_windows, int update_freq=1, bool disable=false)
+        double height, double length, int num_cols_windows, int num_rows_windows, int update_freq=1, bool disable=false)
     : pols(pols), center_mass(center_mass), ids(ids), num_active(num_active),
     update_freq(update_freq), disable(disable) {
         SpaceInfo space_info(height, length);
-        windows_manager = WindowsManager(center_mass, ids, num_active, num_col_windows, num_col_windows, space_info);
+        windows_manager = WindowsManager(center_mass, ids, num_active, num_cols_windows, num_rows_windows, space_info);
         std::cout << "update_freq: " << update_freq << std::endl; 
         num_verts = (*pols)[0].size();
         num_inside_points = 0;

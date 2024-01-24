@@ -20,9 +20,11 @@ def generate_normal_data():
         p0=3.5449077018, # Círculo
         area0=40,
 
-        exclusion_vol=1,
-        diameter=1,
-        
+        diameter  = 1,
+        max_dist  = 1 + 0.1666,
+        rep_force = 30,
+        adh_force = 0.75,
+
         relax_time=1,
         mobility=1,
         vo=1,
@@ -32,7 +34,8 @@ def generate_normal_data():
     )
 
     space_cfg = SpaceCfg(
-        size = 30,
+        height = 30,
+        length = 30,
     )
 
     from math import pi
@@ -56,7 +59,7 @@ def generate_normal_data():
     collect_data_cfg = CollectDataCfg(
         int_cfg=IntegrationCfg(
             dt=0.001/2,
-            update_type=UpdateType.NORMAL,
+            update_type=UpdateType.PERIODIC_NORMAL,
         ),
         tf = 100,
         folder_path="normal_data",

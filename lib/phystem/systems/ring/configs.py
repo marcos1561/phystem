@@ -9,7 +9,8 @@ class RingCfg:
         "vo", "trans_diff", "rot_diff", "exclusion_vol", "diameter", "p0")
 
     def __init__(self,  spring_k, spring_r, area_potencial, k_bend, mobility, relax_time,
-        vo, trans_diff, rot_diff, exclusion_vol, diameter, p0=None, area0=None) -> None:
+        vo, trans_diff, rot_diff, diameter, max_dist, rep_force, adh_force,
+        p0=None, area0=None) -> None:
         if p0 is None and area0 is None:
             raise Exception("Ao menos um dos parâmetros 'p0' e 'area0' devem ser setados.")
 
@@ -28,8 +29,10 @@ class RingCfg:
         self.trans_diff = trans_diff
         self.rot_diff = rot_diff
 
-        self.exclusion_vol = exclusion_vol
         self.diameter = diameter
+        self.max_dist = max_dist
+        self.rep_force = rep_force
+        self.adh_force = adh_force
       
     def adjust_area_pars(self, num_particles: int):
         if self.area_potencial == "target_area":
@@ -71,8 +74,10 @@ class RingCfg:
             "vo": self.vo,
             "trans_diff": self.trans_diff,
             "rot_diff": self.rot_diff,
-            "exclusion_vol": self.exclusion_vol,
             "diameter": self.diameter,
+            "max_dist": self.max_dist,
+            "rep_force": self.rep_force,
+            "adh_force": self.adh_force,
         }
 
     def info(self):
@@ -87,13 +92,14 @@ class RingCfg:
 
 class StokesCfg:
     def __init__(self, obstacle_r: float, obstacle_x: float, obstacle_y: float,
-        create_length: float, remove_length: float, num_max_rings: int
+        create_length: float, remove_length: float, flux_force, num_max_rings: int
     ) -> None:
         self.obstacle_r = obstacle_r
         self.obstacle_x = obstacle_x
         self.obstacle_y = obstacle_y
         self.create_length = create_length
         self.remove_length = remove_length
+        self.flux_force = flux_force
         self.num_max_rings = num_max_rings
 
     @staticmethod
@@ -104,6 +110,7 @@ class StokesCfg:
             "obstacle_y": 0,
             "create_length": 0,
             "remove_length": 0,
+            "flux_force": 0,
             "num_max_rings": -1,
         }
 
@@ -114,6 +121,7 @@ class StokesCfg:
             "obstacle_y": self.obstacle_y,
             "create_length": self.create_length,
             "remove_length": self.remove_length,
+            "flux_force": self.flux_force,
             "num_max_rings": self.num_max_rings,
         }
 

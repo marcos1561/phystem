@@ -73,12 +73,16 @@ public:
     double trans_diff;
     double rot_diff;
 
-    double exclusion_vol;
+    // double exclusion_vol;
+    // double diameter_six; 
+    // double diameter_twelve; 
+    // double force_r_lim;
+    
     double diameter; 
-    double diameter_six; 
-    double diameter_twelve; 
+    double max_dist;
+    double adh_force;
+    double rep_force;
 
-    double force_r_lim;
 
     Vector3d pos; // Posições das partículas
     vector<vector<double>> self_prop_angle; // Ângulo da direção da velocidade auto propulsora
@@ -95,9 +99,8 @@ public:
     double height; // tamanho de uma dimensão do espaço
     double length; // tamanho de uma dimensão do espaço
     double dt; 
-    int windows_update_freq; 
-    RingUpdateType update_type;
-    RingIntegrationType integration_type;
+    const RingUpdateType update_type;
+    const RingIntegrationType integration_type;
 
     //==
     // dt variável (não utilizado no momento)
@@ -128,6 +131,7 @@ public:
     // Stokes
     //==
     StokesCfg stokes_cfg;
+    double max_create_border;
 
     vector<array<int, 2>> begin_windows_ids;
     vector<array<int, 2>> obstacle_windows_ids;
@@ -177,11 +181,11 @@ public:
     //=========//
 
     Ring(Vector3d &pos0, vector<vector<double>>& self_prop_angle0, int num_particles, RingCfg dynamic_cfg, 
-        double height, double length, double dt, int num_col_windows, int seed=-1, int windows_update_freq=1,
+        double height, double length, double dt, ParticleWindowsCfg particle_windows_cfg,
         RingUpdateType update_type=RingUpdateType::periodic_borders, RingIntegrationType integration_type=RingIntegrationType::euler, 
-        StokesCfg stokes_cfg=StokesCfg(), InPolCheckerCfg in_pol_checker_cfg=InPolCheckerCfg(3, 1, true)) 
+        StokesCfg stokes_cfg=StokesCfg(), InPolCheckerCfg in_pol_checker_cfg=InPolCheckerCfg(3, 1, true), int seed=-1) 
     : num_particles(num_particles), dynamic_cfg(dynamic_cfg), height(height), length(length), dt(dt),
-    windows_update_freq(windows_update_freq), update_type(update_type), integration_type(integration_type), 
+    update_type(update_type), integration_type(integration_type), 
     stokes_cfg(stokes_cfg) 
     {
         if ((update_type == RingUpdateType::stokes) && 
@@ -209,9 +213,8 @@ public:
 
         pos = Vector3d(num_max_rings, zero_vector_2d);
         self_prop_angle =  vector<vector<double>>(num_max_rings, zero_vector_1d);
-
-        rings_ids = vector<int>(num_max_rings);
         mask = vector<bool>(num_max_rings);
+        rings_ids = vector<int>(num_max_rings);
 
         for (int i = 0; i < num_max_rings; i++)
         {   
@@ -247,11 +250,12 @@ public:
         initialize_dynamic();
         
         SpaceInfo space_info(height, length);
-        windows_manager = WindowsManagerRing(&pos, &rings_ids, &num_active_rings, num_col_windows, 
-            num_col_windows, space_info, windows_update_freq);
+        windows_manager = WindowsManagerRing(&pos, &rings_ids, &num_active_rings, particle_windows_cfg.num_cols, 
+            particle_windows_cfg.num_rows, space_info, particle_windows_cfg.update_freq);
         
-        in_pol_checker = InPolChecker(continuos_ring_positions, &center_mass, &rings_ids, &num_active_rings, height, length, 
-                        in_pol_checker_cfg.num_cols_windows, in_pol_checker_cfg.update_freq, in_pol_checker_cfg.disable);
+        in_pol_checker = InPolChecker(continuos_ring_positions, &center_mass, &rings_ids, &num_active_rings, 
+            height, length, in_pol_checker_cfg.num_cols_windows, in_pol_checker_cfg.num_rows_windows, 
+            in_pol_checker_cfg.update_freq, in_pol_checker_cfg.disable);
         
         if (update_type == RingUpdateType::stokes)
             init_stokes();
@@ -278,12 +282,17 @@ public:
         trans_diff = dynamic_cfg.trans_diff;
         rot_diff = dynamic_cfg.rot_diff;
 
-        exclusion_vol = dynamic_cfg.exclusion_vol;
         diameter = dynamic_cfg.diameter;
+        max_dist = dynamic_cfg.max_dist;
+        adh_force = dynamic_cfg.adh_force;
+        rep_force = dynamic_cfg.rep_force;
 
-        diameter_six = pow(diameter, 6.); 
-        diameter_twelve = pow(diameter, 12.); 
-        force_r_lim = pow(2, 1./6.) * diameter;
+        
+
+        // Lennard-jones stuff
+        // diameter_six = pow(diameter, 6.); 
+        // diameter_twelve = pow(diameter, 12.); 
+        // force_r_lim = pow(2, 1./6.) * diameter;
 
         auto zero_vector_1d = vector<double>(num_particles, 0.); 
         auto zero_vector_2d = vector<array<double, 2>>(num_particles, {0., 0.}); 
@@ -306,7 +315,6 @@ public:
             #endif
         }
         
-
         center_mass = Vector2d(num_max_rings);
 
         // rk4 stuff
@@ -317,11 +325,6 @@ public:
         }
 
         #if DEBUG == 1
-        // for (int i = 0; i < num_skip_steps; i++)
-        // {
-        //     rng_manager.update();
-        // }
-
         spring_forces = Vector3d(num_max_rings, zero_vector_2d);
         vol_forces = Vector3d(num_max_rings, zero_vector_2d);
         area_forces = Vector3d(num_max_rings, zero_vector_2d);
@@ -345,21 +348,26 @@ public:
     }
 
     void init_stokes() {
-        // create_border = -length/2 + ring_radius * 2.5;
-        // remove_border = +length/2 - ring_radius * 2.0;
         create_border = -length/2 + stokes_cfg.create_length;
         remove_border = length/2 - stokes_cfg.remove_length;
 
-        for (auto window_id: windows_manager.windows_ids) {
-            auto center_pos =  windows_manager.windows_center[window_id[0]][window_id[1]];
-            if ((center_pos[0] - windows_manager.window_length/2.) < create_border)
-                begin_windows_ids.push_back(window_id);
-        }
+        // for (auto window_id: windows_manager.windows_ids) {
+        //     auto center_pos =  windows_manager.windows_center[window_id[0]][window_id[1]];
+        //     if ((center_pos[0] - windows_manager.window_length/2.) < create_border)
+        //         begin_windows_ids.push_back(window_id);
+        // }
 
+        max_create_border = create_border;
         for (auto window_id: windows_manager.windows_ids) {
-            auto center_pos =  windows_manager.windows_center[window_id[0]][window_id[1]];
-            if ((center_pos[0] - windows_manager.window_length/2.) < create_border)
+            auto center_pos = windows_manager.windows_center[window_id[0]][window_id[1]];
+            if ((center_pos[0] - windows_manager.window_length/2.) < create_border) {
+                double window_right_pos = center_pos[0] + windows_manager.window_length/2.;
+                if (window_right_pos > max_create_border) {
+                    max_create_border = window_right_pos;
+                }
+
                 begin_windows_ids.push_back(window_id);
+            }
         
             if (abs(center_pos[0] - stokes_cfg.obstacle_x) < (stokes_cfg.obstacle_r + diameter*2.))
                 obstacle_windows_ids.push_back(window_id);
@@ -390,10 +398,6 @@ public:
         }
         
         stokes_init_self_angle = vector<double>(num_particles, 0.0);
-
-        // for (int i = 0; i < num_active_rings; i++) {
-        //     calc_continuos_pos(rings_ids[i]);
-        // }
 
         calc_center_mass();
         windows_manager.update_window_members();
@@ -430,14 +434,11 @@ public:
             if (mask[i] == false) {
                 pos[i] = stokes_init_pos[add_ring_id];
                 self_prop_angle[i] = stokes_init_self_angle;
-                // pos[i] = new_ring;
-                // self_prop_angle[i] = self_prop_angle[ring_id];
-                
+     
                 mask[i] = true;
                 num_active_rings += 1;
                 to_recalculate_ids = true;
                 
-                // calc_continuos_pos(i);
                 calc_ring_center_mass(i);
                 windows_manager.update_entity(i);
                 in_pol_checker.windows_manager.update_point(i);
@@ -501,21 +502,49 @@ public:
 
         double dist = periodic_dist(dx, dy);
 
-        if (dist > force_r_lim) { 
-            return; 
-        } 
-
         #if DEBUG == 1                
         if (dist == 0.) {
             excluded_vol_debug.count_overlap += 1;
         }
         #endif
 
-        double force_intensity = exclusion_vol * (0.5 * diameter_six / pow(dist, 7.) - diameter_twelve/pow(dist, 13.) );
-        force_intensity = abs(force_intensity);
+        //===
+        // Forças lineares atrativas e repulsivas
+        //===
+        // double max_dist = 1.2;
+        // double rep_force = 30;
+        // double adh_force = 0.75;
 
-        double vol_fx = force_intensity/dist * dx;
-        double vol_fy = force_intensity/dist * dy;
+        if (dist > max_dist) {
+            return;
+        }
+
+        double force_r;
+        if (dist > diameter) {
+            // Força atrativa
+            force_r = adh_force * (diameter - dist) / (max_dist - diameter);
+        } else {
+            // Força repulsiva
+            force_r = rep_force * (diameter - dist) / (diameter);
+        }
+        
+        double vol_fx = force_r/dist * dx;
+        double vol_fy = force_r/dist * dy;
+        //===
+
+        //===
+        // Lennard Jones (Sem atração)
+        //===
+        // if (dist > force_r_lim) { 
+        //     return; 
+        // } 
+
+        // double force_intensity = exclusion_vol * (0.5 * diameter_six / pow(dist, 7.) - diameter_twelve/pow(dist, 13.) );
+        // force_intensity = abs(force_intensity);
+
+        // double vol_fx = force_intensity/dist * dx;
+        // double vol_fy = force_intensity/dist * dy;
+        //=========
 
         #pragma omp atomic
         sum_forces_matrix[ring_id][p_id][0] += vol_fx;
@@ -974,6 +1003,13 @@ public:
 
                 calc_spring_force(ring_id, p_id, id_left);
                 calc_spring_force(ring_id, p_id, id_right);
+
+                // Flux force
+                if (update_type == RingUpdateType::stokes) {
+                    if (pos[ring_id][p_id][0] < max_create_border) {
+                        sum_forces_matrix[ring_id][p_id][0] += stokes_cfg.flux_force;
+                    }
+                }
             }
 
             // Bend
@@ -992,8 +1028,6 @@ public:
         }
 
         collision_forces();
-        // if (in_pol_checker.to_calc_forces == true) {
-        // }
     }
 
     void stokes_resolve_collisions(Vec2d& p_pos, Vec2d& p_vel) {
@@ -1181,59 +1215,9 @@ public:
             for (int i=0; i < num_particles; i++) {
                 calc_derivate(vel_i[0], vel_i[1], angle_deriv_i, ring_id, i);
                 
-                double& p_angle = self_prop_angle[ring_id][i];
-                auto& p_pos = pos[ring_id][i];
-
-                // //
-                // // Colisões com as paredes
-                // //
-                // if (p_pos[1] > height/2.) {
-                //     if (vel_i[1] > 0.0) 
-                //         vel_i[1] = 0.0;
-                        
-                //     // if ((p_angle > 0.0) && (p_angle < M_PI/2)) {
-                //     //     p_angle = 0.0;
-                //     // } else if (p_angle < M_PI) {
-                //     //     p_angle = M_PI;
-                //     // } 
-                // }
-                // else if (p_pos[1] < -height/2.) {
-                //     if (vel_i[1] < 0.0)
-                //         vel_i[1] = 0.0;
-
-                //     // if ((p_angle > 0.0) && (p_angle < M_PI/2)) {
-                //     //     p_angle = 0.0;
-                //     // } else if (p_angle < M_PI) {
-                //     //     p_angle = M_PI;
-                //     // }
-                // }
-                
-                // if ((p_pos[0] < -length/2.) && (vel_i[0] < 0.0))
-                //     vel_i[0] = 0.0f;
-
-                // //
-                // // Colisões com o obstáculo
-                // //
-                // double dx = p_pos[0] - stokes_cfg.obstacle_x;
-                // double dy = p_pos[1] - stokes_cfg.obstacle_y;
-                // Vec2d radius_pos = {dx, dy};
-
-                // double radius_sqr = dx * dx + dy * dy;
-                // if (radius_sqr < (stokes_cfg.obstacle_r * stokes_cfg.obstacle_r)) {
-                //     double dot_pos_vel = dot_prod(radius_pos, vel_i);
-
-                //     if (dot_pos_vel < 0.0) {
-                //         // double pos_length = sqrt(radius_sqr);
-
-                //         vel_i[0] -= radius_pos[0]/(radius_sqr)*dot_pos_vel;
-                //         vel_i[1] -= radius_pos[1]/(radius_sqr)*dot_pos_vel;
-                //     }
-                // }
-
                 pos[ring_id][i][0] += vel_i[0] * dt;
                 pos[ring_id][i][1] += vel_i[1] * dt;
-                p_angle += angle_deriv_i * dt;
-                // self_prop_angle[ring_id][i] += angle_deriv_i * dt;
+                self_prop_angle[ring_id][i] += angle_deriv_i * dt;
 
                 #if DEBUG == 1
                 if (isnan(pos[ring_id][i][0]) == true) {
@@ -1252,14 +1236,6 @@ public:
                 remove_ring(ring_id);
             }
         }
-
-        // for (auto& win_id: obstacle_windows_ids)
-        // {
-        //     for (auto& p_id: windows_manager.windows[win_id[0]][win_id[1]]) {
-        //         pos
-        //     }
-        // }
-        
     }
 
     void advance_time_verlet() {
@@ -1636,6 +1612,11 @@ public:
         in_pol_checker.update();
 
         calc_forces_windows();
+        
+        // Create force
+
+
+
         calc_center_mass();
         
         advance_time_stokes();

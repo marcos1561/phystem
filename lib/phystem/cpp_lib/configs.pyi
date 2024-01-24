@@ -7,3 +7,9 @@ class RingCfg:
 
 class InPolCheckerCfg: 
     def __init__(self, num_cols_windows: int, update_freq: int, disable: bool) -> None: ...
+
+class ParticleWindowsCfg:
+    def __init__(num_cols: int, num_rows: int, update_freq: int) -> None: ...
+
+class InPolCheckerCfg: 
+    def __init__(self, num_cols_windows: int, num_rows_windows: int, update_freq: int, disable: bool) -> None: ...

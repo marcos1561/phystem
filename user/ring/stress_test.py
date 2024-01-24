@@ -5,7 +5,7 @@ from phystem.systems.ring.ui.graph import GraphCfg
 from phystem.systems.ring import collect_pipelines
 
 from phystem.core.run_config import RunType, RealTimeCfg, SaveCfg, CollectDataCfg, CheckpointCfg
-from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType
+from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType, ParticleWindows
 
 dynamic_cfg = RingCfg(
     spring_k=8,
@@ -20,8 +20,10 @@ dynamic_cfg = RingCfg(
     p0=3.7,
     # area0=53,
 
-    exclusion_vol=1,
     diameter=1,
+    max_dist=1+0.166,
+    rep_force=30,
+    adh_force=0.75,
     
     relax_time=1,
     mobility=1,
@@ -35,7 +37,7 @@ dynamic_cfg = RingCfg(
 from math import pi, ceil
 import numpy as np
 # n = int((15000)**.5) + 1
-n = 4
+n = 5
 k = 1.1
 radius = 20/6 * 1.5
 num_rings = n**2
@@ -66,19 +68,20 @@ creator_cfg = CreatorCfg(
 )
 
 
-run_type = RunType.REAL_TIME
+run_type = RunType.COLLECT_DATA
 
 num_windows = int(0.72 * ceil(space_cfg.length/(dynamic_cfg.diameter*3)))
 real_time_cfg = RealTimeCfg(
     int_cfg=IntegrationCfg(
         # dt = 0.001*5, # max euler
         dt = 0.001,
-        num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
-        windows_update_freq=1,
+        particle_win_cfg=ParticleWindows(
+            num_cols=10, num_rows=15,
+            update_freq=1),
         integration_type=IntegrationType.euler,
         update_type=UpdateType.PERIODIC_WINDOWS,
         in_pol_checker=InPolCheckerCfg(
-            num_col_windows=n, update_freq=1, disable=False),
+            num_col_windows=n, num_rows_windows=n+1, update_freq=100, disable=False),
     ),
     num_steps_frame = 500,
     fps = 60,
@@ -101,8 +104,9 @@ real_time_cfg = RealTimeCfg(
 save_cfg = SaveCfg(
     int_cfg=IntegrationCfg(
         dt = 0.001,
-        num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
-        windows_update_freq=1,
+        particle_win_cfg=ParticleWindows(
+            num_cols=num_windows, num_rows=num_windows,
+            update_freq=1),
         integration_type=IntegrationType.euler,
         update_type=UpdateType.PERIODIC_WINDOWS,
     ),
@@ -129,14 +133,15 @@ def quick_collect(sim: Simulation, cfg=None):
 collect_cfg = CollectDataCfg(
     int_cfg=IntegrationCfg(
         dt = 0.001,
-        num_col_windows=int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6),
-        windows_update_freq=1,
+        particle_win_cfg=ParticleWindows(
+            num_cols=num_windows, num_rows=num_windows+1,
+            update_freq=1),
         integration_type=IntegrationType.euler,
         update_type=UpdateType.PERIODIC_WINDOWS,
         in_pol_checker=InPolCheckerCfg(
-            num_col_windows=n, update_freq=1, disable=False),
+            num_col_windows=n, num_rows_windows=n+1, update_freq=1, disable=False),
     ),
-    tf = 30,
+    tf = 1,
     folder_path= "texture/data",
     func=collect_pipelines.last_state,
 )
