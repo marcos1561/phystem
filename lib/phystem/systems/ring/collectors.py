@@ -134,5 +134,7 @@ class LastState(collectors.Collector):
         super().save()
         pos_path = os.path.join(self.path, "pos.npy")
         angle_path = os.path.join(self.path, "angle.npy")
-        np.save(pos_path, np.array(self.solver.pos)[self.solver.rings_ids])
-        np.save(angle_path, np.array(self.solver.self_prop_angle)[self.solver.rings_ids])
+
+        ring_ids = self.solver.rings_ids[:self.solver.num_active_rings]
+        np.save(pos_path, np.array(self.solver.pos)[ring_ids])
+        np.save(angle_path, np.array(self.solver.self_prop_angle)[ring_ids])
