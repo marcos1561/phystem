@@ -32,7 +32,7 @@ int main() {
     cfg.spring_r = 2;
     
     cfg.area_potencial = AreaPotencialType::target_area;
-    cfg.k_bend = 1.;
+    cfg.k_area = 1.;
     cfg.p0 = 3.544907;
     cfg.area0 = 10;
 

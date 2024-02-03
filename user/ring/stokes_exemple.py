@@ -11,16 +11,16 @@ from phystem.systems.ring.ui.graph import GraphCfg
 
 
 dynamic_cfg = RingCfg(
-    spring_k=10,
+    spring_k=8,
     spring_r=0.7,
     
-    area_potencial="target_area",
-    k_bend=4,
+    area_potencial="format",
+    k_area=2,
     # p0=4.828427, # Triângulo retângulo
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
     p0=3.5449077018*1.0, # Círculo
-    # area0=53,
+    area0=53,
 
     diameter  = 1,
     max_dist  = 1 + 0.1666,
@@ -46,7 +46,7 @@ from math import pi
 radius = 20/6 * 1.1
 a = 2
 creator_cfg = CreatorCfg(
-    num_rings = 4,
+    num_rings = 0,
     num_p = 30,
     r = radius,
     angle=[pi/4, 0, 0, 0],
@@ -64,7 +64,7 @@ stokes_cfg = StokesCfg(
     obstacle_y  = 0*space_cfg.length/8/2,
     create_length = radius * 3,
     remove_length = radius * 3,
-    flux_force = 0.5, 
+    flux_force = 1, 
     num_max_rings = 100, 
 )
 

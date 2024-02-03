@@ -4,6 +4,7 @@ enum class AreaPotencialType {
     format, 
     target_perimeter,
     target_area,
+    target_area_and_format,
 };
 
 enum class RingUpdateType {
@@ -24,7 +25,8 @@ public:
     float spring_r;
     
     AreaPotencialType area_potencial;
-    float k_bend;
+    float k_area;
+    float k_format;
     float p0;
     float area0;
 
@@ -43,12 +45,12 @@ public:
 
     RingCfg() {};
 
-    RingCfg(float spring_k, float spring_r, AreaPotencialType area_potencial, float k_bend, float p0, float area0, 
+    RingCfg(float spring_k, float spring_r, AreaPotencialType area_potencial, float k_area, float k_format, float p0, float area0, 
         float mobility, float relax_time, float vo, float trans_diff, float rot_diff, float diameter,
         float max_dist, float rep_force, float adh_force, float flux_force)
-    : spring_k(spring_k), spring_r(spring_r), area_potencial(area_potencial), k_bend(k_bend), p0(p0), area0(area0), mobility(mobility), 
-    relax_time(relax_time), vo(vo), trans_diff(trans_diff), rot_diff(rot_diff), diameter(diameter),
-    max_dist(max_dist), rep_force(rep_force), adh_force(adh_force) {};
+    : spring_k(spring_k), spring_r(spring_r), area_potencial(area_potencial), k_area(k_area), k_format(k_format), 
+    p0(p0), area0(area0), mobility(mobility), relax_time(relax_time), vo(vo), trans_diff(trans_diff), 
+    rot_diff(rot_diff), diameter(diameter), max_dist(max_dist), rep_force(rep_force), adh_force(adh_force) {};
 };
  
 class StokesCfg {

@@ -82,7 +82,7 @@ class StateCheckpoint(collectors.Collector):
         return [
             os.path.join(path, "pos.npy"),
             os.path.join(path, "angle.npy"),
-            os.path.join(path, "check_point_metadata.pickle"),
+            os.path.join(path, "metadata.pickle"),
         ]
 
     def collect(self, count: int) -> None:

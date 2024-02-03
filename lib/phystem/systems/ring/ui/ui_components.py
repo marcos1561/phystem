@@ -121,17 +121,13 @@ class Info(InfoCore):
     def get_info(self) -> str:
         if self.cfgs["run_cfg"].graph_cfg.cpp_is_debug:
             return (
-                f"fps         : {self.fps:.1f}\n"
+                f"fps: {self.fps:.1f}\n"
                 f"Delta T (ms): {self.timer.mean_time():.3f}\n\n"
                 f"t : {self.solver.time:.3f}\n"
                 f"dt: {self.solver.dt:.5f}\n"
-                f"Area = {self.solver.cpp_solver.area_debug.area[0]:.3f}\n"
                 "\n"
                 f"num_active: {self.solver.num_active_rings}\n"
-                f"spring_overlap: {self.solver.spring_debug.count_overlap}\n"
-                f"vol_overlap   : {self.solver.excluded_vol_debug.count_overlap}\n"
-                f"area_overlap  : {self.solver.area_debug.count_overlap}\n"
-                f"zero_speed    : {self.solver.update_debug.count_zero_speed}\n"
+                f"area = {self.solver.cpp_solver.area_debug.area[0]:.3f}\n"
                 f"intersect     : {self.solver.cpp_solver.in_pol_checker.num_inside_points}\n"
                 "\n"
                 f"{self.cfg_info}"

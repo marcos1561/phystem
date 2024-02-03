@@ -8,7 +8,7 @@ from matplotlib.figure import Figure
 import os, yaml
 
 from phystem.utils.timer import TimeIt
-from phystem.core.run_config import RunType, RunCfg, CollectDataCfg, SaveCfg, RealTimeCfg, UiSettings
+from phystem.core.run_config import RunType, RunCfg, CollectDataCfg, SaveCfg, RealTimeCfg, UiSettings, CheckpointCfg
 from phystem.core.creators import CreatorCore
 from phystem.core.solvers import SolverCore
 
@@ -49,6 +49,7 @@ class SimulationCore(ABC):
         if self.run_cfg.checkpoint:
             if not self.run_cfg.checkpoint.override_cfgs:
                 checkpoint_cfgs = self.run_cfg.checkpoint.configs
+                
                 self.run_cfg.int_cfg = checkpoint_cfgs["run_cfg"].int_cfg 
                 self.creator_cfg = checkpoint_cfgs["creator_cfg"]
                 self.space_cfg = checkpoint_cfgs["space_cfg"]
@@ -73,10 +74,31 @@ class SimulationCore(ABC):
             # Como a configuração 'func' é uma função, ela não é salva.
             self.configs["run_cfg"].func = "nao salvo"
 
+        if run_cfg.checkpoint:
+            # Impede o salvamento de todos os checkpoints utilizados
+            # caso seja salvado um checkpoint que foi carregado de outro checkpoint.
+            self.configs["run_cfg"].checkpoint.configs = "nao salvo"
+
         self.app: AppCore = None
         self.time_it = TimeIt(num_samples=600)
 
         self.init_sim()    
+
+    @staticmethod
+    def load_cfg(cfg_path, is_recursive=False):
+        with open(cfg_path, "r") as f:
+            cfgs = yaml.unsafe_load(f)
+        
+        checkpoint: CheckpointCfg = cfgs["run_cfg"].checkpoint 
+        if checkpoint and not is_recursive:
+            checkpoint_cfg_path = os.path.join(checkpoint.folder_path, "config.yaml")
+            checkpoint.configs = SimulationCore.load_cfg(checkpoint_cfg_path, is_recursive=True)    
+
+        return cfgs
+
+    def save_cfgs(self, cfg_path: str):
+        with open(cfg_path, "w") as f:
+            yaml.dump(self.configs, f)
 
     @abstractmethod
     def get_creator(self) -> CreatorCore:

@@ -14,13 +14,13 @@ dynamic_cfg = RingCfg(
     spring_k=6,
     spring_r=0.7,
     
-    area_potencial="target_area",
-    k_bend=2,
+    area_potencial="format",
+    k_area=2,
     # p0=4.828427, # Triângulo retângulo
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
     p0=3.5449077018*1.000, # Círculo
-    # area0=53,
+    area0=53,
 
     diameter  = 1,
     max_dist  = 1 + 0.1666,

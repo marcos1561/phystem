@@ -61,7 +61,8 @@ public:
     double spring_k;
     double spring_r;
 
-    double k_bend;
+    double k_area;
+    double k_format;
     double p0;
     double area0;
     double p_target;
@@ -188,11 +189,11 @@ public:
     update_type(update_type), integration_type(integration_type), 
     stokes_cfg(stokes_cfg) 
     {
-        if ((update_type == RingUpdateType::stokes) && 
-            (dynamic_cfg.area_potencial != AreaPotencialType::target_area)) 
-        {
-            throw std::invalid_argument("O modo 'stokes' apenas suporta 'area_potencial' = 'target_area'.");
-        }
+        // if ((update_type == RingUpdateType::stokes) && 
+        //     (dynamic_cfg.area_potencial != AreaPotencialType::target_area)) 
+        // {
+        //     throw std::invalid_argument("O modo 'stokes' apenas suporta 'area_potencial' = 'target_area'.");
+        // }
 
         if (seed != -1.)
             srand(seed);
@@ -270,7 +271,8 @@ public:
         spring_k = dynamic_cfg.spring_k;
         spring_r = dynamic_cfg.spring_r;
         
-        k_bend = dynamic_cfg.k_bend;
+        k_area = dynamic_cfg.k_area;
+        k_format = dynamic_cfg.k_format;
         p0 = dynamic_cfg.p0;
         area0 = dynamic_cfg.area0;
         p_target = p0 * sqrt(area0);
@@ -695,20 +697,20 @@ public:
     }
 
     void format_force(int ring_id, int point_id, double area, double perimeter) {
-        int id = pos_continuos[ring_id].size() - 1;
+        int id = (*continuos_ring_positions)[ring_id].size() - 1;
         if (point_id != 0)
             id = point_id - 1;
-        auto& v1 = pos_continuos[ring_id][id];
+        auto& v1 = (*continuos_ring_positions)[ring_id][id];
         
         id = 0;
-        if (point_id != ((int)pos_continuos[ring_id].size() - 1))
+        if (point_id != ((int)(*continuos_ring_positions)[ring_id].size() - 1))
             id = point_id + 1;
-        auto& v2 = pos_continuos[ring_id][id];
+        auto& v2 = (*continuos_ring_positions)[ring_id][id];
 
-        auto& point = pos_continuos[ring_id][point_id]; 
+        auto& point = (*continuos_ring_positions)[ring_id][point_id]; 
 
-        double d1 = vector_dist(v1, pos_continuos[ring_id][point_id]);
-        double d2 = vector_dist(v2, pos_continuos[ring_id][point_id]);
+        double d1 = vector_dist(v1, (*continuos_ring_positions)[ring_id][point_id]);
+        double d2 = vector_dist(v2, (*continuos_ring_positions)[ring_id][point_id]);
 
         #if DEBUG == 1                
         if (d1 == 0.)
@@ -722,8 +724,8 @@ public:
         double area_0_deriv_x =  2.0 * perimeter / (p0*p0) * ((v1[0] - point[0]) / d1 +  (v2[0] - point[0]) / d2);
         double area_0_deriv_y =  2.0 * perimeter / (p0*p0) * ((v1[1] - point[1]) / d1 +  (v2[1] - point[1]) / d2);
         
-        double gradient_x = k_bend * delta_area * ((v2[1] - v1[1])/2.0 + area_0_deriv_x);
-        double gradient_y = k_bend * delta_area * (-(v2[0] - v1[0])/2.0 + area_0_deriv_y);
+        double gradient_x = k_format * delta_area * ((v2[1] - v1[1])/2.0 + area_0_deriv_x);
+        double gradient_y = k_format * delta_area * (-(v2[0] - v1[0])/2.0 + area_0_deriv_y);
 
         #if DEBUG == 1
         area_forces[ring_id][point_id][0] = -gradient_x;
@@ -735,22 +737,27 @@ public:
     }
 
     void format_forces(int ring_id) {
-        double perimeter = calc_continuos_pos(ring_id);
-
-        pos_continuos[ring_id][0] = pos[ring_id][0];
-        for (size_t i = 0; i < (differences[ring_id].size()-1); i++)
-        {
-            pos_continuos[ring_id][i+1][0] = pos_continuos[ring_id][i][0] + differences[ring_id][i][0];
-            pos_continuos[ring_id][i+1][1] = pos_continuos[ring_id][i][1] + differences[ring_id][i][1];
+        double perimeter;
+        if (update_type == RingUpdateType::stokes) {
+            perimeter = calc_perimeter((*continuos_ring_positions)[ring_id]);
+        } else {
+            perimeter = calc_continuos_pos(ring_id);
         }
 
-        double area = calc_area(pos_continuos[ring_id]);
+        // pos_continuos[ring_id][0] = pos[ring_id][0];
+        // for (size_t i = 0; i < (differences[ring_id].size()-1); i++)
+        // {
+        //     pos_continuos[ring_id][i+1][0] = pos_continuos[ring_id][i][0] + differences[ring_id][i][0];
+        //     pos_continuos[ring_id][i+1][1] = pos_continuos[ring_id][i][1] + differences[ring_id][i][1];
+        // }
+
+        double area = calc_area((*continuos_ring_positions)[ring_id]);
         
         #if DEBUG
         area_debug.area[ring_id] = area;
         #endif
 
-        for (size_t i = 0; i < pos_continuos[ring_id].size(); i++)
+        for (size_t i = 0; i < (*continuos_ring_positions)[ring_id].size(); i++)
         {
             format_force(ring_id, i, area, perimeter);
         }
@@ -774,7 +781,7 @@ public:
                 id2 = num_particles - 1;
             double d2 = vector_mod(differences[ring_id][id2]);
             
-            double  force_k = k_bend * (perimeter - p_target);
+            double  force_k = k_area * (perimeter - p_target);
 
             // int id1 = i - 1;
             // if (id1 == -1)
@@ -822,7 +829,7 @@ public:
         int id1, id2;
         for (int i = 0; i < num_particles; i++)
         {
-            double force_k = k_bend * (area - area0);
+            double force_k = k_area * (area - area0);
 
             id1 = i - 1;
             if (id1 == -1)
@@ -943,6 +950,10 @@ public:
         case AreaPotencialType::target_area:
             target_area_forces(ring_id);
             break;
+        case AreaPotencialType::target_area_and_format:
+            format_forces(ring_id);
+            target_area_forces(ring_id);
+            break;
         }
     }
 
@@ -1023,6 +1034,10 @@ public:
                 break;
             case AreaPotencialType::target_area:
                 target_area_forces(ring_id);
+                break;
+            case AreaPotencialType::target_area_and_format:
+                target_area_forces(ring_id);
+                format_forces(ring_id);
                 break;
             }
         }

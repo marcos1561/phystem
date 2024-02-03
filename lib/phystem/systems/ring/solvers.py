@@ -70,7 +70,6 @@ class CppSolver:
         }
         self.update_func = update_type_to_func[int_cfg.update_type]
 
-        self.time = 0
         self.dt = int_cfg.dt
         self.n = len(self_prop_angle)
 
@@ -81,6 +80,10 @@ class CppSolver:
     @property
     def num_particles(self):
         return self.cpp_solver.num_particles
+    
+    @property
+    def time(self):
+        return self.cpp_solver.sim_time
     
     @property
     def num_time_steps(self):
@@ -172,7 +175,6 @@ class CppSolver:
 
     def update(self):
         self.update_func()
-        self.time += self.dt
     
     def mean_vel_vec(self, ring_id: int):
         return self.cpp_solver.mean_vel_vec(ring_id)

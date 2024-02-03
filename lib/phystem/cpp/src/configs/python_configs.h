@@ -29,7 +29,8 @@ public:
         spring_k = py::float_(values["spring_k"]);
         spring_r = py::float_(values["spring_r"]);
         
-        k_bend = py::float_(values["k_bend"]);
+        k_area = py::float_(values["k_area"]);
+        k_format = py::float_(values["k_format"]);
         p0 = py::float_(values["p0"]);
         area0 = py::float_(values["area0"]);
 
@@ -54,6 +55,8 @@ public:
             area_potencial = AreaPotencialType::target_perimeter;
         else if (area_potencial_name == "target_area")
             area_potencial = AreaPotencialType::target_area;
+        else if (area_potencial_name == "target_area_and_format")
+            area_potencial = AreaPotencialType::target_area_and_format;
         else
             throw std::invalid_argument("Nome do potencial de area incorreto.");
     };

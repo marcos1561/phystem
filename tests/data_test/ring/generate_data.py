@@ -13,7 +13,7 @@ def generate_normal_data():
         spring_r=0.3,
         
         area_potencial="target_area",
-        k_bend=5,
+        k_area=5,
         # p0=4.828427, # Triângulo retângulo
         # p0=4.55901, # Triângulo equilátero
         # p0=4, # quadrado

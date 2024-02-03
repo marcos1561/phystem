@@ -25,7 +25,8 @@ dynamic_cfg: !!python/object:phystem.systems.ring.configs.RingCfg
   area0: 40
   area_potencial: target_area
   diameter: 1
-  k_bend: 5
+  k_area: 5
+  k_format: -1
   max_dist: 1.1666
   mobility: 1
   p0: 4.743416490252569

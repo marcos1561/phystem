@@ -16,7 +16,7 @@ dynamic_cfg = RingCfg(
     spring_r=0.7,
     
     area_potencial="target_area",
-    k_bend=2,
+    k_area=2,
     # p0=4.828427, # Triângulo retângulo
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
