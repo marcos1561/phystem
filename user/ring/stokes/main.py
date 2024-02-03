@@ -23,6 +23,8 @@ dynamic_cfg = RingCfg(
     p0=3.5449077018*1.0, # Círculo
     # area0=53,
 
+    k_invasion = 12,
+    
     diameter  = 1,
     max_dist  = 1 + 0.1666,
     rep_force = 30,
@@ -67,7 +69,7 @@ seed = 40028922
 ##
 ## Select Run Type
 ##
-run_type = RunType.SAVE_VIDEO
+run_type = RunType.REAL_TIME
 
 
 num_cols = int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6)
@@ -106,9 +108,9 @@ real_time_cfg = RealTimeCfg(
             update_freq=1),
         integration_type=IntegrationType.euler,
         update_type=UpdateType.STOKES,
-        in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50, disable=False),
+        in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 4, disable=False),
     ),
-    num_steps_frame=1200,
+    num_steps_frame=200,
     fps=60,
     graph_cfg = GraphCfg(
         show_circles      = True,
@@ -137,11 +139,11 @@ video_cfg = SaveCfg(
             update_freq=1),
         integration_type=IntegrationType.euler,
         update_type=UpdateType.STOKES,
-        in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50, disable=False),
+        in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 3, disable=False),
     ),
-    path="./video_teste2.mp4",
+    path="./video_teste3.mp4",
     speed=5,
-    duration=10,
+    duration=20,
     fps=30,
     graph_cfg = GraphCfg(
         show_circles      = True,

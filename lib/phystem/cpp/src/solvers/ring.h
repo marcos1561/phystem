@@ -66,6 +66,8 @@ public:
     double p0;
     double area0;
     double p_target;
+    
+    double k_invasion;
 
     double mobility;
     double relax_time;
@@ -276,6 +278,8 @@ public:
         p0 = dynamic_cfg.p0;
         area0 = dynamic_cfg.area0;
         p_target = p0 * sqrt(area0);
+
+        k_invasion = dynamic_cfg.k_invasion;
 
         mobility = dynamic_cfg.mobility;
         relax_time = dynamic_cfg.relax_time;
@@ -898,10 +902,8 @@ public:
             // double dy = sign * area_forces[col_info.ring_id][col_info.p_id][1];
             // double norm = sqrt(dx*dx + dy*dy);
             
-            double f_intensity = 15;
-
-            double fx = dx/norm * f_intensity;
-            double fy = dy/norm * f_intensity;
+            double fx = dx/norm * k_invasion;
+            double fy = dy/norm * k_invasion;
 
             sum_forces_matrix[col_info.ring_id][col_info.p_id][0] += fx;
             sum_forces_matrix[col_info.ring_id][col_info.p_id][1] += fy;

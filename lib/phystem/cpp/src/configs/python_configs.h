@@ -34,6 +34,8 @@ public:
         p0 = py::float_(values["p0"]);
         area0 = py::float_(values["area0"]);
 
+        k_invasion = py::float_(values["k_invasion"]);
+
         mobility = py::float_(values["mobility"]);
         relax_time = py::float_(values["relax_time"]);
         vo = py::float_(values["vo"]);

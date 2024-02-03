@@ -30,6 +30,7 @@ dynamic_cfg: !!python/object:phystem.systems.ring.configs.RingCfg
   max_dist: 1.1666
   mobility: 1
   p0: 4.743416490252569
+  k_invasion: -1
   relax_time: 1
   rep_force: 30
   rot_diff: 0.1

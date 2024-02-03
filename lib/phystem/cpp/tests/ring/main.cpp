@@ -33,8 +33,11 @@ int main() {
     
     cfg.area_potencial = AreaPotencialType::target_area;
     cfg.k_area = 1.;
+    cfg.k_format = 0.1;
     cfg.p0 = 3.544907;
     cfg.area0 = 10;
+
+    cfg.k_invasion = 5.;
 
     cfg.mobility = 1.;
     cfg.relax_time = 1.;

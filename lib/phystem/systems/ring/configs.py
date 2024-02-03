@@ -9,7 +9,7 @@ class RingCfg:
         "vo", "trans_diff", "rot_diff", "exclusion_vol", "diameter", "p0")
 
     def __init__(self,  spring_k, spring_r, area_potencial, mobility, relax_time,
-        vo, trans_diff, rot_diff, diameter, max_dist, rep_force, adh_force,
+        vo, trans_diff, rot_diff, diameter, max_dist, rep_force, adh_force, k_invasion,
         p0=None, area0=None, k_format=None, k_area=None) -> None:
         if p0 is None and area0 is None:
             raise Exception("Ao menos um dos parâmetros 'p0' e 'area0' devem ser setados.")
@@ -36,6 +36,8 @@ class RingCfg:
         self.k_format = k_format
         self.p0 = p0
         self.area0 = area0
+
+        self.k_invasion = k_invasion
 
         self.mobility = mobility
         self.relax_time = relax_time
@@ -85,6 +87,7 @@ class RingCfg:
             "area_potencial": self.area_potencial,
             "p0": self.p0,
             "area0": self.area0,
+            "k_invasion": self.k_invasion,
             "mobility": self.mobility,
             "relax_time": self.relax_time,
             "vo": self.vo,
