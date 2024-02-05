@@ -128,6 +128,13 @@ class SimulationCore(ABC):
     
     def run_only_sim(self):
         run_cfg: CollectDataCfg = self.run_cfg
+        
+        if type(run_cfg.func) == str or run_cfg.func is None:
+            raise Exception((
+                "A função que executa a simulação não está setada! "
+                "(Atributo 'func' da configuração 'CollectDataCfg')",
+            ))
+
         run_cfg.func(self, run_cfg.func_cfg)
 
     def run_app(self, fig: Figure, update, title=None,

@@ -6,7 +6,8 @@ from phystem.systems.ring.solvers import CppSolver, SolverRD
 from phystem.systems.ring.creators import CreatorRD, Creator
 
 from phystem.core.run_config import RunCfg, RunType, RealTimeCfg
-from phystem.systems.ring.configs import CreatorCfg, RingCfg
+from phystem.systems.ring.configs import CreatorCfg, RingCfg, InvaginationCfg, InvaginationCreatorCfg
+from phystem.systems.ring.run_config import IntegrationCfg, UpdateType
 
 from phystem.systems.ring.ui.graph import MainGraph, GraphCfg
 from phystem.systems.ring.ui import ui_components
@@ -21,15 +22,19 @@ class Simulation(SimulationCore):
     dynamic_cfg: RingCfg
 
     def __init__(self, creator_cfg: CreatorCfg, dynamic_cfg: RingCfg, space_cfg, run_cfg: RunCfg, other_cfgs: dict = None, rng_seed: float = None) -> None:
+        int_cfg: IntegrationCfg = run_cfg.int_cfg
+        if int_cfg.update_type is UpdateType.INVAGINATION and type(creator_cfg) != InvaginationCreatorCfg:
+            raise ValueError(f"No mode 'invagination', a configuração de criação deve ser 'InvaginationCreatorCfg', mas é {type(creator_cfg)}.")
+
         dynamic_cfg.adjust_area_pars(creator_cfg.num_p)
         super().__init__(creator_cfg, dynamic_cfg, space_cfg, run_cfg, other_cfgs, rng_seed)
-
 
     def get_creator(self) -> Creator:
         if self.run_cfg.id is RunType.REPLAY_DATA:
             return CreatorRD()
 
-        return Creator(**self.creator_cfg.get_pars(), rng_seed=self.rng_seed)
+        # return Creator(**self.creator_cfg.get_pars(), rng_seed=self.rng_seed)
+        return self.creator_cfg.CreatorType(**self.creator_cfg.get_pars(), rng_seed=self.rng_seed)
     
     def get_solver(self) -> SolverCore:
         self.creator: Creator
@@ -47,11 +52,20 @@ class Simulation(SimulationCore):
         if self.other_cfgs is not None:
             stokes_cfg = self.other_cfgs.get("stokes", None)
 
-        print("seed:", self.rng_seed)
         solver = CppSolver(**init_data.get_data(), num_particles=self.creator_cfg.num_p, 
             dynamic_cfg=self.dynamic_cfg, stokes_cfg=stokes_cfg, space_cfg=self.space_cfg,
             int_cfg=self.run_cfg.int_cfg, rng_seed=self.rng_seed)
         
+        int_cfg: IntegrationCfg = self.run_cfg.int_cfg
+        if int_cfg.update_type is UpdateType.INVAGINATION:
+            inv_cfg: InvaginationCfg = self.other_cfgs["invagination"]
+            inv_creator_cfg: InvaginationCreatorCfg = self.creator_cfg 
+
+            solver.cpp_solver.init_invagination(
+                inv_creator_cfg.height, inv_creator_cfg.length, 
+                inv_cfg.upper_k, inv_cfg.bottom_k,
+            )
+
         return solver
 
     def run_real_time(self):

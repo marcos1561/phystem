@@ -40,6 +40,7 @@ class CppSolver:
             UpdateType.PERIODIC_NORMAL: cpp_lib.configs.RingUpdateType.periodic_borders, 
             UpdateType.PERIODIC_WINDOWS: cpp_lib.configs.RingUpdateType.periodic_borders, 
             UpdateType.STOKES: cpp_lib.configs.RingUpdateType.stokes, 
+            UpdateType.INVAGINATION: cpp_lib.configs.RingUpdateType.invagination, 
         }
 
         pos_in = [cpp_lib.data_types.PosVec(ring_pos) for ring_pos in pos]
@@ -62,12 +63,14 @@ class CppSolver:
             in_pol_checker_cfg,
             rng_seed, 
         )
-
+        
         update_type_to_func = {
             UpdateType.PERIODIC_NORMAL: self.cpp_solver.update_normal,
             UpdateType.PERIODIC_WINDOWS: self.cpp_solver.update_windows,
             UpdateType.STOKES: self.cpp_solver.update_stokes,
+            UpdateType.INVAGINATION: self.cpp_solver.update_windows,
         }
+        
         self.update_func = update_type_to_func[int_cfg.update_type]
 
         self.dt = int_cfg.dt

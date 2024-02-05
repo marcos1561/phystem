@@ -1,6 +1,9 @@
 '''
 Configurações relacionadas ao sistema em questão.
 '''
+
+from phystem.systems.ring import creators
+
 class RingCfg:
     '''
     Variáveis relacionadas a dinâmica do sistema.
@@ -145,10 +148,16 @@ class StokesCfg:
             "num_max_rings": self.num_max_rings,
         }
 
+class InvaginationCfg:
+    def __init__(self, upper_k: float, bottom_k: float):
+        self.upper_k = upper_k
+        self.bottom_k = bottom_k
+
 class CreatorCfg:
     '''
     Configurações passada ao construtor de configuração inicial.
     '''
+    CreatorType = creators.Creator
     def __init__(self, num_rings: int,  num_p: int, r: list[float], angle: list[float],
         center: list[list[float]]) -> None:
         self.num_rings = num_rings
@@ -183,6 +192,26 @@ class CreatorCfg:
             "center": self.center,
         }
 
+class InvaginationCreatorCfg:
+    CreatorType = creators.InvaginationCreator
+
+    def __init__(self, num_rings: int, height: int, length: int, diameter: float) -> None:
+        self.num_rings = num_rings
+        self.num_p =  2 * (height + length) - 4
+
+        self.height = height
+        self.length = length
+        self.diameter = diameter
+        
+    def get_pars(self):
+        return {
+            "num_rings": self.num_rings,
+            "num_p": self.num_p,
+            "height": self.height,
+            "length": self.length,
+            "diameter": self.diameter,
+        }
+
 class SpaceCfg:
     '''
     Configurações do espaço na qual as partículas se encontram.
@@ -194,4 +223,5 @@ class SpaceCfg:
     def set(self, other):
         self.height = other.height
         self.length = other.length
+
 

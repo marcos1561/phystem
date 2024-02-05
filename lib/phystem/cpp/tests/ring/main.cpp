@@ -52,17 +52,20 @@ int main() {
     cfg.rep_force = 30.;
 
     auto data = ring::init_cfg(2, n, r, cfg.vo);
-    data.pos = Vector3d(0);
-    data.self_prop_angle = std::vector<vector<double>>(0);
+    // data.pos = Vector3d(0);
+    // data.self_prop_angle = std::vector<vector<double>>(0);
 
     auto solver = Ring(data.pos, data.self_prop_angle, n, cfg, size, size, dt, p_win_cfg, 
-        RingUpdateType::stokes, RingIntegrationType::euler, stokes_cfg, InPolCheckerCfg(3, 4, 10));
+        RingUpdateType::invagination, RingIntegrationType::euler, stokes_cfg, InPolCheckerCfg(3, 4, 10));
+
+    solver.init_invagination(10, 7, cfg.spring_k*1.1, cfg.spring_k*0.9);
 
     // for (int i = 0; i < 10; i++)
     while (true)
     {
         // solver.update_normal();
-        solver.update_stokes();
+        solver.update_windows();
+        // solver.update_stokes();
         auto pos = solver.pos[0][0];
         std::cout << pos[0] << ", " << pos[1] << std::endl;
         std::cout << "Num active: " << solver.num_active_rings << std::endl;

@@ -63,6 +63,7 @@ PYBIND11_MODULE(cpp_lib, m) {
     py::enum_<RingUpdateType>(configs, "RingUpdateType")
         .value("periodic_borders", RingUpdateType::periodic_borders)
         .value("stokes", RingUpdateType::stokes)
+        .value("invagination", RingUpdateType::invagination)
         ;
 
     py::class_<StokesCfgPy>(configs, "StokesCfgPy")
@@ -179,6 +180,7 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def("update_windows", &Ring::update_windows, py::call_guard<py::gil_scoped_release>())
         .def("update_stokes", &Ring::update_stokes, py::call_guard<py::gil_scoped_release>())
         .def("update_visual_aids", &Ring::update_visual_aids, py::call_guard<py::gil_scoped_release>())
+        .def("init_invagination", &Ring::init_invagination, py::call_guard<py::gil_scoped_release>())
         .def_readwrite("sim_time", &Ring::sim_time, byref)
         .def_readwrite("num_time_steps", &Ring::num_time_steps, byref)
         .def_readonly("num_max_rings", &Ring::num_max_rings, byref)

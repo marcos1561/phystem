@@ -15,12 +15,14 @@ dynamic_cfg = RingCfg(
     spring_r=0.7,
     
     area_potencial="format",
-    k_area=2,
+    k_format=2,
     # p0=4.828427, # Triângulo retângulo
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
     p0=3.5449077018*1.0, # Círculo
     area0=53,
+
+    k_invasion=12,
 
     diameter  = 1,
     max_dist  = 1 + 0.1666,
@@ -46,7 +48,7 @@ from math import pi
 radius = 20/6 * 1.1
 a = 2
 creator_cfg = CreatorCfg(
-    num_rings = 0,
+    num_rings = 4,
     num_p = 30,
     r = radius,
     angle=[pi/4, 0, 0, 0],

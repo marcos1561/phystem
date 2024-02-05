@@ -1,6 +1,7 @@
 #include <cmath>
 #include <vector>
 #include <array>
+#include <map>
 #include <iostream>
 #include <cstdlib> 
 #include <omp.h>
@@ -143,6 +144,13 @@ public:
 
     double create_border;
     double remove_border;
+
+    //==
+    // Invagination
+    //==
+    std::map<int, double> inv_spring_k;
+    std::map<int, bool> inv_is_rfix;
+    std::map<int, bool> inv_is_lfix;
 
     //==
     // Area Potencial
@@ -410,6 +418,24 @@ public:
         in_pol_checker.update();
     }
 
+    void init_invagination(int height, int length, double upper_k, double bottom_k) {
+        for (int i = 0; i < num_particles; i++) {
+            inv_spring_k[i] = spring_k;
+            inv_is_rfix[i] = false;
+            inv_is_lfix[i] = false;
+        }
+
+        for (int j = 0; j < length-1; j++) {
+            inv_spring_k[2*height + length - 3 + j] = upper_k;
+            inv_spring_k[height - 1 + j] = bottom_k;
+        }
+        
+        for (int j = 0; j < height; j++) {
+            inv_is_lfix[j] = true;
+            inv_is_rfix[height+length-2+j] = true;
+        }
+    }
+
     void recalculate_rings_ids() {
         to_recalculate_ids = false;
         int next_id = 0;
@@ -605,6 +631,47 @@ public:
         #if DEBUG == 1
         spring_forces[ring_id][p_id][0] += spring_fx;
         spring_forces[ring_id][p_id][1] += spring_fy;
+        #endif
+    }
+
+    void calc_spring_force2(int ring_id, int spring_id) {
+        int first_id = spring_id;
+        int second_id = spring_id == (num_particles-1) ? 0 : spring_id + 1;
+
+        auto& p = pos[ring_id][first_id]; 
+        auto& other = pos[ring_id][second_id]; 
+
+        double dx = other[0] - p[0];         
+        double dy = other[1] - p[1];
+
+        double dist = periodic_dist(dx, dy);
+
+        #if DEBUG == 1                
+        if (dist == 0.) {
+            spring_debug.count_overlap += 1;
+        }
+        #endif
+
+        double current_spring_k = spring_k;
+        if (update_type == RingUpdateType::invagination) {
+            current_spring_k = inv_spring_k[spring_id];
+        }                
+
+        double force_intensity = current_spring_k * (dist - spring_r);         
+
+        double spring_fx = dx/dist * force_intensity;
+        double spring_fy = dy/dist * force_intensity;
+
+        sum_forces_matrix[ring_id][first_id][0] += spring_fx;
+        sum_forces_matrix[ring_id][first_id][1] += spring_fy;
+        sum_forces_matrix[ring_id][second_id][0] -= spring_fx;
+        sum_forces_matrix[ring_id][second_id][1] -= spring_fy;
+
+        #if DEBUG == 1
+        spring_forces[ring_id][first_id][0] += spring_fx;
+        spring_forces[ring_id][first_id][1] += spring_fy;
+        spring_forces[ring_id][second_id][0] -= spring_fx;
+        spring_forces[ring_id][second_id][1] -= spring_fy;
         #endif
     }
 
@@ -820,7 +887,8 @@ public:
     }
 
     void target_area_forces(int ring_id) {
-        if (update_type == RingUpdateType::periodic_borders) {
+        if ((update_type == RingUpdateType::periodic_borders) || 
+            (update_type == RingUpdateType::invagination)) {
             calc_continuos_pos(ring_id);
         }
 
@@ -1010,21 +1078,32 @@ public:
             int ring_id = rings_ids[i];
 
             // Springs
-            for (int p_id = 0; p_id < num_particles; p_id ++) {
-                int id_left = (p_id == 0) ? num_particles-1 : p_id-1;
-                int id_right = (p_id == num_particles-1) ? 0 : p_id+1;
+            // for (int p_id = 0; p_id < num_particles; p_id ++) {
+            //     int id_left = (p_id == 0) ? num_particles-1 : p_id-1;
+            //     int id_right = (p_id == num_particles-1) ? 0 : p_id+1;
 
-                calc_spring_force(ring_id, p_id, id_left);
-                calc_spring_force(ring_id, p_id, id_right);
+            //     calc_spring_force(ring_id, p_id, id_left);
+            //     calc_spring_force(ring_id, p_id, id_right);
 
+            //     // Flux force
+            //     if (update_type == RingUpdateType::stokes) {
+            //         if (pos[ring_id][p_id][0] < max_create_border) {
+            //             sum_forces_matrix[ring_id][p_id][0] += stokes_cfg.flux_force;
+            //         }
+            //     }
+            // }
+            for (int spring_id = 0; spring_id < num_particles; spring_id++)
+            {
+                calc_spring_force2(ring_id, spring_id);
+                
                 // Flux force
                 if (update_type == RingUpdateType::stokes) {
-                    if (pos[ring_id][p_id][0] < max_create_border) {
-                        sum_forces_matrix[ring_id][p_id][0] += stokes_cfg.flux_force;
+                    if (pos[ring_id][spring_id][0] < max_create_border) {
+                        sum_forces_matrix[ring_id][spring_id][0] += stokes_cfg.flux_force;
                     }
                 }
             }
-
+            
             // Bend
             switch (dynamic_cfg.area_potencial)
             {
@@ -1192,6 +1271,20 @@ public:
         {
             int ring_id = rings_ids[i];
             for (int i=0; i < num_particles; i++) {
+                if (update_type == RingUpdateType::invagination) {
+                    bool skip = false;
+                    if ((ring_id == 0) && (inv_is_lfix[i]))
+                        skip = true;
+                    else if ((ring_id == num_active_rings-1) && (inv_is_rfix[i]))
+                        skip = true;
+
+                    if (skip) {
+                        sum_forces_matrix[ring_id][i][0] = 0.f;
+                        sum_forces_matrix[ring_id][i][1] = 0.f;
+                        continue;
+                    }
+                }
+
                 calc_derivate(vel_i[0], vel_i[1], angle_deriv_i, ring_id, i);
 
                 pos[ring_id][i][0] += vel_i[0] * dt;
@@ -1622,7 +1715,6 @@ public:
         if (to_recalculate_ids == true) {
             recalculate_rings_ids();
         }
-        
 
         windows_manager.update_window_members();
         in_pol_checker.windows_manager.update_window_members();    
@@ -1630,10 +1722,6 @@ public:
 
         calc_forces_windows();
         
-        // Create force
-
-
-
         calc_center_mass();
         
         advance_time_stokes();

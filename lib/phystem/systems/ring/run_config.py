@@ -19,6 +19,7 @@ class UpdateType(Enum):
     PERIODIC_NORMAL = auto()
     PERIODIC_WINDOWS = auto()
     STOKES = auto()
+    INVAGINATION = auto()
 
 class IntegrationType(Enum):
     euler=0

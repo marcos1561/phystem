@@ -10,6 +10,7 @@ enum class AreaPotencialType {
 enum class RingUpdateType {
     stokes,
     periodic_borders,
+    invagination,
 };
 
 enum class RingIntegrationType {

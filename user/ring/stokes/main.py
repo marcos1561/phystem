@@ -69,7 +69,7 @@ seed = 40028922
 ##
 ## Select Run Type
 ##
-run_type = RunType.REAL_TIME
+run_type = RunType.COLLECT_DATA
 
 
 num_cols = int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6)
@@ -88,15 +88,16 @@ collect_data_cfg = CollectDataCfg(
             update_type=UpdateType.PERIODIC_WINDOWS,
             in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
     ), 
-    tf = 20,
+    tf = 5,
     func=pipeline.collect_pipeline,
     folder_path="data",
     func_cfg=pipeline.PipelineCfg(
         save_time_freq=2),
-    checkpoint=CheckpointCfg(
-        folder_path="data",
-        override_cfgs=False,
-    )
+    
+    # checkpoint=CheckpointCfg(
+    #     folder_path="data",
+    #     override_cfgs=False,
+    # )
 )
 
 real_time_cfg = RealTimeCfg(
@@ -108,7 +109,7 @@ real_time_cfg = RealTimeCfg(
             update_freq=1),
         integration_type=IntegrationType.euler,
         update_type=UpdateType.STOKES,
-        in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 4, disable=False),
+        in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 10, disable=False),
     ),
     num_steps_frame=200,
     fps=60,
@@ -122,7 +123,7 @@ real_time_cfg = RealTimeCfg(
         show_inside       = True,
         begin_paused      = False,
         pause_on_high_vel = True,
-        cpp_is_debug      = True
+        cpp_is_debug      = False
     ),
     # checkpoint=CheckpointCfg(
     #     folder_path="data",
@@ -141,7 +142,7 @@ video_cfg = SaveCfg(
         update_type=UpdateType.STOKES,
         in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 3, disable=False),
     ),
-    path="./video_teste3.mp4",
+    path="./aff.mp4",
     speed=5,
     duration=20,
     fps=30,
@@ -153,6 +154,7 @@ video_cfg = SaveCfg(
         show_f_total      = False,
         show_center_mass  = True,
         show_inside       = False,
+        cpp_is_debug      = False,
     ),
 )
 
