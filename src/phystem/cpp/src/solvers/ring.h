@@ -195,7 +195,7 @@ public:
     Ring(Vector3d &pos0, vector<vector<double>>& self_prop_angle0, int num_particles, RingCfg dynamic_cfg, 
         double height, double length, double dt, ParticleWindowsCfg particle_windows_cfg,
         RingUpdateType update_type=RingUpdateType::periodic_borders, RingIntegrationType integration_type=RingIntegrationType::euler, 
-        StokesCfg stokes_cfg=StokesCfg(), InPolCheckerCfg in_pol_checker_cfg=InPolCheckerCfg(3, 1, true), int seed=-1) 
+        StokesCfg stokes_cfg=StokesCfg(), InPolCheckerCfg in_pol_checker_cfg=InPolCheckerCfg(3, 3, 1, true), int seed=-1) 
     : num_particles(num_particles), dynamic_cfg(dynamic_cfg), height(height), length(length), dt(dt),
     update_type(update_type), integration_type(integration_type), 
     stokes_cfg(stokes_cfg) 

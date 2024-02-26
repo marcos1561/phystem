@@ -99,6 +99,9 @@ class SimulationCore(ABC):
         return cfgs
 
     def save_cfgs(self, cfg_path: str):
+        if ".yaml" not in cfg_path:
+            cfg_path += ".yaml"
+
         with open(cfg_path, "w") as f:
             yaml.dump(self.configs, f)
 

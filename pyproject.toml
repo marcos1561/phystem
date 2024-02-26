@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phystem"
+version = "0.0.1"
+authors = [
+  { name="Marcos Pasa", email="marcos.pasa@ufrgs.br" },
+]
+description = "O phystem é uma estrutura para auxiliar na construção e exploração de sistemas físicos."
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "pyyaml",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["phystem.cpp.*", "tests*"]
+
+[project.urls]
+Homepage = "https://github.com/marcos1561/phystem"

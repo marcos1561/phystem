@@ -109,7 +109,6 @@ class Collector(LastState):
             
 def collect_pipeline(sim: Simulation, cfg: PipelineCfg):
     collect_cfg: CollectDataCfg = sim.run_cfg
-    
     solver = sim.solver
     
     if collect_cfg.checkpoint:

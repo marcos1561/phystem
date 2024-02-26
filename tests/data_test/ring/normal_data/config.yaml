@@ -27,10 +27,11 @@ dynamic_cfg: !!python/object:phystem.systems.ring.configs.RingCfg
   diameter: 1
   k_area: 5
   k_format: -1
+  k_invasion: -1
   max_dist: 1.1666
   mobility: 1
   p0: 4.743416490252569
-  k_invasion: -1
+  p0_format: -1
   relax_time: 1
   rep_force: 30
   rot_diff: 0.1
@@ -49,11 +50,7 @@ run_cfg: !!python/object:phystem.core.run_config.CollectDataCfg
   - 1
   int_cfg: !!python/object:phystem.systems.ring.run_config.IntegrationCfg
     dt: 0.0005
-    in_pol_checker: !!python/object:phystem.systems.ring.run_config.InPolCheckerCfg
-      disable: true
-      num_col_windows: 3
-      num_rows_windows: 3
-      update_freq: 1
+    in_pol_checker: null
     integration_type: !!python/object/apply:phystem.systems.ring.run_config.IntegrationType
     - 0
     particle_win_cfg: null

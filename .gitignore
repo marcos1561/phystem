@@ -2,19 +2,21 @@
 *cpp_lib.cpython*
 data
 random_stuff
+*egg-info*
+dist
 
-user/ring/area_test/data
-user/ring/checkpoint
-user/ring/stress
-user/ring/ring_intersect
-user/ring/stokes/videos
-user/ring/stokes/big_test
-user/ring/stokes/data_test
+examples/ring/area_test/data
+examples/ring/checkpoint
+examples/ring/stress
+examples/ring/ring_intersect
+examples/ring/stokes/videos
+examples/ring/stokes/big_test
+examples/ring/stokes/data_test
 
-user/ring/invagination/videos
+examples/ring/invagination/videos
 
-tests/data_test/ring/test
+tests/data_test/ring/test/*
 
-lib/phystem/cpp/tests_ui/build
-lib/phystem/cpp/tests_ui/ui/build
-lib/phystem/cpp/tests_ui/ui/deps
+src/phystem/cpp/tests_ui/build
+src/phystem/cpp/tests_ui/ui/build
+src/phystem/cpp/tests_ui/ui/deps

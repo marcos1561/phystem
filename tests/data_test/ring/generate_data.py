@@ -20,6 +20,8 @@ def generate_normal_data():
         p0=3.5449077018, # Círculo
         area0=40,
 
+        k_invasion=-1,
+
         diameter  = 1,
         max_dist  = 1 + 0.1666,
         rep_force = 30,
@@ -68,6 +70,7 @@ def generate_normal_data():
     )
 
     sim = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=collect_data_cfg, rng_seed=seed)
+    # sim.save_cfgs("normal_data/config")
     sim.run()
 
 generate_normal_data()

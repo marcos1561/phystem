@@ -92,8 +92,6 @@ class Creator(CreatorCore):
             pos.append(ring_pos.T)
             self_prop_angle.append(ring_self_prop_angle)
 
-        print(np.array(pos))
-        print(np.array(self_prop_angle))
         return InitData(np.array(pos), np.array(self_prop_angle))
 
 class InvaginationCreator(CreatorCore):

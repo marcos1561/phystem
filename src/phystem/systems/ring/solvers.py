@@ -2,7 +2,7 @@ import numpy as np
 
 from phystem.core.run_config import ReplayDataCfg
 from phystem.systems.ring.configs import RingCfg, SpaceCfg, StokesCfg
-from phystem.systems.ring.run_config import IntegrationCfg, UpdateType, IntegrationType, ParticleWindows
+from phystem.systems.ring.run_config import IntegrationCfg, UpdateType, IntegrationType, ParticleWindows, InPolCheckerCfg
 from phystem import cpp_lib
 
 class CppSolver:
@@ -14,7 +14,9 @@ class CppSolver:
         if rng_seed is None:
             rng_seed = -1
         if int_cfg.particle_win_cfg is None:
-            int_cfg.particle_win_cfg = ParticleWindows(-1, -1, -1)
+            int_cfg.particle_win_cfg = ParticleWindows(3, 3, -1)
+        if int_cfg.in_pol_checker is None:
+            int_cfg.in_pol_checker = InPolCheckerCfg(3, 3, 1, True)
 
         dynamic_cfg = cpp_lib.configs.RingCfg(dynamic_cfg.cpp_constructor_args())
         

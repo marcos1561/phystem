@@ -42,11 +42,13 @@ class ParticleWindows:
 class IntegrationCfg(run_config.IntegrationCfg):
     def __init__(self, dt: float, particle_win_cfg: ParticleWindows=None, 
         integration_type=IntegrationType.euler, solver_type=SolverType.CPP, update_type=UpdateType.PERIODIC_NORMAL,
-        in_pol_checker=InPolCheckerCfg(3, 1, True)) -> None:
+        in_pol_checker=None) -> None:
         if update_type == UpdateType.PERIODIC_WINDOWS and particle_win_cfg is None:
             raise ValueError("'particle_win_cfg' deve ser especificado.")
 
         super().__init__(dt, solver_type)
+        
+        
         self.update_type = update_type
         self.particle_win_cfg = particle_win_cfg
         self.integration_type = integration_type
