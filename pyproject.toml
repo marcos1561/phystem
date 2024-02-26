@@ -19,6 +19,8 @@ classifiers = [
 ]
 dependencies = [
     "pyyaml",
+    "matplotlib",
+    "numpy",
 ]
 
 [tool.setuptools.packages.find]

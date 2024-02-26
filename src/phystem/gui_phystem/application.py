@@ -134,5 +134,6 @@ class AppCore:
 
     def on_closing(self):
         self.to_run = False
-        self.solver_thread.join()
+        if self.solver_thread.is_alive():
+            self.root.after(100, self.on_closing)
         self.root.destroy()

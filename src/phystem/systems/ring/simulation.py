@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 
 from phystem.core.simulation import SimulationCore
 from phystem.core.solvers import SolverCore
@@ -76,9 +76,9 @@ class Simulation(SimulationCore):
         real_time_cfg: RealTimeCfg = self.run_cfg
         graph_cfg: GraphCfg = real_time_cfg.graph_cfg
 
-        fig, ax = plt.subplots()
-        print(real_time_cfg.ui_settings.dpi)
-        fig.set_dpi(real_time_cfg.ui_settings.dpi)
+        # fig, ax = plt.subplots()
+        fig = Figure(dpi=real_time_cfg.ui_settings.dpi)
+        ax = fig.add_subplot()
 
         ## Creates graphs ###
         particles_graph = MainGraph(
