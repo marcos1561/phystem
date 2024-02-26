@@ -136,4 +136,5 @@ class AppCore:
         self.to_run = False
         if self.solver_thread.is_alive():
             self.root.after(100, self.on_closing)
+            return
         self.root.destroy()
