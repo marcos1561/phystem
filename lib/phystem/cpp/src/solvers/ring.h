@@ -65,6 +65,7 @@ public:
     double k_area;
     double k_format;
     double p0;
+    double p0_format;
     double area0;
     double p_target;
     
@@ -284,6 +285,7 @@ public:
         k_area = dynamic_cfg.k_area;
         k_format = dynamic_cfg.k_format;
         p0 = dynamic_cfg.p0;
+        p0_format = dynamic_cfg.p0_format;
         area0 = dynamic_cfg.area0;
         p_target = p0 * sqrt(area0);
 
@@ -416,6 +418,7 @@ public:
         calc_center_mass();
         windows_manager.update_window_members();
         in_pol_checker.update();
+        recalculate_rings_ids();
     }
 
     void init_invagination(int height, int length, double upper_k, double bottom_k) {
@@ -425,15 +428,33 @@ public:
             inv_is_lfix[i] = false;
         }
 
-        for (int j = 0; j < length-1; j++) {
-            inv_spring_k[2*height + length - 3 + j] = upper_k;
-            inv_spring_k[height - 1 + j] = bottom_k;
+        // Ring of rings
+        for (int j = 0; j < length; j++) {
+            inv_spring_k[j] = bottom_k;
         }
         
-        for (int j = 0; j < height; j++) {
-            inv_is_lfix[j] = true;
-            inv_is_rfix[height+length-2+j] = true;
+        int id = length+height-2;
+        while (id < (num_particles - height + 2)) {
+            inv_spring_k[id] = upper_k;
+            id ++;
         }
+        
+        for (int i = 0; i < num_particles; i++)
+        {
+            std::cout << i << ": " << inv_spring_k[i] << std::endl;
+        }
+        
+
+        // Fix borders
+        // for (int j = 0; j < length-1; j++) {
+        //     inv_spring_k[2*height + length - 3 + j] = upper_k;
+        //     inv_spring_k[height - 1 + j] = bottom_k;
+        // }
+        
+        // for (int j = 0; j < height; j++) {
+        //     inv_is_lfix[j] = true;
+        //     inv_is_rfix[height+length-2+j] = true;
+        // }
     }
 
     void recalculate_rings_ids() {
@@ -500,14 +521,21 @@ public:
 
     double periodic_dist(double &dx, double &dy) {
         /**
-         * Retorna a distância, considerando as bordas periódicas, para a 
-         * diferença entre dois pontos (sem considerar as bordas periódicas) dados por "dx" e "dy".
+         * Retorna a distância baseado no tipo de atualização.
          * 
-         * OBS: Esse método atualiza 'dx' e 'dy' para ficarem de acordo com as bordas periódicas.
+         * -> stokes
+         *  Distância cartesiana.
          * 
-         * NOTE: Quando o espaço não for um quadrado, é necessário
-         * usar box_width para o dx e box_height para o dy.       
+         * -> periodic_boarder | invagination
+         *  Distância considerando as bordas periódicas, dado a 
+         *  diferença entre dois pontos (sem considerar as bordas periódicas) "dx" e "dy".
+         *  
+         *  OBS: Esse método atualiza 'dx' e 'dy' para ficarem de acordo com as bordas periódicas.
         */
+        if (update_type == RingUpdateType::stokes) {
+            return sqrt(dx*dx + dy*dy);
+        } 
+
         if (abs(dx) > length * 0.5)
             dx -= copysign(length, dx);
 
@@ -543,10 +571,6 @@ public:
         //===
         // Forças lineares atrativas e repulsivas
         //===
-        // double max_dist = 1.2;
-        // double rep_force = 30;
-        // double adh_force = 0.75;
-
         if (dist > max_dist) {
             return;
         }
@@ -790,10 +814,10 @@ public:
             area_debug.count_overlap += 1;
         #endif
 
-        double delta_area = area - (perimeter/p0) * (perimeter/p0);
+        double delta_area = area - (perimeter/p0_format) * (perimeter/p0_format);
 
-        double area_0_deriv_x =  2.0 * perimeter / (p0*p0) * ((v1[0] - point[0]) / d1 +  (v2[0] - point[0]) / d2);
-        double area_0_deriv_y =  2.0 * perimeter / (p0*p0) * ((v1[1] - point[1]) / d1 +  (v2[1] - point[1]) / d2);
+        double area_0_deriv_x =  2.0 * perimeter / (p0_format*p0_format) * ((v1[0] - point[0]) / d1 +  (v2[0] - point[0]) / d2);
+        double area_0_deriv_y =  2.0 * perimeter / (p0_format*p0_format) * ((v1[1] - point[1]) / d1 +  (v2[1] - point[1]) / d2);
         
         double gradient_x = k_format * delta_area * ((v2[1] - v1[1])/2.0 + area_0_deriv_x);
         double gradient_y = k_format * delta_area * (-(v2[0] - v1[0])/2.0 + area_0_deriv_y);
@@ -1271,19 +1295,19 @@ public:
         {
             int ring_id = rings_ids[i];
             for (int i=0; i < num_particles; i++) {
-                if (update_type == RingUpdateType::invagination) {
-                    bool skip = false;
-                    if ((ring_id == 0) && (inv_is_lfix[i]))
-                        skip = true;
-                    else if ((ring_id == num_active_rings-1) && (inv_is_rfix[i]))
-                        skip = true;
+                // if (update_type == RingUpdateType::invagination) {
+                //     bool skip = false;
+                //     if ((ring_id == 0) && (inv_is_lfix[i]))
+                //         skip = true;
+                //     else if ((ring_id == num_active_rings-1) && (inv_is_rfix[i]))
+                //         skip = true;
 
-                    if (skip) {
-                        sum_forces_matrix[ring_id][i][0] = 0.f;
-                        sum_forces_matrix[ring_id][i][1] = 0.f;
-                        continue;
-                    }
-                }
+                //     if (skip) {
+                //         sum_forces_matrix[ring_id][i][0] = 0.f;
+                //         sum_forces_matrix[ring_id][i][1] = 0.f;
+                //         continue;
+                //     }
+                // }
 
                 calc_derivate(vel_i[0], vel_i[1], angle_deriv_i, ring_id, i);
 
@@ -1345,6 +1369,10 @@ public:
             if (center_mass[ring_id][0] > remove_border) {
                 remove_ring(ring_id);
             }
+        }
+
+        if (to_recalculate_ids == true) {
+            recalculate_rings_ids();
         }
     }
 
@@ -1694,7 +1722,9 @@ public:
         #if DEBUG == 1
         rng_manager.update();
 
-        for (auto ring_id: rings_ids) {
+        int ring_id;
+        for (int i = 0; i < num_active_rings; i++) {
+            ring_id = rings_ids[i];
             calc_differences(ring_id);
         }
         #endif

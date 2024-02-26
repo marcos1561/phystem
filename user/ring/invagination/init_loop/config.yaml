@@ -1,75 +1,57 @@
 creator_cfg: !!python/object:phystem.systems.ring.configs.InvaginationCreatorCfg
   diameter: 1
   height: 8
-  length: 9
-  num_p: 30
-  num_rings: 13
+  length: 15
+  num_p: 42
+  num_rings: 30
 dynamic_cfg: !!python/object:phystem.systems.ring.configs.RingCfg
-  adh_force: 30
-  area0: 71.61972439179868
+  adh_force: 25
+  area0: 140.37465980792538
   area_potencial: target_area_and_format
   diameter: 1
   k_area: 2
   k_format: 0.1
   k_invasion: 12
-  max_dist: 1.266
+  max_dist: 1.166
   mobility: 1
   p0: 3.5449077018
-  relax_time: 1
+  p0_format: 3.5449077018
+  relax_time: 100
   rep_force: 30
   rot_diff: 0.1
-  spring_k: 8
+  spring_k: 5
   spring_r: 0.7
-  trans_diff: 0.1
+  trans_diff: 0.0
   vo: 1
 other_cfgs:
   invagination: !!python/object:phystem.systems.ring.configs.InvaginationCfg
-    bottom_k: 4.0
-    upper_k: 16
+    bottom_k: 2.5
+    upper_k: 15
 rng_seed: null
-run_cfg: !!python/object:phystem.core.run_config.SaveCfg
+run_cfg: !!python/object:phystem.core.run_config.CollectDataCfg
   checkpoint: null
-  duration: 8
-  fps: 30
-  graph_cfg: !!python/object:phystem.systems.ring.ui.graph.GraphCfg
-    begin_paused: false
-    cpp_is_debug: true
-    force_to_color:
-      area: green
-      spring: red
-      total: black
-      vol: blue
-    pause_on_high_vel: false
-    show_center_mass: false
-    show_circles: true
-    show_f_area: false
-    show_f_spring: false
-    show_f_total: false
-    show_f_vol: false
-    show_inside: false
-    show_pos_cont: false
+  folder_path: init_loop
+  func: nao salvo
+  func_cfg: null
+  func_id: null
   int_cfg: !!python/object:phystem.systems.ring.run_config.IntegrationCfg
-    dt: 0.005
+    dt: 0.001
     in_pol_checker: !!python/object:phystem.systems.ring.run_config.InPolCheckerCfg
       disable: false
-      num_col_windows: 5
-      num_rows_windows: 5
+      num_col_windows: 10
+      num_rows_windows: 10
       update_freq: 100
     integration_type: !!python/object/apply:phystem.systems.ring.run_config.IntegrationType
     - 0
     particle_win_cfg: !!python/object:phystem.systems.ring.run_config.ParticleWindows
-      num_cols: 10
-      num_rows: 15
+      num_cols: 103
+      num_rows: 103
       update_freq: 1
     solver_type: !!python/object/apply:phystem.core.run_config.SolverType
     - 2
     update_type: !!python/object/apply:phystem.systems.ring.run_config.UpdateType
     - 4
-  num_frames: 240
-  num_steps_frame: 200
-  path: ./invagination.mp4
-  speed: 30
-  tf: 240.0
+  tf: 30
 space_cfg: !!python/object:phystem.systems.ring.configs.SpaceCfg
-  height: 104
-  length: 128.70000000000002
+  height: 430.5047505077533
+  length: 430.5047505077533

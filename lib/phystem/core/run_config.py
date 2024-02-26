@@ -287,8 +287,8 @@ class SaveCfg(RunCfg):
     Salva um vídeo da simulação.
     '''
     id = RunType.SAVE_VIDEO
-    def __init__(self, int_cfg: IntegrationCfg, path:str, speed: float, fps: int, duration: float = None, 
-        tf: float = None, num_frames=None, graph_cfg=None, checkpoint: CheckpointCfg=None) -> None:  
+    def __init__(self, int_cfg: IntegrationCfg, path:str, fps: int, speed: float=None, duration: float = None, 
+        tf: float = None, num_frames=None, graph_cfg=None, ui_settings=UiSettings(), checkpoint: CheckpointCfg=None) -> None:  
         '''
         Salva um vídeo da simulação em `path`. Ao menos um dos seguintes parâmetros deve ser 
         especificado:
@@ -329,8 +329,17 @@ class SaveCfg(RunCfg):
                 não é carregado.
         '''
         super().__init__(int_cfg, checkpoint)
+        self.ui_settings = ui_settings
+
         if duration == None and tf == None:
             raise ValueError("Um dos parâmetros `duration` ou `tf` deve ser passado.")
+        
+        if speed == None: 
+            if (duration is None or tf is None):
+                raise ValueError(f"Se 'speed=None' então 'duration' e 'tf' devem ser passados.")
+
+            speed = tf/duration
+
         self.speed = speed
         self.path = path
         self.fps = fps
@@ -343,6 +352,7 @@ class SaveCfg(RunCfg):
             self.duration = duration
             self.num_frames = int(duration * fps)
             self.tf = self.num_frames * self.num_steps_frame * dt
+            # tf = s * d => s = tf/d  
         elif tf != None:
             self.tf = tf
             

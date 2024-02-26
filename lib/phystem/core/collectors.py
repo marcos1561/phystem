@@ -27,9 +27,12 @@ class Collector(ABC):
         self.solver = solver
         self.configs = configs
         self.path = path
+        self.config_path = os.path.join(self.path, "config.yaml")
         
         if not os.path.exists(path):
             raise ValueError(f"O caminho {path} não existe.")
+        
+        self.save_cfg()
 
     @abstractmethod
     def collect(self, count: int) -> None:
@@ -43,13 +46,9 @@ class Collector(ABC):
         '''
         pass
 
-    def save(self) -> None:
-        '''
-        Essa função deve salvar os dados coletados, por padrão ela salva 
-        as configurações.
-        '''
-        config_path = os.path.join(self.path, "config.yaml")
-        with open(config_path, "w") as f:
+    def save_cfg(self) -> None:
+        '''Salva as configurações da simulação.'''
+        with open(self.config_path, "w") as f:
             yaml.dump(self.configs, f)
     
 class State(Collector):

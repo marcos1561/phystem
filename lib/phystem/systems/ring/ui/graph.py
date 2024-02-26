@@ -191,9 +191,12 @@ class MainGraph:
         self.ax.plot([ l, -l], [ h,  h], color="black")
         self.ax.plot([ l, -l], [-h, -h], color="black")
 
-        self.points = [self.ax.scatter(*ring_pos_t, s=16, zorder=2) for ring_pos_t in self.pos_t]
+        points_s = 5
+
+        # self.points = [self.ax.scatter(*ring_pos_t, s=16, zorder=2) for ring_pos_t in self.pos_t]
+        self.points = [self.ax.scatter(*ring_pos_t, s=points_s, zorder=2) for ring_pos_t in self.pos_t]
         # self.points = [self.ax.scatter(*self.pos_t[ring_id], s=16, zorder=2) for ring_id in self.rings_ids[:self.num_active_rings]]
-        self.ith_points = self.ax.scatter(*self.get_ith_points(), c="black", s=22, zorder=2)
+        self.ith_points = self.ax.scatter(*self.get_ith_points(), c="black", s=points_s, zorder=2)
 
         inside_points_arr = np.array(self.solver.in_pol_checker.inside_points).T
         if inside_points_arr.size == 0:
@@ -232,7 +235,7 @@ class MainGraph:
                 ring_lines = LineCollection(self.get_segments(ring_id),
                     norm=colors.Normalize(self.dynamic_cfg.spring_r - dr , self.dynamic_cfg.spring_r + dr),
                     cmap=colors.LinearSegmentedColormap.from_list("spring_tension", ["blue", "black", "red"]),
-                    linewidths=3,
+                    linewidths=1,
                     zorder=1,
                 )
                 self.lines.append(ring_lines)

@@ -92,6 +92,8 @@ class Creator(CreatorCore):
             pos.append(ring_pos.T)
             self_prop_angle.append(ring_self_prop_angle)
 
+        print(np.array(pos))
+        print(np.array(self_prop_angle))
         return InitData(np.array(pos), np.array(self_prop_angle))
 
 class InvaginationCreator(CreatorCore):
@@ -107,7 +109,9 @@ class InvaginationCreator(CreatorCore):
         self.num_p = num_p
         
 
-    def create(self) -> None:
+    def create(self):
+        return self.loop()
+
         pos = np.zeros((self.num_rings, self.num_p, 2))
         # self_prop_angle = np.zeros((self.num_rings, self.num_p))
         self_prop_angle = np.random.random((self.num_rings, self.num_p)) * 2 * np.pi
@@ -153,20 +157,93 @@ class InvaginationCreator(CreatorCore):
 
         return InitData(pos, self_prop_angle)
 
+    def loop(self):
+        from scipy import optimize
+        from math import cos, sin, floor
+
+        num_rings = self.num_rings
+        num_p_int= self.length
+        num_p_height = self.height
+        d = self.diameter
+        
+        theta = 2*np.pi/num_rings
+        r0 = d*num_p_int / (2 * sin(theta/2))
+
+        def func(r):
+            t1 = (r * (cos(theta) - 1) + sin(theta) * d/2)**2
+            t2 = (r * sin(theta) - (cos(theta) + 1) * d/2)**2
+            c = (num_p_int-1)**2 * d**2 
+            return t1 + t2 - c
+
+        r = optimize.fsolve(func, r0)[0]
+
+        rot_matrix = np.array([
+            [cos(theta), -sin(theta)],
+            [sin(theta), cos(theta)],
+        ])
+
+        p1 = np.array([r, d/2])
+        p2 = rot_matrix.dot(np.array([r, -d/2]))
+
+        pos_base = []
+        for i in range(num_p_int):
+            center_i = (p1 - p2)/np.linalg.norm((p1 - p2)) * d/2 * (i*2) + p2
+            pos_base.append(center_i)
+        
+        for i in range(1, num_p_height):
+            center_i = p1 + np.array([1, 0]) * i*d
+            pos_base.append(center_i)
+
+        left_r_dir = rot_matrix.dot(np.array([1, 0]))
+        
+        p3 = pos_base[-1]
+        p4 = p2 + left_r_dir * (num_p_height -1 ) * d
+
+        outer_l = np.linalg.norm(p3 - p4) - d
+
+        num_p_outer = floor(outer_l/d - 1)
+
+        outer_dir = (p4-p3) / np.linalg.norm(p4-p3)
+        for i in range(num_p_outer):
+            center_i = p3 + outer_dir * (d/2 + (2*i + 1)*outer_l/num_p_outer/2)
+            pos_base.append(center_i)
+
+        for i in range(num_p_height-1):
+            center_i = p4 - left_r_dir * i * d
+            pos_base.append(center_i)
+
+        pos_base = np.array(pos_base)
+        pos = [pos_base]
+        for i in range(1, num_rings):
+            pos.append(rot_matrix.dot(pos[-1].T).T)
+
+        pos = np.array(pos)
+        self_prop_angle = np.random.random((num_rings, pos.shape[1])) * 2 * np.pi
+
+        # import matplotlib.pyplot as plt
+        # plt.scatter(*pos.T)
+        # plt.show()
+
+        print(pos.shape)
+        return InitData(pos, self_prop_angle)
+
 
 class CreatorRD(CreatorCore):
     def create(self) -> None:
         pass
+    
 
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
+    num_rings = 1
+    num_p = 1
+    height = 1
+    length = 1
+    diameter = 1
 
-    creator = InvaginationCreator(3, 4, 5, 1)
+    print(Creator(0, 30, [3], [0], [0, 0]).create().pos.shape[0])
+    # creator = InvaginationCreator(num_rings, num_p, height, length, diameter)
+    # creator.loop()
 
-    pos = creator.create()
-    for ring in pos:
-        plt.scatter(*ring.T)
 
-    plt.show()
 
 

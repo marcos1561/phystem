@@ -8,6 +8,10 @@ user/ring/checkpoint
 user/ring/stress
 user/ring/ring_intersect
 user/ring/stokes/videos
+user/ring/stokes/big_test
+user/ring/stokes/data_test
+
+user/ring/invagination/videos
 
 tests/data_test/ring/test
 

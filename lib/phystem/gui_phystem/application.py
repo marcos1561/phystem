@@ -119,8 +119,8 @@ class AppCore:
             
 
     def update_ui(self, *args):
-        if not self.control.control_mng.is_paused:
-            self.canvas.draw()
+        # if not self.control.control_mng.is_paused:
+        self.canvas.draw()
         
         self.info.update()
 

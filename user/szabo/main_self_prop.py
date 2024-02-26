@@ -8,9 +8,9 @@ from phystem.systems.szabo.run_config import GraphCfg, IntegrationCfg, UpdateTyp
 self_propelling_cfg = SelfPropellingCfg(
     mobility = 1.,
     relaxation_time = 1.,
-    nabla = 1,
-    vo = 1.,
-    max_repulsive_force = 30,
+    nabla = 0.6,
+    vo = 0.5,
+    max_repulsive_force = 10,
     max_attractive_force = 0.75,
     r_eq =  5/6,
     max_r = 1.,
@@ -20,7 +20,7 @@ space_cfg = SpaceCfg(
     # size = 18.2574185,
     # size = 57.73502691, # 0.3
     # size = 40.824829046, # 0.6
-    size = 40*10, # 0.6
+    size = 90, # 0.6
 )
 
 creator_cfg = CreatorCfg(
@@ -29,20 +29,20 @@ creator_cfg = CreatorCfg(
     type = CreateType.SQUARE,
 )
 
-seed = 40028922
-# seed=None
+# seed = 40028922
+seed=None
 
 run_type = RunType.REAL_TIME
 
 real_time_cfg = RealTimeCfg(
     int_cfg= IntegrationCfg(
         dt = 0.01,
-        num_col_windows=10,
+        num_col_windows=80,
         solver_type = SolverType.CPP,
         update_type = UpdateType.WINDOWS,
     ),
     num_steps_frame = 10,
-    fps = 60,
+    fps = 120,
     graph_cfg = GraphCfg(
         show_circles=False),
 )

@@ -11,16 +11,22 @@ from phystem.systems.ring.ui.graph import GraphCfg
 
 
 dynamic_cfg = RingCfg(
-    spring_k=6,
+    spring_k=8,
     spring_r=0.7,
     
-    area_potencial="format",
+    area_potencial="target_area_and_format",
     k_area=2,
+    
+    k_format=0.1,
+    p0_format=3.5449 * 1, # Círculo
+    
     # p0=4.828427, # Triângulo retângulo
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
     p0=3.5449077018*1.000, # Círculo
-    area0=53,
+    # area0=53,
+
+    k_invasion=10,
 
     diameter  = 1,
     max_dist  = 1 + 0.1666,
@@ -73,8 +79,8 @@ real_time_cfg = RealTimeCfg(
         update_type=UpdateType.PERIODIC_WINDOWS,
         in_pol_checker=InPolCheckerCfg(3, 3, 200),
     ),
-    num_steps_frame=400,
-    fps=600,
+    num_steps_frame=500,
+    fps=30,
     graph_cfg = GraphCfg(
         show_circles      = True,
         show_f_spring     = False,

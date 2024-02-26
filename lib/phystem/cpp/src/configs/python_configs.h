@@ -32,6 +32,7 @@ public:
         k_area = py::float_(values["k_area"]);
         k_format = py::float_(values["k_format"]);
         p0 = py::float_(values["p0"]);
+        p0_format = py::float_(values["p0_format"]);
         area0 = py::float_(values["area0"]);
 
         k_invasion = py::float_(values["k_invasion"]);

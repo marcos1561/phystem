@@ -29,6 +29,7 @@ public:
     float k_area;
     float k_format;
     float p0;
+    float p0_format;
     float area0;
 
     float k_invasion;
@@ -48,11 +49,11 @@ public:
 
     RingCfg() {};
 
-    RingCfg(float spring_k, float spring_r, AreaPotencialType area_potencial, float k_area, float k_format, float p0, float area0, 
-        float k_invasion, float mobility, float relax_time, float vo, float trans_diff, float rot_diff, float diameter,
-        float max_dist, float rep_force, float adh_force, float flux_force)
+    RingCfg(float spring_k, float spring_r, AreaPotencialType area_potencial, float k_area, float k_format, float p0, float p0_format,
+        float area0, float k_invasion, float mobility, float relax_time, float vo, float trans_diff, float rot_diff, 
+        float diameter, float max_dist, float rep_force, float adh_force, float flux_force)
     : spring_k(spring_k), spring_r(spring_r), area_potencial(area_potencial), k_area(k_area), k_format(k_format), 
-    p0(p0), area0(area0), k_invasion(k_invasion), mobility(mobility), relax_time(relax_time), vo(vo), trans_diff(trans_diff), 
+    p0(p0), p0_format(p0_format), area0(area0), k_invasion(k_invasion), mobility(mobility), relax_time(relax_time), vo(vo), trans_diff(trans_diff), 
     rot_diff(rot_diff), diameter(diameter), max_dist(max_dist), rep_force(rep_force), adh_force(adh_force) {};
 };
  

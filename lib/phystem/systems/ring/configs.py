@@ -13,23 +13,33 @@ class RingCfg:
 
     def __init__(self,  spring_k, spring_r, area_potencial, mobility, relax_time,
         vo, trans_diff, rot_diff, diameter, max_dist, rep_force, adh_force, k_invasion,
-        p0=None, area0=None, k_format=None, k_area=None) -> None:
+        p0=None, p0_format=None, area0=None, k_format=None, k_area=None) -> None:
+        valid_potencials = ["target_area", "target_area_and_format", "format", "target_perimeter"]
+        if area_potencial not in valid_potencials:
+            raise ValueError(f"Potencial '{area_potencial}' não válido. Os valores permitidos são {valid_potencials}")
+
         if p0 is None and area0 is None:
             raise Exception("Ao menos um dos parâmetros 'p0' e 'area0' devem ser setados.")
 
         has_format = area_potencial in ["format", "target_area_and_format"]
         has_target_area = area_potencial in ["target_area", "target_area_and_format"]
 
-        if has_format and k_format is None:
-            raise ValueError("'k_format' deve ser especificado para o potencial.")
+        if has_format:
+            if k_format is None:
+                raise ValueError(f"'k_format' deve ser especificado para o potencial '{area_potencial}'.")
+            if p0_format is None:
+                raise ValueError(f"'p0_format' deve ser especificado para o potencial '{area_potencial}'.")
+        
         if has_target_area and k_area is None:
             raise ValueError("'k_area' deve ser especificado para o potencial.")
 
         if area_potencial == "format":
             area0 = -1
+            p0 = -1
             k_area = -1
-        if area_potencial == "target_area":
+        if not has_format:
             k_format = -1
+            p0_format = -1
 
         self.spring_k = spring_k
         self.spring_r = spring_r
@@ -38,6 +48,7 @@ class RingCfg:
         self.k_area = k_area
         self.k_format = k_format
         self.p0 = p0
+        self.p0_format = p0_format
         self.area0 = area0
 
         self.k_invasion = k_invasion
@@ -55,6 +66,7 @@ class RingCfg:
         self.adh_force = adh_force
       
     def adjust_area_pars(self, num_particles: int):
+        print("adjust:", num_particles)
         if self.area_potencial in ["target_area", "target_area_and_format"]:
             perimeter = num_particles * self.diameter
             if self.area0 is None:
@@ -89,6 +101,7 @@ class RingCfg:
             "k_format": self.k_format,
             "area_potencial": self.area_potencial,
             "p0": self.p0,
+            "p0_format": self.p0_format,
             "area0": self.area0,
             "k_invasion": self.k_invasion,
             "mobility": self.mobility,
@@ -197,12 +210,19 @@ class InvaginationCreatorCfg:
 
     def __init__(self, num_rings: int, height: int, length: int, diameter: float) -> None:
         self.num_rings = num_rings
-        self.num_p =  2 * (height + length) - 4
 
         self.height = height
         self.length = length
         self.diameter = diameter
         
+        self.num_p = None
+
+    @property
+    def ring_radius(self):
+        from math import pi, sin
+        theta = 2*pi/self.num_rings
+        return self.diameter*self.length / (2 * sin(theta/2))
+
     def get_pars(self):
         return {
             "num_rings": self.num_rings,

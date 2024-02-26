@@ -13,8 +13,9 @@ class ProgressType:
     nothing = 2
 
 class Progress(ABC):
-    def __init__(self, end: float, step: int) -> None:
-        self.end = end
+    def __init__(self, end: float, start=0) -> None:
+        self.start = start
+        self.total = end - start
         self.start_time = time.time()
 
         self.has_inform_first_estimate = False
@@ -38,10 +39,11 @@ class Progress(ABC):
             return False
 
     def update(self, t: float):
+        t -= self.start
         p_type = self.get_progress_type(t)
 
         if p_type == ProgressType.mid:
-            p = t/self.end * 100
+            p = t/self.total * 100
 
             slope = 0
             if p > 0:
@@ -58,7 +60,7 @@ class Progress(ABC):
 
 class Discrete(Progress):
     def __init__(self, end: int, step: int) -> None:
-        super().__init__(end, step)
+        super().__init__(end)
         self.count_step = int(end * step/100)
         if self.count_step == 0:
             self.count_step = 1
@@ -70,16 +72,16 @@ class Discrete(Progress):
                 self.has_inform_first_estimate = True
 
             return ProgressType.mid
-        elif t >= self.end:
+        elif t >= self.total:
             return ProgressType.end
         else:
             return ProgressType.nothing
 
 class Continuos(Progress):
-    def __init__(self, end: float, step: int = 10) -> None:
-        super().__init__(end, step)
+    def __init__(self, end: float, start=0, step: int = 10) -> None:
+        super().__init__(end, start)
 
-        self.interval_lims: np.ndarray = np.linspace(0, end, step)
+        self.interval_lims: np.ndarray = np.linspace(0, end-start, step)
         self.interval_mask = np.zeros(self.interval_lims.size-1)
 
     def where_interval(self, t: float) -> int:

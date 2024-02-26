@@ -130,11 +130,15 @@ class LastState(collectors.Collector):
     def collect(self, count: int) -> None:
         pass
 
-    def save(self) -> None:
-        super().save()
-        pos_path = os.path.join(self.path, "pos.npy")
-        angle_path = os.path.join(self.path, "angle.npy")
+    def save(self, pos_name="pos", angle_name="angle", ids_name="ids", directory=None) -> None:
+        if directory is None:
+            directory = self.path
+
+        pos_path = os.path.join(directory, pos_name + ".npy")
+        angle_path = os.path.join(directory, angle_name + ".npy")
+        ids_path = os.path.join(directory, ids_name + ".npy")
 
         ring_ids = self.solver.rings_ids[:self.solver.num_active_rings]
         np.save(pos_path, np.array(self.solver.pos)[ring_ids])
         np.save(angle_path, np.array(self.solver.self_prop_angle)[ring_ids])
+        np.save(ids_path, ring_ids)

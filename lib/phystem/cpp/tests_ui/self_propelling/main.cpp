@@ -11,15 +11,15 @@ int main() {
     SolverCfg solver_cfg;
     
     solver_cfg.dt = 0.01;
-    solver_cfg.size = 80*10;
-    solver_cfg.n = 20000;
+    solver_cfg.size = 70;
+    solver_cfg.n = 3000;
     solver_cfg.seed = -1;
 
-    solver_cfg.num_cols_windows = 10;
+    solver_cfg.num_cols_windows = 60;
 
     SelfPropellingCfg self_prop_cfg;
         self_prop_cfg.max_attractive_force = 0.75; 
-        self_prop_cfg.max_repulsive_force = 30; 
+        self_prop_cfg.max_repulsive_force = 10; 
         self_prop_cfg.max_r = 1.0; 
         self_prop_cfg.r_eq = (5. / 6.); 
         self_prop_cfg.mobility = 1;

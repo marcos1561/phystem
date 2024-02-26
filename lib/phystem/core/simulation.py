@@ -47,16 +47,18 @@ class SimulationCore(ABC):
         self.rng_seed = rng_seed
         
         if self.run_cfg.checkpoint:
+            checkpoint_cfgs = self.run_cfg.checkpoint.configs
             if not self.run_cfg.checkpoint.override_cfgs:
-                checkpoint_cfgs = self.run_cfg.checkpoint.configs
-                
                 self.run_cfg.int_cfg = checkpoint_cfgs["run_cfg"].int_cfg 
                 self.creator_cfg = checkpoint_cfgs["creator_cfg"]
                 self.space_cfg = checkpoint_cfgs["space_cfg"]
                 self.dynamic_cfg = checkpoint_cfgs["dynamic_cfg"]
                 self.other_cfgs = checkpoint_cfgs["other_cfgs"]
                 self.rng_seed = checkpoint_cfgs["rng_seed"]
-
+            else:
+                # Mesmo sobrescrevendo as configurações, está sendo carregado um estado
+                # que foi gerado com as configurações do checkpoint.
+                self.creator_cfg = checkpoint_cfgs["creator_cfg"]
 
         self.configs_container = {
             "creator_cfg": self.creator_cfg,

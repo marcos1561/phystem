@@ -13,7 +13,8 @@ class IntegrationCfg(run_config.IntegrationCfg):
         if update_type == UpdateType.WINDOWS and num_col_windows is None:
             raise ValueError("'num_windows' deve ser especificado.")
 
-        super().__init__(dt, solver_type, update_type)
+        super().__init__(dt, solver_type)
+        self.update_type = update_type
         self.num_col_windows = num_col_windows
 
 class GraphCfg:
