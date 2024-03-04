@@ -87,8 +87,8 @@ collect_data_cfg = CollectDataCfg(
             update_type=UpdateType.STOKES,
             in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
     ), 
-    tf = 250 + 0.5 * 100,
-    folder_path="data_test_test",
+    tf=250 + 0.5 * 1000 ,
+    folder_path="data_test",
     func=pipeline.collect_pipeline,
     func_cfg=pipeline.PipelineCfg(
         checkpoint_period=20, 
@@ -100,15 +100,16 @@ collect_data_cfg = CollectDataCfg(
 )
 
 real_time_cfg = RealTimeCfg(
-     int_cfg=IntegrationCfg(
-            dt = 0.01,
-            particle_win_cfg=ParticleWindows(
-                num_cols=num_cols, num_rows=num_rows,
-                update_freq=1),
-            integration_type=IntegrationType.euler,
-            update_type=UpdateType.STOKES,
-            in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
-    ), 
+    #  int_cfg=IntegrationCfg(
+    #         dt = 0.01,
+    #         particle_win_cfg=ParticleWindows(
+    #             num_cols=num_cols, num_rows=num_rows,
+    #             update_freq=1),
+    #         integration_type=IntegrationType.euler,
+    #         update_type=UpdateType.STOKES,
+    #         in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
+    # ), 
+    int_cfg=collect_data_cfg.int_cfg,
     num_steps_frame=200,
     fps=30,
     graph_cfg = GraphCfg(
@@ -119,14 +120,14 @@ real_time_cfg = RealTimeCfg(
         show_f_total      = False,
         show_center_mass  = False,
         show_inside       = False,
-        begin_paused      = True,
+        begin_paused      = False,
         pause_on_high_vel = True,
         cpp_is_debug      = True
     ),
-    checkpoint=CheckpointCfg(
-        folder_path="data_test/checkpoint",
-        override_cfgs=False,
-    )
+    # checkpoint=CheckpointCfg(
+    #     folder_path="data_test/checkpoint",
+    #     override_cfgs=False,
+    # )
 )
 
 video_cfg = SaveCfg(

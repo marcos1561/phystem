@@ -57,6 +57,18 @@ struct UpdateDebug {
     bool high_vel;
 };
 
+class UniqueId {
+public:
+    unsigned long int max_id;
+    
+    UniqueId() : max_id(0) {}
+
+    unsigned long int new_id() {
+        max_id += 1;
+        return max_id;
+    }
+};
+
 class Ring {
 public:
     double spring_k;
@@ -88,7 +100,6 @@ public:
     double adh_force;
     double rep_force;
 
-
     Vector3d pos; // Posições das partículas
     vector<vector<double>> self_prop_angle; // Ângulo da direção da velocidade auto propulsora
     int num_particles;
@@ -96,6 +107,8 @@ public:
     int num_active_rings;
     vector<bool> mask;
     vector<int> rings_ids;
+    vector<unsigned long int> unique_rings_ids;
+    UniqueId unique_id_mng;
 
     Vector3d old_pos; 
     vector<vector<double>> old_self_prop_angle;
@@ -227,6 +240,9 @@ public:
         self_prop_angle =  vector<vector<double>>(num_max_rings, zero_vector_1d);
         mask = vector<bool>(num_max_rings);
         rings_ids = vector<int>(num_max_rings);
+        unique_rings_ids = vector<unsigned long int>(num_max_rings);
+
+        unique_id_mng = UniqueId();
 
         for (int i = 0; i < num_max_rings; i++)
         {   
@@ -236,6 +252,7 @@ public:
 
                 mask[i] = true;
                 rings_ids[i] = i;
+                unique_rings_ids[i] = unique_id_mng.new_id();
             } else {
                 mask[i] = false;
             }
@@ -487,7 +504,8 @@ public:
             if (mask[i] == false) {
                 pos[i] = stokes_init_pos[add_ring_id];
                 self_prop_angle[i] = stokes_init_self_angle;
-     
+                unique_rings_ids[i] = unique_id_mng.new_id();
+
                 mask[i] = true;
                 num_active_rings += 1;
                 to_recalculate_ids = true;
