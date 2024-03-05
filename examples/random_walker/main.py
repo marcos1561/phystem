@@ -21,8 +21,8 @@ run_cfg = RealTimeCfg(
     IntegrationCfg(
         dt=0.1,
     ),
-    num_steps_frame=1,
-    fps=60,
+    num_steps_frame=100,
+    fps=80,
 )
 
 # run_cfg = SaveCfg(

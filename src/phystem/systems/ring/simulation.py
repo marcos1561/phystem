@@ -9,7 +9,7 @@ from phystem.core.run_config import RunCfg, RunType, RealTimeCfg
 from phystem.systems.ring.configs import CreatorCfg, RingCfg, InvaginationCfg, InvaginationCreatorCfg
 from phystem.systems.ring.run_config import IntegrationCfg, UpdateType
 
-from phystem.systems.ring.ui.graph import MainGraph, GraphCfg
+from phystem.systems.ring.ui import graph_type, graphs_cfg
 from phystem.systems.ring.ui import ui_components
 
 
@@ -74,19 +74,22 @@ class Simulation(SimulationCore):
 
     def run_real_time(self):
         real_time_cfg: RealTimeCfg = self.run_cfg
-        graph_cfg: GraphCfg = real_time_cfg.graph_cfg
+        graph_cfg = real_time_cfg.graph_cfg
 
         # fig, ax = plt.subplots()
         fig = Figure(dpi=real_time_cfg.ui_settings.dpi)
         ax = fig.add_subplot()
 
-        ## Creates graphs ###
-        particles_graph = MainGraph(
-            ax=ax, solver=self.solver, space_cfg=self.space_cfg, dynamic_cfg=self.dynamic_cfg, 
-            graph_cfg=real_time_cfg.graph_cfg)
+        # particles_graph = graph_cfg.GraphCls(
+        #     ax=ax, solver=self.solver, space_cfg=self.space_cfg, dynamic_cfg=self.dynamic_cfg, 
+        #     graph_cfg=real_time_cfg.graph_cfg)
+        particles_graph = graph_type.get_graph(graph_cfg)(
+            ax=ax, solver=self.solver, sim_configs=self.configs_container,
+            graph_cfg=graph_cfg
+        )
 
         ## Initialize graphs ###
-        particles_graph.init()
+        # particles_graph.init()
 
         if graph_cfg.cpp_is_debug:
             self.solver.update_visual_aids()
@@ -110,10 +113,10 @@ class Simulation(SimulationCore):
                             control_mng.is_paused = True
                             break
 
-                    self.time_it.decorator(self.solver.update)
+                    self.time_it.decorator("solver", self.solver.update)
                     i += 1
                 
-            particles_graph.update()
+            self.time_it.decorator("graph", particles_graph.update)
 
         if self.run_cfg.id is RunType.SAVE_VIDEO:
             self.save_video(fig, update, ui_components.Control)
@@ -125,7 +128,7 @@ class Simulation(SimulationCore):
         from phystem.systems.ring.ui.mpl.widget import WidgetManager
 
         real_time_cfg: RealTimeCfg = self.run_cfg
-        graph_cfg: GraphCfg = real_time_cfg.graph_cfg
+        graph_cfg: graphs_cfg.BaseGraphCfg = real_time_cfg.graph_cfg
 
         fig, axes = self.configure_ui(real_time_cfg.id)
 

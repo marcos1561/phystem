@@ -7,7 +7,7 @@ from phystem.systems.ring.configs import *
 from phystem.core.run_config import RunType, CheckpointCfg
 from phystem.core.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, ReplayDataCfg
 from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType, ParticleWindows
-from phystem.systems.ring.ui.graph import GraphCfg
+from phystem.systems.ring.ui.graphs_cfg import *
 
 
 dynamic_cfg = RingCfg(
@@ -81,18 +81,19 @@ real_time_cfg = RealTimeCfg(
     ),
     num_steps_frame=500,
     fps=30,
-    graph_cfg = GraphCfg(
-        show_circles      = True,
-        show_f_spring     = False,
-        show_f_vol        = False,
-        show_f_area       = False,
-        show_f_total      = False,
-        show_center_mass  = True,
-        show_inside       = True,
-        begin_paused      = False,
-        pause_on_high_vel = False,
-        cpp_is_debug      = True,
-    ),
+    graph_cfg=SimpleGraphCfg(),
+    # graph_cfg = MainGraphCfg(
+    #     show_circles      = True,
+    #     show_f_spring     = False,
+    #     show_f_vol        = False,
+    #     show_f_area       = False,
+    #     show_f_total      = False,
+    #     show_center_mass  = True,
+    #     show_inside       = True,
+    #     begin_paused      = True,
+    #     pause_on_high_vel = False,
+    #     cpp_is_debug      = True,
+    # ),
     # checkpoint=CheckpointCfg(
     #     # folder_path="ring_intersect/data_high_den/phystem_data",
     #     # folder_path="ring_intersect/data",
@@ -107,7 +108,7 @@ if run_type is RunType.REPLAY_DATA:
         directory="data/ring/teste",
         num_steps_frame=1,
         frequency=0,
-        graph_cfg=GraphCfg(),
+        graph_cfg=MainGraphCfg(),
         system_cfg = {
             "creator_cfg": creator_cfg,
             "dynamic_cfg": dynamic_cfg,
@@ -151,7 +152,7 @@ save_cfg = SaveCfg(
     fps=30, 
     # duration=10,
     tf=60,
-    graph_cfg = GraphCfg(
+    graph_cfg = MainGraphCfg(
         show_circles  = True,
         show_f_spring = False,
         show_f_vol    = False,

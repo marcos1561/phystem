@@ -1,7 +1,7 @@
 from phystem.systems.ring.simulation import Simulation
 
 from phystem.systems.ring.configs import *
-from phystem.systems.ring.ui.graph import GraphCfg
+from phystem.systems.ring.ui.graphs_cfg import *
 from phystem.systems.ring import collect_pipelines
 
 from phystem.core.run_config import RunType, RealTimeCfg, SaveCfg, CollectDataCfg, CheckpointCfg
@@ -25,7 +25,7 @@ dynamic_cfg = RingCfg(
     diameter=1,
     max_dist=1+0.166,
     rep_force=30,
-    adh_force=0.75 +15,
+    adh_force=0.75 + 0*15,
     
     relax_time=1,
     mobility=1,
@@ -61,19 +61,19 @@ for j in range(n):
         x = k * radius + i * l - space_cfg.length/2
         centers.append([x, y])
 
-# creator_cfg = CreatorCfg(
-#     num_rings = num_rings,
-#     num_p = 30,
-#     r = radius,
-#     angle=np.random.random(num_rings)*2*pi,
-#     center= centers,
-# )
-creator_cfg = InvaginationCreatorCfg(
-    num_rings=4,
-    height=4,
-    length=5,
-    diameter=dynamic_cfg.diameter,
+creator_cfg = CreatorCfg(
+    num_rings = num_rings,
+    num_p = 30,
+    r = radius,
+    angle=np.random.random(num_rings)*2*pi,
+    center= centers,
 )
+# creator_cfg = InvaginationCreatorCfg(
+#     num_rings=4,
+#     height=4,
+#     length=5,
+#     diameter=dynamic_cfg.diameter,
+# )
 
 
 run_type = RunType.REAL_TIME
@@ -93,7 +93,8 @@ real_time_cfg = RealTimeCfg(
     ),
     num_steps_frame = 500,
     fps = 60,
-    graph_cfg = GraphCfg(
+    # graph_cfg = SimpleGraphCfg(),
+    graph_cfg = MainGraphCfg(
         show_circles     = True,
         show_f_spring    = False,
         show_f_vol       = False,
@@ -101,7 +102,7 @@ real_time_cfg = RealTimeCfg(
         show_f_total     = False,
         show_center_mass = False,
         show_inside      = True,
-        begin_paused     = True,
+        begin_paused     = False,
     ),
     # checkpoint=CheckpointCfg(
     #     folder_path="texture/data",
@@ -124,7 +125,7 @@ save_cfg = SaveCfg(
     # duration=0.01,
     tf=7,
     num_frames=1*15,
-    graph_cfg = GraphCfg(
+    graph_cfg = MainGraphCfg(
         show_circles  = True,
         show_f_spring = False,
         show_f_vol    = False,

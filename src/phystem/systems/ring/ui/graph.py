@@ -1,80 +1,43 @@
+from abc import ABC, abstractmethod
+from copy import deepcopy
 import numpy as np
+
 from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection, PathCollection, PatchCollection
 from matplotlib.patches import Circle
 from matplotlib.quiver import Quiver 
-from matplotlib.artist import Artist 
-from matplotlib import colors 
+from matplotlib import colors, cm
 
-from copy import deepcopy
-
+from .graphs_cfg import MainGraphCfg, SimpleGraphCfg
 from phystem.systems.ring.solvers import CppSolver
 from phystem.systems.ring.configs import RingCfg, SpaceCfg, RingCfg
 
-class GraphCfg:
-    def __init__(self, show_circles=False, show_f_spring=False, show_f_vol=False, show_f_area=False, 
-        show_f_total=False, show_center_mass=False, show_inside=False, force_to_color=None, begin_paused=False, 
-        pause_on_high_vel=False, cpp_is_debug=True) -> None:
-        self.show_circles = show_circles
-        self.show_f_spring = show_f_spring
-        self.show_f_vol = show_f_vol
-        self.show_f_area = show_f_area
-        self.show_f_total = show_f_total
-        self.show_center_mass = show_center_mass
-        self.show_inside = show_inside
+from phystem.utils import timer
 
-        self.show_pos_cont = False
 
-        self.begin_paused = begin_paused
-        self.pause_on_high_vel = pause_on_high_vel
 
-        self.cpp_is_debug = cpp_is_debug
+class BaseGraph(ABC):
+    @abstractmethod
+    def __init__(self, ax: Axes, solver: CppSolver, sim_configs: dict, graph_cfg=None):
+        pass
 
-        self.force_to_color = force_to_color
-        if force_to_color is None:
-            self.force_to_color = {
-                "spring": "red",
-                "vol": "blue",
-                "area": "green",
-                "total": "black",
-            }
+    @abstractmethod
+    def update(self):
+        pass
 
-        # self.f_name_to_show = {
-        #     "spring": self.show_f_spring,
-        #     "vol": self.show_f_vol,
-        #     "area": self.show_f_area,
-        #     "total": self.show_f_total,
-        # }
-
-    def get_show_forces(self):
-        # return self.f_name_to_show[name]
-        return {
-            "spring": self.show_f_spring,
-            "vol": self.show_f_vol,
-            "area": self.show_f_area,
-            "total": self.show_f_total,
-        }
-
-    def set_show_force(self, name: str, value: bool):
-        if name == "spring":
-            self.show_f_spring = value
-        elif name == "vol":
-            self.show_f_vol = value
-        elif name == "area":
-            self.show_f_area = value
-        elif name == "total":
-            self.show_f_total = value
-
-class MainGraph:
-    def __init__(self, ax: Axes, solver: CppSolver, space_cfg: SpaceCfg, dynamic_cfg: RingCfg, graph_cfg: GraphCfg=None) -> None:
+class MainGraph(BaseGraph):
+    def __init__(self, ax: Axes, solver: CppSolver, sim_configs: dict, graph_cfg: MainGraphCfg=None) -> None:
         '''
         Gráfico das partículas com a opção de desenhar os círculos dos raios de interação.
         '''
+        if graph_cfg is None:
+            graph_cfg = MainGraphCfg()
+
         self.num_rings = solver.num_max_rings
 
         self.ax = ax
-        self.space_cfg = space_cfg
-        self.dynamic_cfg = dynamic_cfg
+        self.space_cfg: SpaceCfg = sim_configs["space_cfg"]
+        self.dynamic_cfg: RingCfg = sim_configs["dynamic_cfg"]
         self.solver = solver
         self.graph_cfg = graph_cfg
 
@@ -100,6 +63,8 @@ class MainGraph:
         self.graph_points = solver.graph_points
 
         self.cpp_is_debug = self.graph_cfg.cpp_is_debug
+
+        self.init()
 
     @property
     def pos_t(self):
@@ -470,3 +435,58 @@ class MainGraph:
 
         # return (self.lines, self.points, self.circles_col) + tuple(self.arrows.values())
         return
+
+class SimpleGraph(BaseGraph):
+    def __init__(self, ax: Axes, solver: CppSolver, sim_configs, graph_cfg: SimpleGraphCfg=None):
+        self.ax = ax
+        self.solver = solver
+        self.graph_cfg = graph_cfg
+        space_cfg: SpaceCfg = sim_configs["space_cfg"]
+
+        h = space_cfg.height/2
+        l = space_cfg.length/2
+        r_scale = 1
+        self.ax.set_ylim(-r_scale*h, r_scale*h)
+        self.ax.set_xlim(-r_scale*l, r_scale*l)
+
+        self.ax.set_aspect(1)
+
+        # Borders
+        self.ax.plot([-l, -l], [ h, -h], color="black")
+        self.ax.plot([ l,  l], [ h, -h], color="black")
+        self.ax.plot([ l, -l], [ h,  h], color="black")
+        self.ax.plot([ l, -l], [-h, -h], color="black")
+
+        self.cmap = cm.Set1
+        
+        stokes_cfg = self.solver.cpp_solver.stokes_cfg
+        self.ax.add_patch(Circle((stokes_cfg.obstacle_x, stokes_cfg.obstacle_y), stokes_cfg.obstacle_r, fill=False))
+
+        self.update_ring_ids()
+        self.colors = self.init_colors(self.solver.num_max_rings, self.solver.num_particles) 
+
+        points_s = 8
+        self.points = self.ax.scatter(*self.get_pos().T, s=points_s, cmap=self.cmap, 
+            c=self.colors[self.ring_ids].flatten())
+        
+    def update_ring_ids(self):
+        self.ring_ids = self.solver.rings_ids[:self.solver.num_active_rings]
+
+    def get_pos(self):
+        pos = np.array(self.solver.pos)[self.ring_ids]
+        
+        # self.colors[self.ring_ids] = pos[:,0,0].reshape(pos.shape[0], 1)
+
+        return pos.reshape(pos.shape[0] * pos.shape[1], pos.shape[2])
+    
+    def init_colors(self, num_rings, num_particles):
+        c = np.zeros((num_rings, num_particles), dtype=np.int16)
+        color_id = np.random.choice(range(len(self.cmap.colors)), num_rings)
+        for i in range(num_rings):
+            c[i] = color_id[i]
+
+        return c
+    def update(self):
+        self.update_ring_ids()
+        self.points.set_offsets(self.get_pos())
+        self.points.set_array(self.colors[self.ring_ids].flatten())

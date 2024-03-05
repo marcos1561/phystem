@@ -4,7 +4,7 @@ from phystem.systems.ring.configs import *
 from phystem.core.run_config import RunType, CheckpointCfg, CollectDataCfg, UiSettings
 from phystem.core.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, ReplayDataCfg
 from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType, ParticleWindows
-from phystem.systems.ring.ui.graph import GraphCfg
+from phystem.systems.ring.ui.graphs_cfg import *
 
 import pipeline
 
@@ -68,7 +68,7 @@ seed = 40028922
 ##
 ## Select Run Type
 ##
-run_type = RunType.COLLECT_DATA
+run_type = RunType.REAL_TIME
 
 
 num_cols = int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6)
@@ -112,7 +112,8 @@ real_time_cfg = RealTimeCfg(
     int_cfg=collect_data_cfg.int_cfg,
     num_steps_frame=200,
     fps=30,
-    graph_cfg = GraphCfg(
+    # graph_cfg = SimpleGraphCfg(),
+    graph_cfg = MainGraphCfg(
         show_circles      = True,
         show_f_spring     = False,
         show_f_vol        = False,
@@ -131,21 +132,23 @@ real_time_cfg = RealTimeCfg(
 )
 
 video_cfg = SaveCfg(
-    int_cfg=IntegrationCfg(
-        dt = 0.001*10, # max euler
-        # dt = 0.001*5 * 1.55,
-        particle_win_cfg=ParticleWindows(
-            num_cols=num_cols, num_rows=num_rows,
-            update_freq=1),
-        integration_type=IntegrationType.euler,
-        update_type=UpdateType.STOKES,
-        in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 3, disable=False),
-    ),
-    path="./aff.mp4",
-    speed=5,
-    duration=20,
+    # int_cfg=IntegrationCfg(
+    #     dt = 0.001*10, # max euler
+    #     # dt = 0.001*5 * 1.55,
+    #     particle_win_cfg=ParticleWindows(
+    #         num_cols=num_cols, num_rows=num_rows,
+    #         update_freq=1),
+    #     integration_type=IntegrationType.euler,
+    #     update_type=UpdateType.STOKES,
+    #     in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 3, disable=False),
+    # ),
+    int_cfg = collect_data_cfg.int_cfg,
+    path="./color_test.mp4",
+    tf=200,
+    # speed=5,
+    duration=10,
     fps=30,
-    graph_cfg = GraphCfg(
+    graph_cfg = MainGraphCfg(
         show_circles      = True,
         show_f_spring     = False,
         show_f_vol        = False,

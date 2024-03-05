@@ -5,7 +5,7 @@ from phystem.core.run_config import RealTimeCfg
 
 from phystem.systems.ring.solvers import CppSolver
 from phystem.systems.ring.configs import RingCfg, CreatorCfg
-from phystem.systems.ring.ui.graph import GraphCfg
+from phystem.systems.ring.ui.graphs_cfg import *
 
 from phystem.gui_phystem.info_ui import InfoCore
 from phystem.gui_phystem.control_ui import ControlCore
@@ -13,17 +13,19 @@ from phystem.gui_phystem.control_mng import ControlManagerCore
 from phystem.utils.timer import TimeIt
 
 class ControlMng(ControlManagerCore):
-    graph_cfg: GraphCfg
+    graph_cfg: MainGraphCfg
     
     def __init__(self, run_cfg: RealTimeCfg) -> None:
         super().__init__(run_cfg)
-
         if self.graph_cfg.begin_paused:
             self.is_paused = True
 
         self.advance_once = False
 
     def add_vars(self):
+        if type(self.graph_cfg) != MainGraphCfg:
+            self.graph_cfg = MainGraphCfg()
+        
         self.vars["show_circles"] = BooleanVar(value=self.graph_cfg.show_circles)
         self.vars["f_springs"] = BooleanVar(value=self.graph_cfg.show_f_spring)
         self.vars["f_vol"] = BooleanVar(value=self.graph_cfg.show_f_vol)
@@ -122,7 +124,8 @@ class Info(InfoCore):
         if self.cfgs["run_cfg"].graph_cfg.cpp_is_debug:
             return (
                 f"fps: {self.fps:.1f}\n"
-                f"Delta T (ms): {self.timer.mean_time():.3f}\n\n"
+                f"Solver Delta T (ms): {self.timer.mean_time('solver'):.3f}\n"
+                f"Graph  Delta T (ms): {self.timer.mean_time('graph'):.3f}\n\n"
                 f"t : {self.solver.time:.3f}\n"
                 f"dt: {self.solver.dt:.5f}\n"
                 "\n"
