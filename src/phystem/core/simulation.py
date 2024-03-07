@@ -184,8 +184,10 @@ class SimulationCore(ABC):
 
         save_video_cfg: SaveCfg = self.run_cfg
         
-        folder_path = save_video_cfg.path.split("/")[0]
-        video_name = save_video_cfg.path.split("/")[-1].split(".")[0]
+        # folder_path = save_video_cfg.path.split("/")[0]
+        # video_name = save_video_cfg.path.split("/")[-1].split(".")[0]
+        folder_path = os.path.dirname(save_video_cfg.path)
+        video_name = os.path.splitext(os.path.basename(save_video_cfg.path))[0]
         if not os.path.exists(folder_path):
             raise Exception(f"O caminho {folder_path} não existe.")
 

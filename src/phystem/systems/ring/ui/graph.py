@@ -534,7 +534,7 @@ class ReplayGraph(BaseGraph):
             self.points = self.ax.scatter(*self.get_pos().T, **self.graph_cfg.scatter_kwargs, cmap=cm.hsv, 
                 c=self.get_colors(), vmin=-np.pi, vmax=np.pi)
             
-            fig.colorbar(self.points)
+            # fig.colorbar(self.points)
         else:
             self.points = self.ax.scatter(*self.get_pos().T, **self.graph_cfg.scatter_kwargs)
 

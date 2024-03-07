@@ -219,7 +219,7 @@ class ReplayDataCfg(RealTimeCfg):
     id = RunType.REPLAY_DATA
 
     def __init__(self, directory: str, data_dir="data", num_steps_frame=1, fps=30, 
-        graph_cfg=None, solver_cfg=None,) -> None:
+        graph_cfg=None, solver_cfg=None) -> None:
         '''
         Parameters:
         -----------
@@ -265,7 +265,7 @@ class SaveCfg(RunCfg):
     '''
     id = RunType.SAVE_VIDEO
     def __init__(self, int_cfg: IntegrationCfg, path:str, fps: int, speed: float=None, duration: float = None, 
-        tf: float = None, ti=0, num_frames=None, graph_cfg=None, ui_settings=UiSettings(), checkpoint: CheckpointCfg=None,
+        tf: float = None, ti=0, num_frames=None, graph_cfg=None, solver_cfg=None, ui_settings=UiSettings(), checkpoint: CheckpointCfg=None,
         replay: ReplayDataCfg=None) -> None:  
         '''
         Salva um vídeo da simulação em `path`. Ao menos um dos seguintes parâmetros deve ser 
@@ -320,6 +320,7 @@ class SaveCfg(RunCfg):
 
             speed = (tf - ti)/duration
 
+        self.solver_cfg = solver_cfg
         self.speed = speed
         self.path = path
         self.fps = fps
