@@ -224,7 +224,9 @@ public:
 
         double center_x, center_y;
         for (int i = 0; i < num_rows; i++) {
-            center_y = space_info.height/2. + window_height * (0.5 - (double)(i + 1));
+            center_y = window_height*0.5 + (double)i * window_height - space_info.height*0.5;
+            // center_y = space_info.height/2. + window_height * (0.5 - (double)(i + 1));
+
             center_y += space_info.center[1];
             
             for (int j = 0; j < num_cols; j++) {
@@ -241,10 +243,16 @@ public:
             int col_pos = (int)(((*point_pos)[entity_id][p_id][0] - space_info.center[0] + space_info.length/2.) / col_size);
             int row_pos = (int)(((*point_pos)[entity_id][p_id][1] - space_info.center[1] + space_info.height/2.) / row_size);
 
+
             if (row_pos == num_rows)
                 row_pos -= 1;
             if (col_pos == num_cols)
                 col_pos -= 1;
+
+            // std::cout << "Pos: " << (*point_pos)[entity_id][p_id][0] << ", " << (*point_pos)[entity_id][p_id][1] << std::endl;
+            // std::cout << "row_size, col_size: " << row_size << ", " << col_size << std::endl;
+            // std::cout << "(row, col): " << row_pos << ", " << col_pos << std::endl;
+            // std::cout << "---" << std::endl;
 
             // if ((row_pos >= num_rows) | (row_pos < 0)) {
             //     std::cout << "(Ring) row_pos out_of_bounds | " << row_pos  << std::endl;
@@ -280,9 +288,12 @@ public:
         }
 
         // for (int entity_id = 0; entity_id < num_entitys; entity_id++)
+        // std::cout << "num_active: " << *num_active << std::endl;
+        // std::cout << "entity_id:" << std::endl;
         for (int i = 0; i < *num_active; i++)
         {
             int entity_id = (*ids)[i];
+            // std::cout << entity_id << std::endl;
             update_entity(entity_id);
         }
     }

@@ -1,3 +1,5 @@
+import numpy as np
+
 from phystem.systems.ring.simulation import Simulation
 
 from phystem.systems.ring.configs import *
@@ -58,18 +60,15 @@ stokes_cfg = StokesCfg(
     obstacle_y  = 0*space_cfg.length/8/2,
     create_length = radius * 2.01,
     remove_length = radius * 2.01,
-    flux_force = 0.1, 
+    flux_force = 5, 
     obs_force = 15,
     num_max_rings = 400, 
 )
 
-seed = 40028922
-# seed = None
-
 ##
 ## Select Run Type
 ##
-run_type = RunType.REAL_TIME
+run_type = RunType.COLLECT_DATA
 
 
 num_cols = int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6)
@@ -80,37 +79,25 @@ num_rows_cm = int(ceil(space_cfg.height / (2.5*radius)))
 
 collect_data_cfg = CollectDataCfg(
     int_cfg=IntegrationCfg(
-            dt = 0.01,
-            particle_win_cfg=ParticleWindows(
-                num_cols=num_cols, num_rows=num_rows,
-                update_freq=1),
-            integration_type=IntegrationType.euler,
-            update_type=UpdateType.STOKES,
-            in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
+        dt = 0.01,
+        particle_win_cfg=ParticleWindows(
+            num_cols=num_cols, num_rows=num_rows,
+            update_freq=1),
+        integration_type=IntegrationType.euler,
+        update_type=UpdateType.STOKES,
+        in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
     ), 
-    # tf=250 + 0.5 * 1000 ,
-    tf=3.2,
-    folder_path="data",
+    tf=-1,
+    folder_path="data/data2",
     func=pipeline.collect_pipeline,
-    func_cfg=pipeline.PipelineCfg(
-        checkpoint_period=20, 
-        snapshot_period=0.5,
-        save_type=pipeline.SaveType.checkpoint),
-    # checkpoint=CheckpointCfg(
-    #     folder_path="data_test/checkpoint"
-    # )
+    func_cfg={
+        "wait_time": 250,
+        "collect_time": 100,
+        "flux_range": np.linspace(0.1, 5, 20),
+    },
 )
 
 real_time_cfg = RealTimeCfg(
-    #  int_cfg=IntegrationCfg(
-    #         dt = 0.01,
-    #         particle_win_cfg=ParticleWindows(
-    #             num_cols=num_cols, num_rows=num_rows,
-    #             update_freq=1),
-    #         integration_type=IntegrationType.euler,
-    #         update_type=UpdateType.STOKES,
-    #         in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
-    # ), 
     int_cfg=collect_data_cfg.int_cfg,
     num_steps_frame=1,
     fps=30,
@@ -127,23 +114,9 @@ real_time_cfg = RealTimeCfg(
     #     pause_on_high_vel = True,
     #     cpp_is_debug      = True
     # ),
-    # checkpoint=CheckpointCfg(
-    #     folder_path="data/checkpoint",
-    #     override_cfgs=False,
-    # )
 )
 
 video_cfg = SaveCfg(
-    # int_cfg=IntegrationCfg(
-    #     dt = 0.001*10, # max euler
-    #     # dt = 0.001*5 * 1.55,
-    #     particle_win_cfg=ParticleWindows(
-    #         num_cols=num_cols, num_rows=num_rows,
-    #         update_freq=1),
-    #     integration_type=IntegrationType.euler,
-    #     update_type=UpdateType.STOKES,
-    #     in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 3, disable=False),
-    # ),
     int_cfg = collect_data_cfg.int_cfg,
     path="./color_test.mp4",
     tf=200,
@@ -168,7 +141,14 @@ run_type_to_cfg = {
     RunType.SAVE_VIDEO: video_cfg,
 }
 
-sim = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type],
-    other_cfgs={"stokes": stokes_cfg}, rng_seed=seed)
+configs = {
+    "creator_cfg": creator_cfg, "dynamic_cfg": dynamic_cfg, 
+    "space_cfg": space_cfg, "run_cfg": run_type_to_cfg[run_type],
+    "other_cfgs": {"stokes": stokes_cfg}
+}
 
-sim.run()
+if run_type is RunType.COLLECT_DATA:
+    pipeline.main(configs)
+else:
+    sim = Simulation(**configs)
+    sim.run()

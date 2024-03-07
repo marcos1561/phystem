@@ -24,6 +24,8 @@ int main() {
     stokes_cfg.create_length = 2.5 * r;
     stokes_cfg.remove_length = 0.0;
     stokes_cfg.num_max_rings = 100;
+    stokes_cfg.obs_force = 10;
+    stokes_cfg.flux_force = 2;
 
     std::cout << stokes_cfg.num_max_rings << std::endl;
 
@@ -52,20 +54,20 @@ int main() {
     cfg.rep_force = 30.;
 
     auto data = ring::init_cfg(2, n, r, cfg.vo);
-    // data.pos = Vector3d(0);
-    // data.self_prop_angle = std::vector<vector<double>>(0);
+    data.pos = Vector3d(0);
+    data.self_prop_angle = std::vector<vector<double>>(0);
 
     auto solver = Ring(data.pos, data.self_prop_angle, n, cfg, size, size, dt, p_win_cfg, 
-        RingUpdateType::invagination, RingIntegrationType::euler, stokes_cfg, InPolCheckerCfg(3, 4, 10));
+        RingUpdateType::stokes, RingIntegrationType::euler, stokes_cfg, InPolCheckerCfg(3, 4, 10));
 
-    solver.init_invagination(10, 7, cfg.spring_k*1.1, cfg.spring_k*0.9);
+    // solver.init_invagination(10, 7, cfg.spring_k*1.1, cfg.spring_k*0.9);
 
     // for (int i = 0; i < 10; i++)
     while (true)
     {
         // solver.update_normal();
-        solver.update_windows();
-        // solver.update_stokes();
+        // solver.update_windows();
+        solver.update_stokes();
         auto pos = solver.pos[0][0];
         std::cout << pos[0] << ", " << pos[1] << std::endl;
         std::cout << "Num active: " << solver.num_active_rings << std::endl;

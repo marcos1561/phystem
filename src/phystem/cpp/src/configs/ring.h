@@ -67,15 +67,16 @@ public:
     double remove_length;
 
     double flux_force;
+    double obs_force;
 
     int num_max_rings;
 
     StokesCfg(): num_max_rings(-1) { };
     
     StokesCfg(double obstacle_r, double obstacle_x, double obstacle_y,
-        double create_length, double remove_length, double flux_force, int num_max_rings)
+        double create_length, double remove_length, double flux_force, double obs_force, int num_max_rings)
     : obstacle_r(obstacle_r), obstacle_x(obstacle_x), obstacle_y(obstacle_y), 
-    create_length(create_length), remove_length(remove_length), flux_force(flux_force), 
+    create_length(create_length), remove_length(remove_length), flux_force(flux_force), obs_force(obs_force), 
     num_max_rings(num_max_rings) { };
 };
 

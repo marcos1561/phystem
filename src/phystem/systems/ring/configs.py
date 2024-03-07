@@ -128,7 +128,8 @@ class RingCfg:
 
 class StokesCfg:
     def __init__(self, obstacle_r: float, obstacle_x: float, obstacle_y: float,
-        create_length: float, remove_length: float, flux_force, num_max_rings: int
+        create_length: float, remove_length: float, flux_force: float, 
+        obs_force: float, num_max_rings: int
     ) -> None:
         self.obstacle_r = obstacle_r
         self.obstacle_x = obstacle_x
@@ -136,6 +137,7 @@ class StokesCfg:
         self.create_length = create_length
         self.remove_length = remove_length
         self.flux_force = flux_force
+        self.obs_force = obs_force
         self.num_max_rings = num_max_rings
 
     @staticmethod
@@ -147,6 +149,7 @@ class StokesCfg:
             "create_length": 0,
             "remove_length": 0,
             "flux_force": 0,
+            "obs_force": 0,
             "num_max_rings": -1,
         }
 
@@ -158,6 +161,7 @@ class StokesCfg:
             "create_length": self.create_length,
             "remove_length": self.remove_length,
             "flux_force": self.flux_force,
+            "obs_force": self.obs_force,
             "num_max_rings": self.num_max_rings,
         }
 

@@ -467,7 +467,7 @@ class SimpleGraph(BaseGraph):
 
         points_s = 8
         self.points = self.ax.scatter(*self.get_pos().T, s=points_s, cmap=self.cmap, 
-            c=self.colors[self.ring_ids].flatten())
+            c=self.colors[self.ring_ids].flatten(), vmin=0, vmax=len(self.cmap.colors)-1)
         
     def update_ring_ids(self):
         self.ring_ids = self.solver.rings_ids[:self.solver.num_active_rings]

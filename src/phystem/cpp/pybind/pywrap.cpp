@@ -202,8 +202,10 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def_readonly("total_forces", &Ring::total_forces)
         .def_readonly("vol_forces", &Ring::vol_forces)
         .def_readonly("area_forces", &Ring::area_forces)
+        .def_readonly("obs_forces", &Ring::obs_forces)
         .def_readonly("differences", &Ring::differences)
         .def_readonly("center_mass", &Ring::center_mass)
         .def_readonly("in_pol_checker", &Ring::in_pol_checker)
+        .def_readonly("num_created_rings", &Ring::num_created_rings)
         ;
 }

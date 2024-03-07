@@ -147,6 +147,10 @@ class CppSolver:
         return self.cpp_solver.area_forces
     
     @property
+    def obs_forces(self):
+        return self.cpp_solver.obs_forces
+    
+    @property
     def total_forces(self):
         return self.cpp_solver.total_forces
     
@@ -174,6 +178,10 @@ class CppSolver:
     @property
     def update_debug(self):
         return self.cpp_solver.update_debug
+
+    @property
+    def num_created_rings(self):
+        return self.cpp_solver.num_created_rings
     
     def update_visual_aids(self):
         self.cpp_solver.update_visual_aids()

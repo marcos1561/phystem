@@ -24,7 +24,8 @@ class ControlMng(ControlManagerCore):
 
     def add_vars(self):
         if type(self.graph_cfg) != MainGraphCfg:
-            self.graph_cfg = MainGraphCfg()
+            self.graph_cfg = MainGraphCfg(
+                begin_paused=self.graph_cfg.begin_paused)
         
         self.vars["show_circles"] = BooleanVar(value=self.graph_cfg.show_circles)
         self.vars["f_springs"] = BooleanVar(value=self.graph_cfg.show_f_spring)

@@ -76,6 +76,7 @@ public:
         remove_length = py::float_(values["remove_length"]);
         
         flux_force = py::float_(values["flux_force"]);
+        obs_force = py::float_(values["obs_force"]);
 
         num_max_rings = py::int_(values["num_max_rings"]);
     }

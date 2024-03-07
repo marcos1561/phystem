@@ -102,9 +102,9 @@ public:
 
     Vector3d pos; // Posições das partículas
     vector<vector<double>> self_prop_angle; // Ângulo da direção da velocidade auto propulsora
-    int num_particles;
+    int num_particles; // Número de partículas em cada anel
     
-    int num_active_rings;
+    int num_active_rings; 
     vector<bool> mask;
     vector<int> rings_ids;
     vector<unsigned long int> unique_rings_ids;
@@ -129,6 +129,7 @@ public:
     int dt_count;
     bool is_low_dt;
 
+
     double sim_time;
     int num_time_steps;
 
@@ -151,10 +152,12 @@ public:
     StokesCfg stokes_cfg;
     double max_create_border;
 
+    vector<vector<array<int, 2>>> create_rings_win_ids;
+    vector<bool> to_create_new_ring;
     vector<array<int, 2>> begin_windows_ids;
-    vector<array<int, 2>> obstacle_windows_ids;
     vector<Vector2d> stokes_init_pos;
     vector<double> stokes_init_self_angle;
+    int num_created_rings;
 
     double create_border;
     double remove_border;
@@ -185,6 +188,7 @@ public:
     Vector3d spring_forces;
     Vector3d vol_forces;
     Vector3d area_forces;
+    Vector3d obs_forces;
 
     vector<vector<vector<double*>>> pos_t; // Transposta da posições das partículas
     
@@ -270,6 +274,7 @@ public:
         sim_time = 0.0;
         num_time_steps = 0;
         
+        // Variable dt
         base_dt = dt;
         low_dt = 0.001;
         num_low_dt = (int)(base_dt/low_dt) * 100;
@@ -320,8 +325,6 @@ public:
         adh_force = dynamic_cfg.adh_force;
         rep_force = dynamic_cfg.rep_force;
 
-        
-
         // Lennard-jones stuff
         // diameter_six = pow(diameter, 6.); 
         // diameter_twelve = pow(diameter, 12.); 
@@ -362,6 +365,7 @@ public:
         vol_forces = Vector3d(num_max_rings, zero_vector_2d);
         area_forces = Vector3d(num_max_rings, zero_vector_2d);
         total_forces = Vector3d(num_max_rings, zero_vector_2d);
+        obs_forces = Vector3d(num_max_rings, zero_vector_2d);
 
         area_debug.area = vector<double>(num_max_rings);
 
@@ -381,42 +385,62 @@ public:
     }
 
     void init_stokes() {
+        /** Inicializa os dados relacionados ao fluxo de stokes */
+        
+        // Limite no eixo x da região de criação/remoção de novos anéis.
         create_border = -length/2 + stokes_cfg.create_length;
         remove_border = length/2 - stokes_cfg.remove_length;
 
-        // for (auto window_id: windows_manager.windows_ids) {
-        //     auto center_pos =  windows_manager.windows_center[window_id[0]][window_id[1]];
-        //     if ((center_pos[0] - windows_manager.window_length/2.) < create_border)
-        //         begin_windows_ids.push_back(window_id);
-        // }
-
+        /**
+         * Cálculo das janelas (a nível das partículas) que estão dentro
+         * da região de criação de anéis. O id de tais janelas são armazenados 
+         * em 'begin_windows_ids'.
+        */
         max_create_border = create_border;
         for (auto window_id: windows_manager.windows_ids) {
             auto center_pos = windows_manager.windows_center[window_id[0]][window_id[1]];
-            if ((center_pos[0] - windows_manager.window_length/2.) < create_border) {
-                double window_right_pos = center_pos[0] + windows_manager.window_length/2.;
-                if (window_right_pos > max_create_border) {
-                    max_create_border = window_right_pos;
+            
+            double left_window_border = center_pos[0] - windows_manager.window_length/2.;
+            if (left_window_border < create_border) {
+                double right_window_border = center_pos[0] + windows_manager.window_length/2.;
+                
+                // Garantindo que 'max_create_border' seja realmente o máximo. 
+                if (right_window_border > max_create_border) {
+                    max_create_border = right_window_border;
                 }
 
                 begin_windows_ids.push_back(window_id);
             }
-        
-            if (abs(center_pos[0] - stokes_cfg.obstacle_x) < (stokes_cfg.obstacle_r + diameter*2.))
-                obstacle_windows_ids.push_back(window_id);
         }
         std::cout << "Num begin_windows: " << begin_windows_ids.size() << std::endl;
 
 
+        /**
+         * Posição dos anéis que serão criados:
+         * 
+         * A região de criação é dividida em retângulos e as posições
+         * dos anéis são pré-calculadas para eles aparecerem
+         * dentro de algum desses retângulos. Quando um retângulo
+         * fica livre, um anel é criado nele.
+        */
+        vector<double> begin_rings_centery;
+        
+        // Espaçamento vertical entre os anéis
         double y_pad = (diameter * 0.5 * 3.) * 0.5;
+        
+        // Quantidade de anéis que cabem na região de criação.
         int n = (int)(height / (2.0 * (y_pad + ring_radius)));
+        
         std::cout << "Create ring num: " << n << std::endl;
 
+        // Cálculo da posição e do ângulo da velocidade autopropulsora
+        // utilizados na criação dos anéis.
         Vector2d stokes_init_pos_i(num_particles);
         double angle = M_PI * 2. / num_particles;
         for (int ring_i = 0; ring_i < n; ring_i++)
         {
             double y_pos = height * 0.5 - (y_pad + ring_radius) * (1.0 + (double)(ring_i * 2));
+            begin_rings_centery.push_back(y_pos);
             for (int i = 0; i < num_particles; i++)
             {
                 double x = ring_radius * cos((double)i * angle);
@@ -431,6 +455,36 @@ public:
         }
         
         stokes_init_self_angle = vector<double>(num_particles, 0.0);
+
+
+        /**
+         * Cálculo das janelas que contém a região onde os anéis são criados.
+         * 
+         * O elemento 'create_rings_win_ids[i]' contém os ids das janelas que estão
+         * dentro da região onde o i-ésimo anel é criado.
+        */
+        float start_y = height/2.;
+        float end_y = (begin_rings_centery[1] + begin_rings_centery[0]) * 0.5;
+        for (size_t i = 0; i < begin_rings_centery.size(); i++)
+        {
+            vector<array<int, 2>> ring_win_ids;
+            for (auto window_id: begin_windows_ids) {
+                auto win_center = windows_manager.windows_center[window_id[0]][window_id[1]];
+                double h = windows_manager.window_height;
+                if ((win_center[1] - h*0.5 < start_y) && (win_center[1] + h*0.5 > end_y)) {
+                    ring_win_ids.push_back(window_id);
+                }
+            }
+            create_rings_win_ids.push_back(ring_win_ids);
+            to_create_new_ring.push_back(false);
+            start_y = end_y;
+            
+            if (i < begin_rings_centery.size()-2) {
+                end_y = (begin_rings_centery[i+2] + begin_rings_centery[i+1]) * 0.5;
+            } else if (i < begin_rings_centery.size()-1) {
+                end_y = -height * 0.5;
+            }
+        }
 
         calc_center_mass();
         windows_manager.update_window_members();
@@ -475,6 +529,11 @@ public:
     }
 
     void recalculate_rings_ids() {
+        /**
+         * Recalcula a lista dos ids dos anéis que estão
+         * atualmente ativos. Aqui o id é a posição do anel
+         * no vetor global de posições (pos).
+        */
         to_recalculate_ids = false;
         int next_id = 0;
         for (int i = 0; i < num_max_rings; i++)
@@ -487,19 +546,11 @@ public:
         num_active_rings = next_id;
     }
 
-    void add_ring() {
-        // int ring_id = rings_ids[0];
-
-        // auto new_ring = pos[ring_id];
-        // for (size_t p_id = 0; p_id < new_ring.size(); p_id++) {
-        //     new_ring[p_id][0] -= center_mass[ring_id][0];
-        //     new_ring[p_id][1] -= center_mass[ring_id][1];
-            
-        //     new_ring[p_id][0] += -length/2. + 1.2 * ring_radius;
-        // }
-
-        int num_add_rings = stokes_init_pos.size();
-        int add_ring_id = 0;
+    void add_ring(int add_ring_id) {
+        /**
+         * Adiciona o anel de id 'add_ring_id' da lista das posições
+         * pré-calculadas ('stokes_init_pos').
+        */
         for (size_t i = 0; i < mask.size(); i++) {
             if (mask[i] == false) {
                 pos[i] = stokes_init_pos[add_ring_id];
@@ -513,14 +564,11 @@ public:
                 calc_ring_center_mass(i);
                 windows_manager.update_entity(i);
                 in_pol_checker.windows_manager.update_point(i);
-
-                add_ring_id += 1;
-                if (add_ring_id >= num_add_rings)
-                    return;
+                return;
             }
         }
-        if (add_ring_id < num_add_rings)
-            std::cout << "Não foi encontrado posições disponíveis para adicionar os anéis." << std::endl;
+
+        std::cout << "Não foi encontrado posições disponíveis para adicionar os anéis." << std::endl;
     }
 
     void remove_ring(int ring_id) {
@@ -530,6 +578,10 @@ public:
     }
 
     void periodic_border(array<double, 2>& p){
+        /**
+         * Dado o vetor 'p' calculado como a diferença entre dois pontos,
+         * atualiza o mesmo levando em consideração as bordas periódicas.
+        */
         if (abs(p[0]) > length/2.f)
             p[0] -= copysign(length, p[0]);
         
@@ -1081,6 +1133,7 @@ public:
                 
                 vol_forces[ring_id][i][0] = 0.;
                 vol_forces[ring_id][i][1] = 0.;
+                
             }
         }
         #endif
@@ -1138,10 +1191,31 @@ public:
             {
                 calc_spring_force2(ring_id, spring_id);
                 
-                // Flux force
                 if (update_type == RingUpdateType::stokes) {
-                    if (pos[ring_id][spring_id][0] < max_create_border) {
+                    Vec2d& p_pos = pos[ring_id][spring_id];
+                    
+                    // Flux force
+                    if (p_pos[0] < max_create_border) {
                         sum_forces_matrix[ring_id][spring_id][0] += stokes_cfg.flux_force;
+                    }
+                    
+                    // Obstacle force
+                    double dx = p_pos[0] - stokes_cfg.obstacle_x;
+                    double dy = p_pos[1] - stokes_cfg.obstacle_y;
+                    Vec2d radius_pos = {dx, dy};
+
+                    double radius = sqrt(dx * dx + dy * dy);
+                    if (radius < stokes_cfg.obstacle_r ) {
+                        double obs_force_x = radius_pos[0]/radius * stokes_cfg.obs_force;
+                        double obs_force_y = radius_pos[1]/radius * stokes_cfg.obs_force;
+
+                        sum_forces_matrix[ring_id][spring_id][0] += obs_force_x;
+                        sum_forces_matrix[ring_id][spring_id][1] += obs_force_y;
+
+                        #if DEBUG == 1
+                        obs_forces[ring_id][spring_id][0] = obs_force_x;
+                        obs_forces[ring_id][spring_id][1] = obs_force_y;
+                        #endif
                     }
                 }
             }
@@ -1175,22 +1249,10 @@ public:
         if (p_pos[1] > height/2.) {
             if (p_vel[1] > 0.0) 
                 p_vel[1] = 0.0;
-                
-            // if ((p_angle > 0.0) && (p_angle < M_PI/2)) {
-            //     p_angle = 0.0;
-            // } else if (p_angle < M_PI) {
-            //     p_angle = M_PI;
-            // } 
         }
         else if (p_pos[1] < -height/2.) {
             if (p_vel[1] < 0.0)
                 p_vel[1] = 0.0;
-
-            // if ((p_angle > 0.0) && (p_angle < M_PI/2)) {
-            //     p_angle = 0.0;
-            // } else if (p_angle < M_PI) {
-            //     p_angle = M_PI;
-            // }
         }
         
         if ((p_pos[0] < -length/2.) && (p_vel[0] < 0.0))
@@ -1199,21 +1261,21 @@ public:
         //
         // Colisões com o obstáculo
         //
-        double dx = p_pos[0] - stokes_cfg.obstacle_x;
-        double dy = p_pos[1] - stokes_cfg.obstacle_y;
-        Vec2d radius_pos = {dx, dy};
+        // double dx = p_pos[0] - stokes_cfg.obstacle_x;
+        // double dy = p_pos[1] - stokes_cfg.obstacle_y;
+        // Vec2d radius_pos = {dx, dy};
 
-        double radius_sqr = dx * dx + dy * dy;
-        if (radius_sqr < (stokes_cfg.obstacle_r * stokes_cfg.obstacle_r)) {
-            double dot_pos_vel = dot_prod(radius_pos, p_vel);
+        // double radius_sqr = dx * dx + dy * dy;
+        // if (radius_sqr < (stokes_cfg.obstacle_r * stokes_cfg.obstacle_r)) {
+        //     double dot_pos_vel = dot_prod(radius_pos, p_vel);
 
-            if (dot_pos_vel < 0.0) {
-                // double pos_length = sqrt(radius_sqr);
+        //     if (dot_pos_vel < 0.0) {
+        //         // double pos_length = sqrt(radius_sqr);
 
-                p_vel[0] -= radius_pos[0]/(radius_sqr)*dot_pos_vel;
-                p_vel[1] -= radius_pos[1]/(radius_sqr)*dot_pos_vel;
-            }
-        }
+        //         p_vel[0] -= radius_pos[0]/(radius_sqr)*dot_pos_vel;
+        //         p_vel[1] -= radius_pos[1]/(radius_sqr)*dot_pos_vel;
+        //     }
+        // }
     }
 
     void calc_derivate(double &vel_x, double &vel_y, double &angle_deriv_i, int ring_id, int particle_id) {
@@ -1747,31 +1809,84 @@ public:
         }
         #endif
 
-        bool crete_new_ring = true;
-        for (auto win_id: begin_windows_ids) {
-            int num_win_rings = windows_manager.capacity[win_id[0]][win_id[1]];
+        // bool crete_new_ring = true;
+        // for (auto win_id: begin_windows_ids) {
+        //     int num_win_rings = windows_manager.capacity[win_id[0]][win_id[1]];
 
-            if (num_win_rings > 0) {
-                crete_new_ring = false;
-                break;
+        //     if (num_win_rings > 0) {
+        //         crete_new_ring = false;
+        //         break;
+        //     }
+        // }
+        // bool crete_new_ring = true;
+        // 
+        // if (crete_new_ring == true)
+        //     add_ring();
+        
+        // std::cout << "Criando novos aneis" << std::endl;
+        for (size_t i = 0; i < create_rings_win_ids.size(); i++)
+        {
+            // std::cout << "Anel id:" << i << std::endl;
+            auto& ring_window_ids = create_rings_win_ids[i];
+            bool create_new_ring = true;
+            for (auto& win_id: ring_window_ids) {
+                int num_win_rings = windows_manager.capacity[win_id[0]][win_id[1]];
+                
+                // auto& win_center =  windows_manager.windows_center[win_id[0]][win_id[1]];
+                // std::cout << "Janela centro:" << win_center[0] << ", " << win_center[1] << std::endl;
+                // std::cout << "Num inside:" << num_win_rings << std::endl;
+                
+                if (num_win_rings > 0) {
+                    create_new_ring = false;
+                    break;
+                }
             }
+            // std::cout << "========" << std::endl;
+
+            to_create_new_ring[i] = create_new_ring;
         }
 
-        if (crete_new_ring == true)
-            add_ring();
+        num_created_rings = 0;
+        for (size_t i = 0; i < to_create_new_ring.size(); i++) {
+            if (to_create_new_ring[i] == true) {
+                num_created_rings += 1;
+                add_ring(i);
+            }
+        }
         
         if (to_recalculate_ids == true) {
+            // std::cout << "Recalculando ids" << std::endl;
             recalculate_rings_ids();
         }
 
+        // std::cout << "Atualizando janelas (particulas)" << std::endl;
         windows_manager.update_window_members();
+        
+        // std::cout << "\n#== Janelas ==#" << std::endl;
+        // for (auto& wid: windows_manager.windows_ids) {
+        //     auto& win_center = windows_manager.windows_center[wid[0]][wid[1]];
+        //     if (win_center[0] < -54) {
+        //         std::cout << "Janela centro:" << win_center[0] << ", " << win_center[1] << std::endl;
+        //         std::cout << "num_inside:" << windows_manager.capacity[wid[0]][wid[1]] << std::endl;
+        //         std::cout << "====" << std::endl;
+        //     }
+        // }
+        // std::cout << "#======#\n" << std::endl;
+
+        // std::cout << "Atualizando janelas (CM)" << std::endl;
         in_pol_checker.windows_manager.update_window_members();    
+        // std::cout << "Atualizando janelas InPolChecker" << std::endl;
         in_pol_checker.update();
 
+        // std::cout << "Calculando forças" << std::endl;
         calc_forces_windows();
-        
+        // Obstacle force
+
+
+        // std::cout << "Calculando CM" << std::endl;
         calc_center_mass();
         
+        // std::cout << "Avançando no tempo" << std::endl;
         advance_time_stokes();
 
         #if DEBUG == 1
