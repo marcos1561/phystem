@@ -2,23 +2,20 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 import numpy as np
 
+from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection, PathCollection, PatchCollection
 from matplotlib.patches import Circle
 from matplotlib.quiver import Quiver 
 from matplotlib import colors, cm
 
-from .graphs_cfg import MainGraphCfg, SimpleGraphCfg
-from phystem.systems.ring.solvers import CppSolver
+from .graphs_cfg import MainGraphCfg, SimpleGraphCfg, ReplayGraphCfg
+from phystem.systems.ring.solvers import CppSolver, SolverReplay
 from phystem.systems.ring.configs import RingCfg, SpaceCfg, RingCfg
-
-from phystem.utils import timer
-
-
 
 class BaseGraph(ABC):
     @abstractmethod
-    def __init__(self, ax: Axes, solver: CppSolver, sim_configs: dict, graph_cfg=None):
+    def __init__(self, fig: Figure, ax: Axes, solver: CppSolver, sim_configs: dict, graph_cfg=None):
         pass
 
     @abstractmethod
@@ -26,7 +23,7 @@ class BaseGraph(ABC):
         pass
 
 class MainGraph(BaseGraph):
-    def __init__(self, ax: Axes, solver: CppSolver, sim_configs: dict, graph_cfg: MainGraphCfg=None) -> None:
+    def __init__(self, fig: Figure, ax: Axes, solver: CppSolver, sim_configs: dict, graph_cfg: MainGraphCfg=None) -> None:
         '''
         Gráfico das partículas com a opção de desenhar os círculos dos raios de interação.
         '''
@@ -437,7 +434,7 @@ class MainGraph(BaseGraph):
         return
 
 class SimpleGraph(BaseGraph):
-    def __init__(self, ax: Axes, solver: CppSolver, sim_configs, graph_cfg: SimpleGraphCfg=None):
+    def __init__(self, fig: Figure, ax: Axes, solver: CppSolver, sim_configs, graph_cfg: SimpleGraphCfg=None):
         self.ax = ax
         self.solver = solver
         self.graph_cfg = graph_cfg
@@ -469,6 +466,9 @@ class SimpleGraph(BaseGraph):
         self.points = self.ax.scatter(*self.get_pos().T, s=points_s, cmap=self.cmap, 
             c=self.colors[self.ring_ids].flatten(), vmin=0, vmax=len(self.cmap.colors)-1)
         
+        # self.points = self.ax.scatter(*self.get_pos().T, s=points_s, cmap=cm.hsv, 
+        #     c=self.get_colors(), vmin=-np.pi, vmax=np.pi)
+        
     def update_ring_ids(self):
         self.ring_ids = self.solver.rings_ids[:self.solver.num_active_rings]
 
@@ -486,7 +486,67 @@ class SimpleGraph(BaseGraph):
             c[i] = color_id[i]
 
         return c
+    
+    def get_colors(self):
+        return self.colors[self.ring_ids].flatten()
+    
     def update(self):
         self.update_ring_ids()
         self.points.set_offsets(self.get_pos())
-        self.points.set_array(self.colors[self.ring_ids].flatten())
+        self.points.set_array(self.get_colors())
+
+class ReplayGraph(BaseGraph):
+    def __init__(self, fig: Figure, ax: Axes, solver: SolverReplay, sim_configs: dict, graph_cfg: ReplayGraphCfg=None):
+        if type(solver) != SolverReplay:
+            raise Exception("Tipo de solver incompatível. 'ReplayGraph' apenas aceita 'SolverReplay'.")
+
+        self.ax = ax
+        self.solver = solver
+        
+        self.graph_cfg = graph_cfg
+        if graph_cfg is None:
+            self.graph_cfg = ReplayGraphCfg()
+
+        space_cfg: SpaceCfg = sim_configs["space_cfg"]
+
+        h = space_cfg.height/2
+        l = space_cfg.length/2
+        r_scale = 1
+        self.ax.set_ylim(-r_scale*h, r_scale*h)
+        
+        if self.graph_cfg.x_lims is None:
+            self.ax.set_xlim(-r_scale*l, r_scale*l)
+        else:
+            self.ax.set_xlim(*self.graph_cfg.x_lims)
+
+        self.ax.set_aspect(1)
+
+        # Borders
+        self.ax.plot([-l, -l], [ h, -h], color="black")
+        self.ax.plot([ l,  l], [ h, -h], color="black")
+        self.ax.plot([ l, -l], [ h,  h], color="black")
+        self.ax.plot([ l, -l], [-h, -h], color="black")
+
+        stokes_cfg = sim_configs["other_cfgs"]["stokes"]
+        self.ax.add_patch(Circle((stokes_cfg.obstacle_x, stokes_cfg.obstacle_y), stokes_cfg.obstacle_r, fill=False))
+
+        if self.graph_cfg.vel_colors:
+            self.points = self.ax.scatter(*self.get_pos().T, **self.graph_cfg.scatter_kwargs, cmap=cm.hsv, 
+                c=self.get_colors(), vmin=-np.pi, vmax=np.pi)
+            
+            fig.colorbar(self.points)
+        else:
+            self.points = self.ax.scatter(*self.get_pos().T, **self.graph_cfg.scatter_kwargs)
+
+    def get_pos(self):
+        pos = self.solver.pos
+        return pos.reshape(pos.shape[0] * pos.shape[1], pos.shape[2])
+
+    def get_colors(self):
+        vel_cm = self.solver.vel_cm_dir
+        return (np.zeros((self.solver.num_particles, vel_cm.size), dtype=np.float32) + vel_cm).T.flatten()
+
+    def update(self):
+        self.points.set_offsets(self.get_pos())
+        if self.graph_cfg.vel_colors:
+            self.points.set_array(self.get_colors())

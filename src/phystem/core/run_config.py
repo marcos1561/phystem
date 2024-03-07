@@ -27,28 +27,23 @@ Enumerações
 
     SolverType:
         Tipo do solver a ser utilizado
-    
-    UpdateType:
-        Tipo de atualização a ser utilizado pelo solver.
-
-        
-TODO: No momento atual configurações que modificam como o sistema é integrado (tipo 1) (como o passo temporal 
-    e tipo do solver) estão misturadas com configuração que não interferem como o sistema evolui com 
-    o tempo (tipo 2) (como fps e número de passos por frame).
-
-    Proposta de Solução: Encapsular as configurações do tipo 1 em uma classe e criar um argumento nas configurações
-    de execução para recebe-lá. Dessa forma, sistemas que adicionarem configurações desse tipo (como o número de 
-    janelas em rings) apenas vão necessitar expandir essa classe e não vão precisar expandir as configurações 
-    de execução em si. Ainda, o carregamento do checkpoint apenas vai necessitar sobrescrever essa classe.
-
-    Problemas com a solução: 
-        * Impossibilidade de carregar arquivos de configurações antigos, pois a estrutura das
-        configurações de execução mudou.
-        
-        * Todas as referências antigas das configurações do tipo 1 não mais vão funcionar.
 '''
 from enum import Flag, Enum, auto
 import yaml, os
+
+def load_cfg(cfg_path, is_recursive=False):
+    with open(cfg_path, "r") as f:
+        cfgs = yaml.unsafe_load(f)
+    
+    checkpoint: CheckpointCfg = cfgs["run_cfg"].checkpoint 
+    if checkpoint and not is_recursive:
+        checkpoint_cfg_path = os.path.join(checkpoint.folder_path, "config.yaml")
+        if os.path.exists(checkpoint_cfg_path):
+            checkpoint.configs = load_cfg(checkpoint_cfg_path, is_recursive=True)    
+        else:
+            checkpoint.configs = "configurações não encontradas"    
+
+    return cfgs
 
 class RunType(Flag):
     COLLECT_DATA = auto()
@@ -62,22 +57,6 @@ class SolverType(Enum):
     '''
     PYTHON = auto()
     CPP = auto()
-
-# class UpdateType(Enum):
-#     '''
-#     Modo de integração a ser utilizado pelo solver.
-
-#     Variants:
-#     ---------
-#         NORMAL:
-#             Integração normal, sem mágicas envolvidas.
-        
-#         WINDOWS:
-#             Divide o espaço em janelas e mantém atualizado quem está em cada
-#             janela.
-#     '''
-#     PERIODIC_NORMAL = auto()
-#     PERIODIC_WINDOWS = auto()
 
 class CheckpointCfg:
     def __init__(self, folder_path: str, override_cfgs: bool = False) -> None:
@@ -239,7 +218,8 @@ class ReplayDataCfg(RealTimeCfg):
     '''
     id = RunType.REPLAY_DATA
 
-    def __init__(self, directory: str, system_cfg: dict, num_steps_frame=1, frequency=0, fps=30, graph_cfg=None) -> None:
+    def __init__(self, directory: str, data_dir="data", num_steps_frame=1, fps=30, 
+        graph_cfg=None, solver_cfg=None,) -> None:
         '''
         Parameters:
         -----------
@@ -267,20 +247,17 @@ class ReplayDataCfg(RealTimeCfg):
                 Configurações passadas para o gerenciador do gráfico da simulação.
         '''
         # Carrega as configurações utilizadas nos dados salvos.
-        with open(os.path.join(directory, "config.yaml"), "r") as f:
-            cfg = yaml.unsafe_load(f)
-        collect_cfg: CollectDataCfg = cfg["run_cfg"]
+        cfg_path = os.path.join(directory, "config.yaml") 
+        self.system_cfg = load_cfg(cfg_path)
 
-        dt = collect_cfg.dt
-        super().__init__(dt=dt, num_steps_frame=num_steps_frame, fps=fps, graph_cfg=graph_cfg)
+        init_cfg = self.system_cfg["run_cfg"].int_cfg
+        super().__init__(int_cfg=init_cfg, num_steps_frame=num_steps_frame, fps=fps, graph_cfg=graph_cfg)
 
-        # Seta as configurações da simulação com aquelas salvas nos dados.
-        cfg_names = ("creator_cfg", "dynamic_cfg", "space_cfg")
-        for name in cfg_names:
-            system_cfg[name].set(cfg[name])
-        
-        self.frequency = frequency
+        self.solver_cfg = solver_cfg
         self.directory = directory
+        self.data_dir = os.path.join(directory, data_dir)
+        
+        self.system_cfg["run_cfg"] = self
 
 class SaveCfg(RunCfg):
     '''
@@ -288,7 +265,8 @@ class SaveCfg(RunCfg):
     '''
     id = RunType.SAVE_VIDEO
     def __init__(self, int_cfg: IntegrationCfg, path:str, fps: int, speed: float=None, duration: float = None, 
-        tf: float = None, num_frames=None, graph_cfg=None, ui_settings=UiSettings(), checkpoint: CheckpointCfg=None) -> None:  
+        tf: float = None, ti=0, num_frames=None, graph_cfg=None, ui_settings=UiSettings(), checkpoint: CheckpointCfg=None,
+        replay: ReplayDataCfg=None) -> None:  
         '''
         Salva um vídeo da simulação em `path`. Ao menos um dos seguintes parâmetros deve ser 
         especificado:
@@ -330,15 +308,17 @@ class SaveCfg(RunCfg):
         '''
         super().__init__(int_cfg, checkpoint)
         self.ui_settings = ui_settings
+        self.replay = replay
 
         if duration == None and tf == None:
             raise ValueError("Um dos parâmetros `duration` ou `tf` deve ser passado.")
         
+
         if speed == None: 
             if (duration is None or tf is None):
                 raise ValueError(f"Se 'speed=None' então 'duration' e 'tf' devem ser passados.")
 
-            speed = tf/duration
+            speed = (tf - ti)/duration
 
         self.speed = speed
         self.path = path
@@ -351,20 +331,27 @@ class SaveCfg(RunCfg):
         if duration != None:
             self.duration = duration
             self.num_frames = int(duration * fps)
-            self.tf = self.num_frames * self.num_steps_frame * dt
+            self.t = self.num_frames * self.num_steps_frame * dt
             # tf = s * d => s = tf/d  
         elif tf != None:
-            self.tf = tf
+            self.t = tf - ti
             
             if num_frames is not None:
                 self.num_frames = num_frames
-                self.num_steps_frame = self.tf/num_frames/dt
+                self.num_steps_frame = self.t/num_frames/dt
             else:
-                self.num_frames = int(self.tf / self.num_steps_frame / dt)
+                self.num_frames = int(self.t / self.num_steps_frame / dt)
 
             self.duration = self.num_frames / self.fps
-    
+
+        print(self.duration)
+
     def set_num_steps_frame(self, speed, fps, dt):
+        # n * dt * fps = t
+        # n = t / (dt * fps)
+        # s = t/d
+        # n = (s * d) / (dt * fps)
+
         self.num_steps_frame = speed / fps / dt
         if self.num_steps_frame < 1:
             self.num_steps_frame = 1

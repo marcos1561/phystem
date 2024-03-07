@@ -1,7 +1,7 @@
 from tkinter import ttk
 from tkinter import BooleanVar, W
 from tkinter.ttk import Frame
-from phystem.core.run_config import RealTimeCfg
+from phystem.core.run_config import RealTimeCfg, RunType
 
 from phystem.systems.ring.solvers import CppSolver
 from phystem.systems.ring.configs import RingCfg, CreatorCfg
@@ -122,6 +122,17 @@ class Info(InfoCore):
         self.cfg_info = dynamic_cfg.info() + f"N = {creator_cfg.num_p}\n" 
 
     def get_info(self) -> str:
+        if self.cfgs["run_cfg"].id is RunType.REPLAY_DATA:
+            return (
+                f"fps: {self.fps:.1f}\n"
+                f"Solver Delta T (ms): {self.timer.mean_time('solver'):.3f}\n"
+                f"Graph  Delta T (ms): {self.timer.mean_time('graph'):.3f}\n\n"
+                f"t : {self.solver.time:.3f}\n"
+                f"dt: {self.solver.dt:.5f}\n"
+                "\n"
+                f"{self.cfg_info}"
+            )
+
         if self.cfgs["run_cfg"].graph_cfg.cpp_is_debug:
             return (
                 f"fps: {self.fps:.1f}\n"

@@ -82,7 +82,7 @@ class SimulationCore(ABC):
             self.configs["run_cfg"].checkpoint.configs = "nao salvo"
 
         self.app: AppCore = None
-        self.time_it = TimeIt(funcs_names=["solver", "graph"], num_samples=600)
+        self.time_it = TimeIt(funcs_names=["solver", "graph"], num_samples=5)
 
         self.init_sim()    
 

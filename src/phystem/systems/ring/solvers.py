@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 from phystem.core.run_config import ReplayDataCfg
 from phystem.systems.ring.configs import RingCfg, SpaceCfg, StokesCfg
@@ -195,6 +196,120 @@ class CppSolver:
     def mean_vel(self, ring_id: int):
         return self.cpp_solver.mean_vel(ring_id)
 
+class SolverReplay:
+    def __init__(self, run_cfg: ReplayDataCfg) -> None:
+        self.main_dir = run_cfg.directory
+        self.data_dir = run_cfg.data_dir
+        self.dt = run_cfg.int_cfg.dt
+
+        solver_cfg = run_cfg.solver_cfg
+
+        mode = solver_cfg["mode"]
+
+        self.init_func_map = {
+            "normal": self.init_normal,
+            "same_ids": self.init_same_ids,
+            "same_ids_pre_calc": self.init_same_ids_pre_calc,
+        }
+        self.update_func_map = {
+            "normal": self.update_normal,
+            "same_ids": self.update_same_ids,
+            "same_ids_pre_calc": self.update_same_ids_pre_calc,
+        }
+
+        self.init_func = self.init_func_map[mode]
+        self.update_func = self.update_func_map[mode]
+
+        self.init_func()
+        
+        self.num_particles = self.pos.shape[1]
+        self.count = 0
+        self.times = np.load(os.path.join(self.main_dir, "times.npy")) 
+        self.time = self.times[self.count]
+
+    def update_visual_aids(self):
+        pass
+
+    def init_normal(self):
+        self.update_pos_normal(0)
+
+    def init_same_ids(self):
+        self.pos, self.ids = self.load(0)
+        self.pos2_original, self.ids2 = self.load(1)
+        self.pos, self.pos2 = self.same_rings(self.pos, self.ids, self.pos2_original, self.ids2)
+        self.calc_vel_cm()
+    
+    def init_same_ids_pre_calc(self):
+        ids_dir = os.path.join(self.main_dir, "same_ids")
+        self.all_ids = np.load(os.path.join(ids_dir, "ids.npy"))
+        self.all_ids_size = np.load(os.path.join(ids_dir, "ids_size.npy"))
+        
+        self.pos2_original = np.load(os.path.join(self.data_dir, f"pos_{0}.npy"))
+        self.update_pos_same_ids_pre_calc(0)
+        self.calc_vel_cm()
+    
+
+    def update_pos_normal(self, frame):
+        self.pos = np.load(os.path.join(self.data_dir, f"pos_{frame}.npy"))
+    
+    def update_pos_same_ids(self, frame):
+        self.pos, self.ids = self.pos2_original, self.ids2
+        self.pos2_original, self.ids2 = self.load(self.count+1)
+        self.pos, self.pos2 = self.same_rings(self.pos, self.ids, self.pos2_original, self.ids2)
+    
+    def update_pos_same_ids_pre_calc(self, frame):
+        self.pos = self.pos2_original
+        self.pos2_original = np.load(os.path.join(self.data_dir, f"pos_{frame+1}.npy"))
+
+        self.pos = self.pos[self.all_ids[frame, 0, :self.all_ids_size[frame]]]
+        self.pos2 = self.pos2_original[self.all_ids[frame, 1, :self.all_ids_size[frame]]]
+
+     
+    def update_normal(self, frame):
+        self.update_pos_normal(frame)
+
+    def update_same_ids(self, frame):
+        self.update_pos_same_ids(frame)
+        self.calc_vel_cm()
+    
+    def update_same_ids_pre_calc(self, frame):
+        self.update_pos_same_ids_pre_calc(frame)
+        self.calc_vel_cm()
+
+
+    @staticmethod
+    def same_rings(pos1, ids1, pos2, ids2):
+        argsort1 = np.argsort(ids1)
+        argsort2 = np.argsort(ids2)
+        
+        ids1_sorted = np.sort(ids1)
+        ids2_sorted = np.sort(ids2)
+
+        common_ids = np.intersect1d(ids1_sorted, ids2_sorted)
+        id_mask1 = np.where(np.in1d(ids1_sorted, common_ids))[0]
+        id_mask2 = np.where(np.in1d(ids2_sorted, common_ids))[0]
+        return pos1[argsort1[id_mask1]], pos2[argsort2[id_mask2]]
+
+    def load(self, frame):
+        pos = np.load(os.path.join(self.data_dir, f"pos_{frame}.npy"))
+        ids = np.load(os.path.join(self.data_dir, f"ids_{frame}.npy"))
+        return pos, ids
+
+    def calc_vel_cm(self):
+        vel = (self.pos2 - self.pos)/self.dt
+        self.vel_cm = vel.sum(axis=1)/vel.shape[1]
+        self.vel_cm_dir = np.arctan2(self.vel_cm[:, 1], self.vel_cm[:, 0])
+
+    def update(self):
+        self.count += 1
+
+        if self.count > 1015:
+            return
+
+        self.update_func(self.count)
+
+        self.time = self.times[self.count]
+
 class SolverRD:
     '''
     Solver utilizado no modo replay. Apenas itera sobre os dados salvos.  
@@ -242,4 +357,3 @@ class SolverRD:
             self.pos[:] = self.pos_all[self.id]
             self.pos_t = self.pos.T
             self.vel[:] = self.vel_all[self.id]
-            

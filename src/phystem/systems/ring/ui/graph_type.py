@@ -8,6 +8,7 @@ def get_graph(cfg) -> type[graph.BaseGraph]:
     cfg_to_cls = {
         graphs_cfg.MainGraphCfg: graph.MainGraph,
         graphs_cfg.SimpleGraphCfg: graph.SimpleGraph,
+        graphs_cfg.ReplayGraphCfg: graph.ReplayGraph,
     }
 
     return cfg_to_cls[type(cfg)]

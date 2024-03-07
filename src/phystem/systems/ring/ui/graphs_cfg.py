@@ -52,3 +52,15 @@ class MainGraphCfg(BaseGraphCfg):
 class SimpleGraphCfg(BaseGraphCfg):
     def __init__(self, begin_paused=False, pause_on_high_vel=False, cpp_is_debug=True) -> None:
         super().__init__(begin_paused, pause_on_high_vel, cpp_is_debug)
+
+class ReplayGraphCfg(BaseGraphCfg):
+    def __init__(self, scatter_kwargs=None, x_lims=None, vel_colors=False,
+        begin_paused=False, pause_on_high_vel=False, cpp_is_debug=True) -> None:
+        super().__init__(begin_paused, pause_on_high_vel, cpp_is_debug)
+        self.x_lims = x_lims
+        self.vel_colors=  vel_colors
+
+        self.scatter_kwargs = scatter_kwargs
+        if scatter_kwargs is None:
+            self.scatter_kwargs = {}
+

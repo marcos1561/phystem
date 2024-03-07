@@ -2,7 +2,7 @@ from matplotlib.figure import Figure
 
 from phystem.core.simulation import SimulationCore
 from phystem.core.solvers import SolverCore
-from phystem.systems.ring.solvers import CppSolver, SolverRD
+from phystem.systems.ring.solvers import CppSolver, SolverRD, SolverReplay
 from phystem.systems.ring.creators import CreatorRD, Creator
 
 from phystem.core.run_config import RunCfg, RunType, RealTimeCfg
@@ -44,7 +44,12 @@ class Simulation(SimulationCore):
         self.creator: Creator
 
         if self.run_cfg.id is RunType.REPLAY_DATA:
-            return SolverRD(self.run_cfg)
+            # return SolverRD(self.run_cfg)
+            return SolverReplay(self.run_cfg)
+
+        if self.run_cfg.id is RunType.SAVE_VIDEO:
+            if self.run_cfg.replay is not None:
+                return SolverReplay(self.run_cfg.replay)
 
         if self.run_cfg.checkpoint:
             from phystem.systems.ring.collectors import StateCheckpoint
@@ -84,7 +89,7 @@ class Simulation(SimulationCore):
         #     ax=ax, solver=self.solver, space_cfg=self.space_cfg, dynamic_cfg=self.dynamic_cfg, 
         #     graph_cfg=real_time_cfg.graph_cfg)
         particles_graph = graph_type.get_graph(graph_cfg)(
-            ax=ax, solver=self.solver, sim_configs=self.configs_container,
+            fig=fig, ax=ax, solver=self.solver, sim_configs=self.configs_container,
             graph_cfg=graph_cfg
         )
 
