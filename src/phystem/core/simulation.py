@@ -177,10 +177,13 @@ class SimulationCore(ABC):
                 Função que atualiza um frame do vídeo.
         '''
         from phystem.utils.progress import MplAnim as Progress
+        import time
 
         # Instantiation of app because update may use control_mng.
-        self.app = AppCore(fig, self.configs_container, self.solver, self.time_it, self.run_cfg, None, None,
-            ControlT=ControlT)
+        # self.app = AppCore(fig, self.configs_container, self.solver, self.time_it, self.run_cfg, None, None,
+        #     ControlT=ControlT)
+
+        t1 = time.time()
 
         save_video_cfg: SaveCfg = self.run_cfg
         
@@ -199,3 +202,7 @@ class SimulationCore(ABC):
         with open(config_path, "w") as f:
             yaml.dump(self.configs, f)
         ani.save(save_video_cfg.path, fps=save_video_cfg.fps, progress_callback=progress.update)
+
+        t2 = time.time()
+        from datetime import timedelta
+        print("Elapsed time:", timedelta(seconds=t2-t1))

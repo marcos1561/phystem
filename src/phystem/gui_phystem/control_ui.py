@@ -10,14 +10,14 @@ from phystem.utils.timer import TimeIt
 from phystem.gui_phystem.control_mng import ControlManagerCore
 
 class ControlCore():
-    def __init__(self, main_frame: ttk.Frame, run_cfg: RealTimeCfg, slider_lims=[1, 100]) -> None:
+    def __init__(self, main_frame: ttk.Frame, run_cfg: RealTimeCfg, solver: SolverCore, slider_lims=[1, 100]) -> None:
         self.main_frame = main_frame
-        self.control_mng = self.get_control_mng(run_cfg)
+        self.control_mng = self.get_control_mng(run_cfg, solver)
 
         self.slider_lims = slider_lims
 
-    def get_control_mng(self, run_cfg: RealTimeCfg):
-        return ControlManagerCore(run_cfg)
+    def get_control_mng(self, run_cfg: RealTimeCfg, solver: SolverCore):
+        return ControlManagerCore(run_cfg, solver)
 
     def configure_ui(self):
         f_main_frame = ttk.LabelFrame(self.main_frame, text="Control", padding=10, border=3)

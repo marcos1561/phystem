@@ -227,6 +227,8 @@ class SolverReplay:
         self.times = np.load(os.path.join(self.main_dir, "times.npy")) 
         self.time = self.times[self.count]
 
+        self.time_sign = 1
+
     def update_visual_aids(self):
         pass
 
@@ -301,9 +303,13 @@ class SolverReplay:
         self.vel_cm_dir = np.arctan2(self.vel_cm[:, 1], self.vel_cm[:, 0])
 
     def update(self):
-        self.count += 1
-
-        if self.count > 1015:
+        self.count += self.time_sign
+        
+        if self.count > 1015: 
+            self.count = 1015
+            return
+        elif self.count < 0:
+            self.count = 0
             return
 
         self.update_func(self.count)

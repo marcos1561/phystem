@@ -124,7 +124,16 @@ class Simulation(SimulationCore):
             self.time_it.decorator("graph", particles_graph.update)
 
         if self.run_cfg.id is RunType.SAVE_VIDEO:
-            self.save_video(fig, update, ui_components.Control)
+            def update_video(frame=None):
+                i = 0
+                while i < real_time_cfg.num_steps_frame:
+                    self.time_it.decorator("solver", self.solver.update)
+                    i += 1
+
+                ax.set_title(f"t = {self.solver.time}")
+                self.time_it.decorator("graph", particles_graph.update)
+
+            self.save_video(fig, update_video, ui_components.Control)
         else:
             self.run_app(fig, update, "Ring", ui_components.Info, ui_components.Control, real_time_cfg.ui_settings)
 

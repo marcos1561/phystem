@@ -2,14 +2,16 @@
 from tkinter import StringVar, IntVar
 
 from phystem.core.run_config import RealTimeCfg
+from phystem.core.solvers import SolverCore
 
 class ControlManagerCore:
     '''
     Controla a funcionalidade dos widgets.
     '''
-    def __init__(self, run_cfg: RealTimeCfg) -> None:
+    def __init__(self, run_cfg: RealTimeCfg, solver: SolverCore) -> None:
         self.run_cfg = run_cfg
         self.graph_cfg = run_cfg.graph_cfg
+        self.solver = solver
         self.vars = {
             "frequency": IntVar(value=run_cfg.num_steps_frame),
         } 

@@ -10,37 +10,34 @@ run_cfg = ReplayDataCfg(
         scatter_kwargs={"s": 0.1}, 
         x_lims=(-300, 300),
         begin_paused=False,
-        vel_colors=False,
+        vel_colors=True,
     ),
     solver_cfg={
         "mode": "same_ids_pre_calc",
     },
-    num_steps_frame=3,
+    num_steps_frame=1,
 )
 
 save_cfg = SaveCfg(
     int_cfg=run_cfg.int_cfg, 
     path="./data/movies/test3.mp4", 
     fps=30,
-    # ti=3000,
-    # tf=3509.50,
-    duration=3,
-    speed=1, 
+    dt=0.5,
+    ti=3000,
+    tf=3509.50,
+    duration=15,
     replay=run_cfg,
     graph_cfg=graphs_cfg.ReplayGraphCfg(
         # scatter_kwargs={"s": 0.1, "c":"black"}, 
         scatter_kwargs={"s": 0.1}, 
-        # x_lims=(-300, 300),
+        x_lims=(-300, 300),
         begin_paused=False,
-        vel_colors=True,
+        vel_colors=False,
     ),
-    solver_cfg={
-        "mode": "same_ids",
-    },
 )
 
 configs = run_cfg.system_cfg
-configs["run_cfg"] = save_cfg
+# configs["run_cfg"] = save_cfg
 
 sim = Simulation(**configs)
 sim.run()

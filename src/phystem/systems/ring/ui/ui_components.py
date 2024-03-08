@@ -2,6 +2,7 @@ from tkinter import ttk
 from tkinter import BooleanVar, W
 from tkinter.ttk import Frame
 from phystem.core.run_config import RealTimeCfg, RunType
+from phystem.core.solvers import SolverCore
 
 from phystem.systems.ring.solvers import CppSolver
 from phystem.systems.ring.configs import RingCfg, CreatorCfg
@@ -14,9 +15,10 @@ from phystem.utils.timer import TimeIt
 
 class ControlMng(ControlManagerCore):
     graph_cfg: MainGraphCfg
-    
-    def __init__(self, run_cfg: RealTimeCfg) -> None:
-        super().__init__(run_cfg)
+    solver: SolverCore
+
+    def __init__(self, run_cfg: RealTimeCfg, solver: SolverCore) -> None:
+        super().__init__(run_cfg, solver)
         if self.graph_cfg.begin_paused:
             self.is_paused = True
 
@@ -38,6 +40,9 @@ class ControlMng(ControlManagerCore):
 
     def advance_once_callback(self):
         self.advance_once = True
+   
+    def change_time_callback(self):
+        self.solver.time_sign *= -1
 
     def show_circles(self):
         self.graph_cfg.show_circles = self.vars["show_circles"].get()
@@ -60,8 +65,10 @@ class ControlMng(ControlManagerCore):
 class Control(ControlCore):
     control_mng: ControlMng
 
-    def get_control_mng(self, run_cfg: RealTimeCfg):
-        return ControlMng(run_cfg)
+    def get_control_mng(self, run_cfg: RealTimeCfg, solver: SolverCore):
+        return ControlMng(run_cfg, solver)
+    # def get_control_mng(self, run_cfg: RealTimeCfg):
+    #     return ControlMng(run_cfg)
 
     def configure_ui(self):
         self.slider_lims = [1, 1000]
@@ -95,6 +102,9 @@ class Control(ControlCore):
         
         advance_button = ttk.Button(f_main_frame, command=self.control_mng.advance_once_callback,
             text="Avançar", width=20)
+        
+        change_time_button = ttk.Button(f_main_frame, command=self.control_mng.change_time_callback,
+            text="Reverter Tempo", width=20)
 
         show_circles.grid(column=0, row=2, sticky=W)
         
@@ -109,6 +119,7 @@ class Control(ControlCore):
         inside_points.grid(column=1, row=0, padx=10)
         
         advance_button.grid(column=0, row=6, sticky=W, pady=15)
+        change_time_button.grid(column=0, row=7, sticky=W, pady=15)
 
 
 class Info(InfoCore):

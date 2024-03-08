@@ -265,8 +265,8 @@ class SaveCfg(RunCfg):
     '''
     id = RunType.SAVE_VIDEO
     def __init__(self, int_cfg: IntegrationCfg, path:str, fps: int, speed: float=None, duration: float = None, 
-        tf: float = None, ti=0, num_frames=None, graph_cfg=None, solver_cfg=None, ui_settings=UiSettings(), checkpoint: CheckpointCfg=None,
-        replay: ReplayDataCfg=None) -> None:  
+        tf: float = None, ti=0, num_frames=None, graph_cfg=None, solver_cfg=None, dt=None, 
+        ui_settings=UiSettings(), checkpoint: CheckpointCfg=None, replay: ReplayDataCfg=None) -> None:  
         '''
         Salva um vídeo da simulação em `path`. Ao menos um dos seguintes parâmetros deve ser 
         especificado:
@@ -306,46 +306,52 @@ class SaveCfg(RunCfg):
                 Configurações para carregar um checkpoint. Caso seja 'none', o checkpoint
                 não é carregado.
         '''
+        if duration is not None and speed is not None:
+            tf = speed * duration + ti
+        elif tf is not None and duration is not None:
+            speed = (tf - ti)/duration
+        elif tf is not None and speed is not None:
+            duration = (tf -ti)/speed
+        else:
+            raise Exception((
+                "Nenhuma configuração de parâmetros aceitáveis encontrada.\n"
+                "As seguintes opções são válidas.\n"
+                "   -> duration, speed.\n"
+                "   -> tf, speed.\n"
+                "   -> tf, duration.\n"
+            ))
+        
         super().__init__(int_cfg, checkpoint)
+        
         self.ui_settings = ui_settings
         self.replay = replay
-
-        if duration == None and tf == None:
-            raise ValueError("Um dos parâmetros `duration` ou `tf` deve ser passado.")
-        
-
-        if speed == None: 
-            if (duration is None or tf is None):
-                raise ValueError(f"Se 'speed=None' então 'duration' e 'tf' devem ser passados.")
-
-            speed = (tf - ti)/duration
-
         self.solver_cfg = solver_cfg
-        self.speed = speed
         self.path = path
-        self.fps = fps
         self.graph_cfg = graph_cfg
 
-        dt = self.int_cfg.dt
-        self.set_num_steps_frame(speed, fps, dt)
+        if dt is None:
+            self.dt = self.int_cfg.dt
+        else:
+            self.dt = dt
 
-        if duration != None:
-            self.duration = duration
-            self.num_frames = int(duration * fps)
-            self.t = self.num_frames * self.num_steps_frame * dt
-            # tf = s * d => s = tf/d  
-        elif tf != None:
-            self.t = tf - ti
-            
-            if num_frames is not None:
-                self.num_frames = num_frames
-                self.num_steps_frame = self.t/num_frames/dt
-            else:
-                self.num_frames = int(self.t / self.num_steps_frame / dt)
+        self.fps = fps
+        self.duration = duration
+        self.speed = speed 
+        self.t = tf - ti
 
-            self.duration = self.num_frames / self.fps
+        self.num_steps_frame = self.t / (self.fps * self.duration * self.dt)
+        if self.num_steps_frame < 1:
+            self.num_steps_frame = 1
+            self.dt = self.speed/self.fps
+        else:
+            self.num_steps_frame = int(round(self.num_steps_frame))
 
-        print(self.duration)
+        self.num_frames = int(duration * fps)
+
+        print("num_steps_frame:", self.num_steps_frame)
+        print("duration:", self.duration)
+        print("t:", self.t)
+        print("speed:", self.speed)
 
     def set_num_steps_frame(self, speed, fps, dt):
         # n * dt * fps = t
@@ -353,7 +359,8 @@ class SaveCfg(RunCfg):
         # s = t/d
         # n = (s * d) / (dt * fps)
 
-        self.num_steps_frame = speed / fps / dt
+        # self.num_steps_frame = speed / fps / dt
+        self.num_steps_frame = self.t / (fps * dt)
         if self.num_steps_frame < 1:
             self.num_steps_frame = 1
             self.dt = self.speed/self.fps

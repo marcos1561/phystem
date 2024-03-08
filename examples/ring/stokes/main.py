@@ -69,7 +69,7 @@ seed = 40028922
 ##
 ## Select Run Type
 ##
-run_type = RunType.REAL_TIME
+run_type = RunType.SAVE_VIDEO
 
 
 num_cols = int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6)
@@ -134,32 +134,23 @@ real_time_cfg = RealTimeCfg(
 )
 
 video_cfg = SaveCfg(
-    # int_cfg=IntegrationCfg(
-    #     dt = 0.001*10, # max euler
-    #     # dt = 0.001*5 * 1.55,
-    #     particle_win_cfg=ParticleWindows(
-    #         num_cols=num_cols, num_rows=num_rows,
-    #         update_freq=1),
-    #     integration_type=IntegrationType.euler,
-    #     update_type=UpdateType.STOKES,
-    #     in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 3, disable=False),
-    # ),
-    int_cfg = collect_data_cfg.int_cfg,
+    int_cfg=collect_data_cfg.int_cfg,
     path="./color_test.mp4",
-    tf=200,
-    # speed=5,
-    duration=10,
+    # duration=5,
+    tf=100,
+    speed=40,
     fps=30,
-    graph_cfg = MainGraphCfg(
-        show_circles      = True,
-        show_f_spring     = False,
-        show_f_vol        = False,
-        show_f_area       = False,
-        show_f_total      = False,
-        show_center_mass  = True,
-        show_inside       = False,
-        cpp_is_debug      = False,
-    ),
+    graph_cfg=SimpleGraphCfg(),
+    # graph_cfg = MainGraphCfg(
+    #     show_circles      = True,
+    #     show_f_spring     = False,
+    #     show_f_vol        = False,
+    #     show_f_area       = False,
+    #     show_f_total      = False,
+    #     show_center_mass  = True,
+    #     show_inside       = False,
+    #     cpp_is_debug      = False,
+    # ),
 )
 
 run_type_to_cfg = {

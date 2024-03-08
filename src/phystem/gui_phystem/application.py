@@ -48,7 +48,7 @@ class AppCore:
         control_frame = ttk.Frame(left_frame)
         info_frame = ttk.Frame(left_frame)
 
-        self.control = ControlT(control_frame, run_cfg)
+        self.control = ControlT(control_frame, run_cfg, solver)
         self.info = InfoT(info_frame, cfgs, solver, timer)
         
         self.control.configure_ui()
