@@ -197,12 +197,13 @@ class CppSolver:
         return self.cpp_solver.mean_vel(ring_id)
 
 class SolverReplay:
-    def __init__(self, run_cfg: ReplayDataCfg) -> None:
+    def __init__(self, run_cfg: ReplayDataCfg, dynamic_cfg: RingCfg, space_cfg: SpaceCfg) -> None:
         self.main_dir = run_cfg.directory
         self.data_dir = run_cfg.data_dir
         self.dt = run_cfg.int_cfg.dt
 
         solver_cfg = run_cfg.solver_cfg
+
 
         mode = solver_cfg["mode"]
 
@@ -228,6 +229,32 @@ class SolverReplay:
         self.time = self.times[self.count]
 
         self.time_sign = 1
+        
+        #=
+        # Density
+        #=
+        ring_per_grid = 3
+
+        self.space_cfg = space_cfg
+        from math import pi, cos
+        self.ring_d = dynamic_cfg.diameter / (2 * (1 - cos(2*pi/(self.num_particles))))**.5 * 2   
+
+        height, length = space_cfg.height, space_cfg.length
+        self.grid_shape = (int(height/ring_per_grid/self.ring_d), int(length/ring_per_grid/self.ring_d))
+
+        self.ring_count = np.zeros(self.grid_shape, dtype=int)
+        self.edges = (
+            np.linspace(-length/2, length/2, self.grid_shape[1]+1),
+            np.linspace(-height/2, height/2, self.grid_shape[0]+1),
+        )
+        
+        # self.grid_size = height / self.grid_shape[0], length / self.grid_shape[1]
+        self.grid_size = (
+            self.edges[1][1] - self.edges[1][0],
+            self.edges[0][1] - self.edges[0][0],
+        )
+
+        self.calc_density()
 
     def update_visual_aids(self):
         pass
@@ -302,6 +329,22 @@ class SolverReplay:
         self.vel_cm = vel.sum(axis=1)/vel.shape[1]
         self.vel_cm_dir = np.arctan2(self.vel_cm[:, 1], self.vel_cm[:, 0])
 
+    def calc_density(self):
+        self.cm = self.pos.sum(axis=1)/self.pos.shape[1]
+
+        x = self.cm[:, 0] + self.space_cfg.length/2
+        y = self.cm[:, 1] + self.space_cfg.height/2
+
+        col_pos = (x / self.grid_size[1]).astype(int)
+        row_pos = (y / self.grid_size[0]).astype(int)
+
+        row_pos[row_pos == self.grid_shape[0]] -= 1
+        col_pos[col_pos == self.grid_shape[1]] -= 1
+
+        self.ring_count[:] = 0
+        for idx in range(col_pos.size):
+            self.ring_count[row_pos[idx], col_pos[idx]] += 1
+
     def update(self):
         self.count += self.time_sign
         
@@ -313,6 +356,8 @@ class SolverReplay:
             return
 
         self.update_func(self.count)
+        self.calc_density()
+
 
         self.time = self.times[self.count]
 

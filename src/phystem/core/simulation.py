@@ -1,6 +1,5 @@
 from copy import deepcopy
 from abc import ABC, abstractmethod
-from typing import Type
 
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -8,13 +7,13 @@ from matplotlib.figure import Figure
 import os, yaml
 
 from phystem.utils.timer import TimeIt
-from phystem.core.run_config import RunType, RunCfg, CollectDataCfg, SaveCfg, RealTimeCfg, UiSettings, CheckpointCfg
+from phystem.core.run_config import RunType, RunCfg, CollectDataCfg, SaveCfg, RealTimeCfg, CheckpointCfg
 from phystem.core.creators import CreatorCore
 from phystem.core.solvers import SolverCore
 
 from phystem.gui_phystem.application import AppCore
+from phystem.gui_phystem import config_ui
 from phystem.gui_phystem import control_ui
-from phystem.gui_phystem import info_ui
 
 class SimulationCore(ABC): 
     '''
@@ -142,12 +141,10 @@ class SimulationCore(ABC):
 
         run_cfg.func(self, run_cfg.func_cfg)
 
-    def run_app(self, fig: Figure, update, title=None,
-        InfoT=info_ui.InfoCore, ControlT=control_ui.ControlCore, ui_settings=UiSettings()):
-        self.app = AppCore(fig, self.configs_container, self.solver, self.time_it, self.run_cfg, update, title,
-            InfoT, ControlT, ui_settings)
+    def run_app(self, fig: Figure, update, title=None, ui_settings: config_ui.UiSettings=None):
+        self.app = AppCore(fig, self.configs_container, self.solver, self.time_it, 
+            update, title, ui_settings)
         self.app.run()
-
 
     def run_mpl_animation(self, fig: Figure, update):
         '''
@@ -165,7 +162,7 @@ class SimulationCore(ABC):
         ani = animation.FuncAnimation(fig, update, interval=1/(real_time_cfg.fps)*1000, cache_frame_data=False)
         plt.show()
 
-    def save_video(self, fig: Figure, update, ControlT=control_ui.ControlCore):
+    def save_video(self, fig: Figure, update):
         '''
         Salva um vídeo da simulação de acordo com as configurações dadas.
 
@@ -178,10 +175,6 @@ class SimulationCore(ABC):
         '''
         from phystem.utils.progress import MplAnim as Progress
         import time
-
-        # Instantiation of app because update may use control_mng.
-        # self.app = AppCore(fig, self.configs_container, self.solver, self.time_it, self.run_cfg, None, None,
-        #     ControlT=ControlT)
 
         t1 = time.time()
 

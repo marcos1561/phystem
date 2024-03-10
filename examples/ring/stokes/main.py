@@ -1,7 +1,7 @@
 from phystem.systems.ring.simulation import Simulation
 
 from phystem.systems.ring.configs import *
-from phystem.core.run_config import RunType, CheckpointCfg, CollectDataCfg, UiSettings
+from phystem.core.run_config import RunType, CheckpointCfg, CollectDataCfg
 from phystem.core.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, ReplayDataCfg
 from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType, ParticleWindows
 from phystem.systems.ring.ui.graphs_cfg import *
@@ -58,7 +58,7 @@ stokes_cfg = StokesCfg(
     obstacle_y  = 0*space_cfg.length/8/2,
     create_length = radius * 2.01,
     remove_length = radius * 2.01,
-    flux_force = 0.1, 
+    flux_force = 3, 
     obs_force = 15,
     num_max_rings = 400, 
 )
@@ -69,7 +69,7 @@ seed = 40028922
 ##
 ## Select Run Type
 ##
-run_type = RunType.SAVE_VIDEO
+run_type = RunType.REAL_TIME
 
 
 num_cols = int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6)
@@ -114,7 +114,7 @@ real_time_cfg = RealTimeCfg(
     int_cfg=collect_data_cfg.int_cfg,
     num_steps_frame=1,
     fps=30,
-    graph_cfg = SimpleGraphCfg(begin_paused=True),
+    graph_cfg = SimpleGraphCfg(begin_paused=False),
     # graph_cfg = MainGraphCfg(
     #     show_circles      = True,
     #     show_f_spring     = False,

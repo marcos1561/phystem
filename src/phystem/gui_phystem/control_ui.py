@@ -20,28 +20,39 @@ class ControlCore():
         return ControlManagerCore(run_cfg, solver)
 
     def configure_ui(self):
-        f_main_frame = ttk.LabelFrame(self.main_frame, text="Control", padding=10, border=3)
+        label_frame = ttk.LabelFrame(self.main_frame, text="Control", padding=10, border=3)
+        
+        base_frame = ttk.Frame(label_frame)
+        self.configure_main(base_frame)
 
-        frequency = self.control_mng.vars["frequency"]
-        speed_frame = ttk.Frame(f_main_frame)
-        speed_label = ttk.Label(speed_frame, text="Speed")        
-        speed = ttk.Scale(speed_frame, from_=self.slider_lims[0], to=self.slider_lims[1], orient=HORIZONTAL,
-                            command=self.control_mng.speed_callback, variable=frequency,
-                            length=300)
+        controls_frame = ttk.Frame(label_frame)
+        self.configure_controls(controls_frame)
 
-        pause_btt = ttk.Button(f_main_frame, command=self.control_mng.pause_callback,
+        label_frame.grid(column=0, row=0, sticky=(W, E, N, S))
+        base_frame.grid(column=0, row=0, sticky=(W, E, N, S))
+        controls_frame.grid(column=0, row=1, sticky=(W, E, N, S))
+
+    def configure_main(self, main_frame: ttk.Frame):
+        pause_btt = ttk.Button(main_frame, command=self.control_mng.pause_callback,
                 text="Pausar", width=20)
-
-        f_main_frame.grid(column=0, row=0, sticky=(W, E, N, S))
         
+        speed_var = self.control_mng.vars["frequency"]
+        speed_frame = ttk.Frame(main_frame)
+        speed_label = ttk.Label(speed_frame, text="Speed")        
+        speed_slider = ttk.Scale(speed_frame, from_=self.slider_lims[0], to=self.slider_lims[1], orient=HORIZONTAL,
+                        command=self.control_mng.speed_callback, variable=speed_var,
+                        length=300)
+        # speed_value = ttk.Entry(speed_frame, textvariable=speed_var, width=5)
+
         pause_btt.grid(column=0, row=0, sticky=W)
-        
-        speed_frame.grid(column=0, row=1, sticky=W, pady=30)
+
+        speed_frame.grid(column=0, row=2, sticky=W, pady=15)
         speed_label.grid(column=0, row=0)
-        speed.grid(column=0, row=1, sticky=W)
+        speed_slider.grid(column=0, row=1, sticky=W)
+        # speed_value.grid(column=1, row=1, padx=10)
 
-        return f_main_frame
-
+    def configure_controls(self, main_frame: ttk.Frame):
+        pass
 
 if __name__ == "__main__":
     class S:

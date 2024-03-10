@@ -1,7 +1,6 @@
 from tkinter import *
 from tkinter import ttk
 
-from phystem.core.run_config import RealTimeCfg
 from phystem.core.solvers import SolverCore
 from phystem.utils.timer import TimeIt
 

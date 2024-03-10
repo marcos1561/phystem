@@ -8,24 +8,29 @@ from matplotlib.backend_bases import key_press_handler
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2Tk)
 
-from phystem.core.run_config import RealTimeCfg, UiSettings
+from phystem.core.run_config import RealTimeCfg
 from phystem.core.solvers import SolverCore
 from phystem.utils.timer import TimeIt
 
+from phystem.gui_phystem.config_ui import UiSettings
 from phystem.gui_phystem import control_ui, info_ui
 
 class AppCore:
     def __init__(self, fig: Figure, cfgs: dict, solver: SolverCore, timer: TimeIt,
-        run_cfg: RealTimeCfg, update_func, title: str=None,
-        InfoT=info_ui.InfoCore, 
-        ControlT=control_ui.ControlCore,
-        ui_settings=UiSettings(), 
+        update_func, title: str=None, ui_settings:UiSettings=None, 
         ) -> None:
+        if ui_settings is None:
+            ui_settings = UiSettings()
+        if ui_settings.InfoT is None:
+            ui_settings.InfoT = info_ui.InfoCore
+        if ui_settings.ControlT is None:
+            ui_settings.ControlT = control_ui.ControlCore
+
         self.root = Tk()
         self.fig = fig
         self.update_func = update_func
         self.canvas: FigureCanvasTkAgg = None
-        self.run_cfg = run_cfg
+        self.run_cfg: RealTimeCfg = cfgs["run_cfg"]
 
         self.fig.set_dpi(ui_settings.dpi)
 
@@ -38,6 +43,7 @@ class AppCore:
         if title is not None:
             self.root.wm_title(title)
 
+
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.bind("<<update_ui>>", self.update_ui)
 
@@ -48,8 +54,8 @@ class AppCore:
         control_frame = ttk.Frame(left_frame)
         info_frame = ttk.Frame(left_frame)
 
-        self.control = ControlT(control_frame, run_cfg, solver)
-        self.info = InfoT(info_frame, cfgs, solver, timer)
+        self.control = ui_settings.ControlT(control_frame, self.run_cfg, solver)
+        self.info = ui_settings.InfoT(info_frame, cfgs, solver, timer)
         
         self.control.configure_ui()
         self.info.configure_ui()

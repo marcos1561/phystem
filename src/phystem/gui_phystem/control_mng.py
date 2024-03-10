@@ -18,9 +18,13 @@ class ControlManagerCore:
         self.add_vars()
 
         self.is_paused = False
-
+        self.advance_once = False
+    
     def add_vars(self):
         pass
+
+    def advance_once_callback(self):
+        self.advance_once = True
 
     def pause_callback(self):
         if self.is_paused:

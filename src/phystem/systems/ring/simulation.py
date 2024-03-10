@@ -5,7 +5,7 @@ from phystem.core.solvers import SolverCore
 from phystem.systems.ring.solvers import CppSolver, SolverRD, SolverReplay
 from phystem.systems.ring.creators import CreatorRD, Creator
 
-from phystem.core.run_config import RunCfg, RunType, RealTimeCfg
+from phystem.core.run_config import RunCfg, RunType, RealTimeCfg, ReplayDataCfg
 from phystem.systems.ring.configs import CreatorCfg, RingCfg, InvaginationCfg, InvaginationCreatorCfg
 from phystem.systems.ring.run_config import IntegrationCfg, UpdateType
 
@@ -45,7 +45,7 @@ class Simulation(SimulationCore):
 
         if self.run_cfg.id is RunType.REPLAY_DATA:
             # return SolverRD(self.run_cfg)
-            return SolverReplay(self.run_cfg)
+            return SolverReplay(self.run_cfg, self.dynamic_cfg, self.space_cfg)
 
         if self.run_cfg.id is RunType.SAVE_VIDEO:
             if self.run_cfg.replay is not None:
@@ -133,9 +133,20 @@ class Simulation(SimulationCore):
                 ax.set_title(f"t = {self.solver.time}")
                 self.time_it.decorator("graph", particles_graph.update)
 
-            self.save_video(fig, update_video, ui_components.Control)
+            self.save_video(fig, update_video)
         else:
-            self.run_app(fig, update, "Ring", ui_components.Info, ui_components.Control, real_time_cfg.ui_settings)
+            if type(real_time_cfg) is RealTimeCfg:
+                if real_time_cfg.ui_settings.ControlT is None: 
+                    real_time_cfg.ui_settings.ControlT = ui_components.Control
+                if real_time_cfg.ui_settings.InfoT is None: 
+                    real_time_cfg.ui_settings.InfoT = ui_components.Info
+            elif type(real_time_cfg) is ReplayDataCfg:
+                if real_time_cfg.ui_settings.ControlT is None: 
+                    real_time_cfg.ui_settings.ControlT = ui_components.ControlReplay
+                if real_time_cfg.ui_settings.InfoT is None: 
+                    real_time_cfg.ui_settings.InfoT = ui_components.InfoReplay
+            
+            self.run_app(fig, update, "Ring", real_time_cfg.ui_settings)
 
     def run_real_time_only_mpl(self):
         from phystem.systems.ring.ui.mpl import graph as mpl_graph

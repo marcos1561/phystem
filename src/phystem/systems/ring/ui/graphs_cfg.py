@@ -54,13 +54,20 @@ class SimpleGraphCfg(BaseGraphCfg):
         super().__init__(begin_paused, pause_on_high_vel, cpp_is_debug)
 
 class ReplayGraphCfg(BaseGraphCfg):
-    def __init__(self, scatter_kwargs=None, x_lims=None, vel_colors=False,
+    def __init__(self, scatter_kwargs=None, density_kwargs=None, x_lims=None, vel_colors=False,
+        show_rings=True, show_density=False,
         begin_paused=False, pause_on_high_vel=False, cpp_is_debug=True) -> None:
         super().__init__(begin_paused, pause_on_high_vel, cpp_is_debug)
         self.x_lims = x_lims
         self.vel_colors=  vel_colors
+        self.show_density = show_density
+        self.show_rings = show_rings
 
         self.scatter_kwargs = scatter_kwargs
         if scatter_kwargs is None:
             self.scatter_kwargs = {}
+        
+        self.density_kwargs = density_kwargs
+        if density_kwargs is None:
+            self.density_kwargs = {}
 

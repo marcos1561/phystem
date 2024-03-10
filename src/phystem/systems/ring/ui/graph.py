@@ -528,16 +528,23 @@ class ReplayGraph(BaseGraph):
         self.ax.plot([ l, -l], [-h, -h], color="black")
 
         stokes_cfg = sim_configs["other_cfgs"]["stokes"]
-        self.ax.add_patch(Circle((stokes_cfg.obstacle_x, stokes_cfg.obstacle_y), stokes_cfg.obstacle_r, fill=False))
+        self.ax.add_patch(Circle((stokes_cfg.obstacle_x, stokes_cfg.obstacle_y), stokes_cfg.obstacle_r, fill=False, zorder=3))
 
-        if self.graph_cfg.vel_colors:
-            self.points = self.ax.scatter(*self.get_pos().T, **self.graph_cfg.scatter_kwargs, cmap=cm.hsv, 
-                c=self.get_colors(), vmin=-np.pi, vmax=np.pi)
-            
-            # fig.colorbar(self.points)
-        else:
-            self.points = self.ax.scatter(*self.get_pos().T, **self.graph_cfg.scatter_kwargs)
+        if self.graph_cfg.show_rings:
+            if self.graph_cfg.vel_colors:
+                self.points = self.ax.scatter(*self.get_pos().T, zorder=2, **self.graph_cfg.scatter_kwargs, cmap=cm.hsv, 
+                    c=self.get_colors(), vmin=-np.pi, vmax=np.pi)
+                
+                fig.colorbar(self.points)
+            else:
+                self.points = self.ax.scatter(*self.get_pos().T, zorder=2, **self.graph_cfg.scatter_kwargs)
 
+        if self.graph_cfg.show_density:
+            self.density = ax.pcolormesh(*self.solver.edges, self.solver.ring_count, shading='flat',
+                zorder=1, **self.graph_cfg.density_kwargs)
+            fig.colorbar(self.density)
+
+    
     def get_pos(self):
         pos = self.solver.pos
         return pos.reshape(pos.shape[0] * pos.shape[1], pos.shape[2])
@@ -547,6 +554,10 @@ class ReplayGraph(BaseGraph):
         return (np.zeros((self.solver.num_particles, vel_cm.size), dtype=np.float32) + vel_cm).T.flatten()
 
     def update(self):
-        self.points.set_offsets(self.get_pos())
-        if self.graph_cfg.vel_colors:
-            self.points.set_array(self.get_colors())
+        if self.graph_cfg.show_rings:
+            self.points.set_offsets(self.get_pos())
+            if self.graph_cfg.vel_colors:
+                self.points.set_array(self.get_colors())
+
+        if self.graph_cfg.show_density:
+            self.density.set_array(self.solver.ring_count)

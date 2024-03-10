@@ -30,6 +30,7 @@ Enumerações
 '''
 from enum import Flag, Enum, auto
 import yaml, os
+from phystem.gui_phystem import config_ui
 
 def load_cfg(cfg_path, is_recursive=False):
     with open(cfg_path, "r") as f:
@@ -87,11 +88,11 @@ class IntegrationCfg:
         self.dt = dt
         self.solver_type = solver_type
 
-class UiSettings:
-    def __init__(self, window_scale=0.83, dpi=190, left_pannel_size=0.3) -> None:
-        self.window_scale = window_scale
-        self.dpi = dpi
-        self.left_pannel_size = left_pannel_size
+# class UiSettings:
+#     def __init__(self, window_scale=0.83, dpi=190, left_pannel_size=0.3) -> None:
+#         self.window_scale = window_scale
+#         self.dpi = dpi
+#         self.left_pannel_size = left_pannel_size
 
 class RunCfg:
     '''
@@ -187,7 +188,7 @@ class RealTimeCfg(RunCfg):
     '''
     id = RunType.REAL_TIME
     def __init__(self, int_cfg: IntegrationCfg, num_steps_frame: int, fps: int, graph_cfg=None,
-        ui_settings=UiSettings(), checkpoint: CheckpointCfg=None) -> None:
+        ui_settings: config_ui.UiSettings=None, checkpoint: CheckpointCfg=None) -> None:
         '''
         Parameters:
             int_cfg:
@@ -207,6 +208,10 @@ class RealTimeCfg(RunCfg):
                 não é carregado.
         '''
         super().__init__(int_cfg, checkpoint)
+        
+        if ui_settings is None:
+            ui_settings = config_ui.UiSettings()
+
         self.ui_settings = ui_settings
         self.num_steps_frame = num_steps_frame
         self.fps = fps
@@ -219,7 +224,7 @@ class ReplayDataCfg(RealTimeCfg):
     id = RunType.REPLAY_DATA
 
     def __init__(self, directory: str, data_dir="data", num_steps_frame=1, fps=30, 
-        graph_cfg=None, solver_cfg=None) -> None:
+        graph_cfg=None, solver_cfg=None,  ui_settings: config_ui.UiSettings=None) -> None:
         '''
         Parameters:
         -----------
@@ -251,7 +256,8 @@ class ReplayDataCfg(RealTimeCfg):
         self.system_cfg = load_cfg(cfg_path)
 
         init_cfg = self.system_cfg["run_cfg"].int_cfg
-        super().__init__(int_cfg=init_cfg, num_steps_frame=num_steps_frame, fps=fps, graph_cfg=graph_cfg)
+        super().__init__(int_cfg=init_cfg, num_steps_frame=num_steps_frame, fps=fps, 
+                         graph_cfg=graph_cfg, ui_settings=ui_settings)
 
         self.solver_cfg = solver_cfg
         self.directory = directory
@@ -265,8 +271,8 @@ class SaveCfg(RunCfg):
     '''
     id = RunType.SAVE_VIDEO
     def __init__(self, int_cfg: IntegrationCfg, path:str, fps: int, speed: float=None, duration: float = None, 
-        tf: float = None, ti=0, num_frames=None, graph_cfg=None, solver_cfg=None, dt=None, 
-        ui_settings=UiSettings(), checkpoint: CheckpointCfg=None, replay: ReplayDataCfg=None) -> None:  
+        tf: float = None, ti=0, num_frames=None, graph_cfg=None, dt=None, 
+        ui_settings: config_ui.UiSettings=None, checkpoint: CheckpointCfg=None, replay: ReplayDataCfg=None) -> None:  
         '''
         Salva um vídeo da simulação em `path`. Ao menos um dos seguintes parâmetros deve ser 
         especificado:
@@ -323,9 +329,11 @@ class SaveCfg(RunCfg):
         
         super().__init__(int_cfg, checkpoint)
         
+        if ui_settings is None:
+            ui_settings = config_ui.UiSettings()
+
         self.ui_settings = ui_settings
         self.replay = replay
-        self.solver_cfg = solver_cfg
         self.path = path
         self.graph_cfg = graph_cfg
 
@@ -352,18 +360,3 @@ class SaveCfg(RunCfg):
         print("duration:", self.duration)
         print("t:", self.t)
         print("speed:", self.speed)
-
-    def set_num_steps_frame(self, speed, fps, dt):
-        # n * dt * fps = t
-        # n = t / (dt * fps)
-        # s = t/d
-        # n = (s * d) / (dt * fps)
-
-        # self.num_steps_frame = speed / fps / dt
-        self.num_steps_frame = self.t / (fps * dt)
-        if self.num_steps_frame < 1:
-            self.num_steps_frame = 1
-            self.dt = self.speed/self.fps
-        else:
-            self.num_steps_frame = int(round(self.num_steps_frame))
-
