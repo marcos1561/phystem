@@ -166,9 +166,10 @@ class StokesCfg:
         }
 
 class InvaginationCfg:
-    def __init__(self, upper_k: float, bottom_k: float):
+    def __init__(self, upper_k: float, bottom_k: float, num_affected: int):
         self.upper_k = upper_k
         self.bottom_k = bottom_k
+        self.num_affected = num_affected 
 
 class CreatorCfg:
     '''

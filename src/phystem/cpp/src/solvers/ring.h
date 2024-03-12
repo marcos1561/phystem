@@ -168,6 +168,7 @@ public:
     std::map<int, double> inv_spring_k;
     std::map<int, bool> inv_is_rfix;
     std::map<int, bool> inv_is_lfix;
+    int inv_num_affected;
 
     //==
     // Area Potencial
@@ -492,7 +493,9 @@ public:
         recalculate_rings_ids();
     }
 
-    void init_invagination(int height, int length, double upper_k, double bottom_k) {
+    void init_invagination(int height, int length, double upper_k, double bottom_k, int num_affected) {
+        inv_num_affected = num_affected;
+
         for (int i = 0; i < num_particles; i++) {
             inv_spring_k[i] = spring_k;
             inv_is_rfix[i] = false;
@@ -514,7 +517,7 @@ public:
         {
             std::cout << i << ": " << inv_spring_k[i] << std::endl;
         }
-        
+        std::cout << "num_affected: " << inv_num_affected << std::endl;
 
         // Fix borders
         // for (int j = 0; j < length-1; j++) {
@@ -748,7 +751,10 @@ public:
 
         double current_spring_k = spring_k;
         if (update_type == RingUpdateType::invagination) {
-            current_spring_k = inv_spring_k[spring_id];
+            // current_spring_k = inv_spring_k[spring_id];
+            if (ring_id < inv_num_affected) {
+                current_spring_k = inv_spring_k[spring_id];
+            }
         }                
 
         double force_intensity = current_spring_k * (dist - spring_r);         

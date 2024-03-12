@@ -1,7 +1,7 @@
 from phystem.systems.ring.simulation import Simulation
 
 from phystem.systems.ring.configs import *
-from phystem.systems.ring.ui.graph import GraphCfg
+from phystem.systems.ring.ui import graphs_cfg
 from phystem.systems.ring import collect_pipelines
 
 from phystem.core.run_config import RunType, RealTimeCfg, SaveCfg, CollectDataCfg, CheckpointCfg
@@ -24,24 +24,20 @@ dynamic_cfg = RingCfg(
     # p0=3.7,
     # area0=53,
 
-    k_invasion= 12,
+    k_invasion=30,
 
     diameter=1,
     max_dist=1+0.166,
-    rep_force=30,
-    adh_force=25,
+    rep_force=35,
+    adh_force=30,
     
     relax_time=100,
     mobility=1,
-    vo=1,
+    vo=0.01*0,
     
-    trans_diff=0.1*0,
-    rot_diff=0.1,
+    trans_diff=3,
+    rot_diff=0,
 )
-
-
-# seed = 40028922
-seed = None
 
 creator_cfg = InvaginationCreatorCfg(
     num_rings=30, #13,
@@ -60,12 +56,13 @@ space_cfg = SpaceCfg(
 )
 
 inv_cfg = InvaginationCfg(
-    upper_k=dynamic_cfg.spring_k * 1,
-    bottom_k=dynamic_cfg.spring_k * 1,
+    upper_k=dynamic_cfg.spring_k * 2,
+    bottom_k=dynamic_cfg.spring_k * 0.5,
+    num_affected=8,
 )
 
 
-run_type = RunType.SAVE_VIDEO
+run_type = RunType.REAL_TIME
 
 
 from math import ceil
@@ -74,7 +71,7 @@ n = 10
 real_time_cfg = RealTimeCfg(
     int_cfg=IntegrationCfg(
         # dt = 0.001*5, # max euler
-        dt = 0.001*5,
+        dt = 0.0001,
         particle_win_cfg=ParticleWindows(
             num_cols=num_windows, num_rows=num_windows,
             update_freq=1),
@@ -85,49 +82,22 @@ real_time_cfg = RealTimeCfg(
     ),
     num_steps_frame = 800,
     fps = 60,
-    graph_cfg = GraphCfg(
-        show_circles     = True,
-        show_f_spring    = False,
-        show_f_vol       = False,
-        show_f_area      = False,
-        show_f_total     = False,
-        show_center_mass = False,
-        show_inside      = True,
-        begin_paused     = False,
-    ),
-    checkpoint=CheckpointCfg(
-        folder_path="init_loop",
-        override_cfgs=True,
-    ),
+    # graph_cfg = graphs_cfg.MainGraphCfg(),
+    graph_cfg = graphs_cfg.SimpleGraphCfg(begin_paused=True),
+    # checkpoint=CheckpointCfg(
+    #     folder_path="init_loop",
+    #     override_cfgs=True,
+    # ),
 )
 
 save_cfg = SaveCfg(
-     int_cfg=IntegrationCfg(
-        # dt = 0.001*5, # max euler
-        dt = 0.001*5,
-        particle_win_cfg=ParticleWindows(
-            num_cols=num_windows, num_rows=num_windows,
-            update_freq=1),
-        integration_type=IntegrationType.euler,
-        update_type=UpdateType.INVAGINATION,
-        in_pol_checker=InPolCheckerCfg(
-            num_col_windows=n, num_rows_windows=n, update_freq=100, disable=False),
-    ),
-    path = "./loop_normal.mp4",
+    int_cfg=real_time_cfg.int_cfg,
+    path = "./loop_quarter.mp4",
     fps=30, 
-    speed=100,
-    tf=2200,
-    graph_cfg = GraphCfg(
-        show_circles  = False,
-        show_f_spring = False,
-        show_f_vol    = False,
-        show_f_area   = False,
-        show_f_total  = False,
-    ),
-    checkpoint=CheckpointCfg(
-        folder_path="init_loop",
-        override_cfgs=True,
-    ),
+    speed=50,
+    duration=15,
+    graph_cfg = graphs_cfg.SimpleGraphCfg(),
+    # checkpoint=real_time_cfg.checkpoint,
 )
 
 collect_cfg = CollectDataCfg(
@@ -153,6 +123,7 @@ run_type_to_cfg = {
     RunType.COLLECT_DATA: collect_cfg,
 }
 
+seed = None
 sim = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type], 
                 other_cfgs={"invagination": inv_cfg}, rng_seed=seed)
 sim.run()

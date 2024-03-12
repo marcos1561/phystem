@@ -72,7 +72,7 @@ class Simulation(SimulationCore):
 
             solver.cpp_solver.init_invagination(
                 inv_creator_cfg.height, inv_creator_cfg.length, 
-                inv_cfg.upper_k, inv_cfg.bottom_k,
+                inv_cfg.upper_k, inv_cfg.bottom_k, inv_cfg.num_affected
             )
 
         return solver
