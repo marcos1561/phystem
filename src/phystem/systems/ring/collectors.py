@@ -126,6 +126,7 @@ class LastState(collectors.Collector):
 
     def __init__(self, solver: CppSolver, path: str, configs: list) -> None:
         super().__init__(solver, path, configs)
+        self.ring_ids: np.ndarray = None
 
     def collect(self, count: int) -> None:
         pass
@@ -138,7 +139,7 @@ class LastState(collectors.Collector):
         angle_path = os.path.join(directory, angle_name + ".npy")
         ids_path = os.path.join(directory, ids_name + ".npy")
 
-        ring_ids = self.solver.rings_ids[:self.solver.num_active_rings]
-        np.save(pos_path, np.array(self.solver.pos)[ring_ids])
-        np.save(angle_path, np.array(self.solver.self_prop_angle)[ring_ids])
-        np.save(ids_path, ring_ids)
+        self.ring_ids = self.solver.rings_ids[:self.solver.num_active_rings]
+        np.save(pos_path, np.array(self.solver.pos)[self.ring_ids])
+        np.save(angle_path, np.array(self.solver.self_prop_angle)[self.ring_ids])
+        np.save(ids_path, np.array(self.solver.unique_rings_ids)[self.ring_ids])

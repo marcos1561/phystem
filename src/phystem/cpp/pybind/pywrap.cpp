@@ -188,6 +188,7 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def_readonly("num_active_rings", &Ring::num_active_rings, byref)
         .def_readonly("rings_ids", &Ring::rings_ids, byref)
         .def_readonly("pos", &Ring::pos, byref)
+        .def_readonly("vel", &Ring::vel, byref)
         .def_readonly("self_prop_angle", &Ring::self_prop_angle, byref)
         .def_readonly("unique_rings_ids", &Ring::unique_rings_ids, byref)
         .def_readonly("stokes_cfg", &Ring::stokes_cfg, byref)

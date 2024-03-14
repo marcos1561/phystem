@@ -1,10 +1,13 @@
 import numpy as np
-import os
+import os, yaml
 
 from phystem.core.run_config import ReplayDataCfg
 from phystem.systems.ring.configs import RingCfg, SpaceCfg, StokesCfg
 from phystem.systems.ring.run_config import IntegrationCfg, UpdateType, IntegrationType, ParticleWindows, InPolCheckerCfg
 from phystem import cpp_lib
+
+from .solver_config import *
+from . import utils
 
 class CppSolver:
     def __init__(self, pos: np.ndarray, self_prop_angle: np.ndarray, num_particles: int,
@@ -108,8 +111,16 @@ class CppSolver:
         return self.cpp_solver.rings_ids
     
     @property
+    def unique_rings_ids(self):
+        return self.cpp_solver.unique_rings_ids
+    
+    @property
     def pos(self):
         return self.cpp_solver.pos
+    
+    @property
+    def vel(self):
+        return self.cpp_solver.vel
     
     @property
     def graph_points(self):
@@ -197,65 +208,64 @@ class CppSolver:
         return self.cpp_solver.mean_vel(ring_id)
 
 class SolverReplay:
+    solver_cfg: ReplaySolverCfg
+
     def __init__(self, run_cfg: ReplayDataCfg, dynamic_cfg: RingCfg, space_cfg: SpaceCfg) -> None:
         self.main_dir = run_cfg.directory
         self.data_dir = run_cfg.data_dir
         self.dt = run_cfg.int_cfg.dt
 
-        solver_cfg = run_cfg.solver_cfg
+        self.set_solver_cfg(run_cfg)
 
+        with open(os.path.join(self.main_dir, "metadata.yaml")) as f:
+            metadata = yaml.unsafe_load(f)
+            self.max_snap_id = metadata["count"]
 
-        mode = solver_cfg["mode"]
+        mode = self.solver_cfg.mode
 
         self.init_func_map = {
-            "normal": self.init_normal,
-            "same_ids": self.init_same_ids,
-            "same_ids_pre_calc": self.init_same_ids_pre_calc,
+            ReplaySolverCfg.Mode.normal: self.init_normal,
+            ReplaySolverCfg.Mode.same_ids: self.init_same_ids,
+            ReplaySolverCfg.Mode.same_ids_pre_calc: self.init_same_ids_pre_calc,
         }
         self.update_func_map = {
-            "normal": self.update_normal,
-            "same_ids": self.update_same_ids,
-            "same_ids_pre_calc": self.update_same_ids_pre_calc,
+            ReplaySolverCfg.Mode.normal: self.update_normal,
+            ReplaySolverCfg.Mode.same_ids: self.update_same_ids,
+            ReplaySolverCfg.Mode.same_ids_pre_calc: self.update_same_ids_pre_calc,
         }
 
         self.init_func = self.init_func_map[mode]
         self.update_func = self.update_func_map[mode]
 
-        self.init_func()
-        
-        self.num_particles = self.pos.shape[1]
         self.count = 0
+        self.time_sign = 1
         self.times = np.load(os.path.join(self.main_dir, "times.npy")) 
         self.time = self.times[self.count]
-
-        self.time_sign = 1
+        
+        self.init_func()
+        self.num_particles = self.pos.shape[1]
         
         #=
         # Density
         #=
-        ring_per_grid = 3
+        ring_per_grid = self.solver_cfg.ring_per_grid
 
         self.space_cfg = space_cfg
-        from math import pi, cos
-        self.ring_d = dynamic_cfg.diameter / (2 * (1 - cos(2*pi/(self.num_particles))))**.5 * 2   
+        self.ring_d = utils.get_ring_radius(dynamic_cfg.diameter, self.num_particles)
 
         height, length = space_cfg.height, space_cfg.length
-        self.grid_shape = (int(height/ring_per_grid/self.ring_d), int(length/ring_per_grid/self.ring_d))
-
-        self.ring_count = np.zeros(self.grid_shape, dtype=int)
-        self.edges = (
-            np.linspace(-length/2, length/2, self.grid_shape[1]+1),
-            np.linspace(-height/2, height/2, self.grid_shape[0]+1),
+        num_rows, num_cols = (int(height/ring_per_grid/self.ring_d), int(length/ring_per_grid/self.ring_d))
+        self.grid = utils.RegularGrid(
+            length=length, height=height,
+            num_cols=num_cols, num_rows=num_rows,
         )
-        
-        # self.grid_size = height / self.grid_shape[0], length / self.grid_shape[1]
-        self.grid_size = (
-            self.edges[1][1] - self.edges[1][0],
-            self.edges[0][1] - self.edges[0][0],
-        )
-
+        self.ring_count = np.zeros(self.grid.shape_mpl, dtype=int)
         self.calc_density()
+        
 
+    def set_solver_cfg(self, run_cfg: ReplayDataCfg):
+        self.solver_cfg = run_cfg.solver_cfg
+    
     def update_visual_aids(self):
         pass
 
@@ -263,11 +273,10 @@ class SolverReplay:
         self.update_pos_normal(0)
 
     def init_same_ids(self):
-        self.pos, self.ids = self.load(0)
-        self.pos2_original, self.ids2 = self.load(1)
-        self.pos, self.pos2 = self.same_rings(self.pos, self.ids, self.pos2_original, self.ids2)
-        self.calc_vel_cm()
-    
+        if not self.solver_cfg.vel_from_solver:
+            self.pos2_original, self.ids2 = self.load(0)
+        self.update_same_ids(0)
+
     def init_same_ids_pre_calc(self):
         ids_dir = os.path.join(self.main_dir, "same_ids")
         self.all_ids = np.load(os.path.join(ids_dir, "ids.npy"))
@@ -275,16 +284,18 @@ class SolverReplay:
         
         self.pos2_original = np.load(os.path.join(self.data_dir, f"pos_{0}.npy"))
         self.update_pos_same_ids_pre_calc(0)
-        self.calc_vel_cm()
+        self.calc_vel_cm(0)
     
-
     def update_pos_normal(self, frame):
         self.pos = np.load(os.path.join(self.data_dir, f"pos_{frame}.npy"))
     
     def update_pos_same_ids(self, frame):
-        self.pos, self.ids = self.pos2_original, self.ids2
-        self.pos2_original, self.ids2 = self.load(self.count+1)
-        self.pos, self.pos2 = self.same_rings(self.pos, self.ids, self.pos2_original, self.ids2)
+        if self.solver_cfg.vel_from_solver:
+            self.pos, self.ids = self.load(frame)
+        else:
+            self.pos, self.ids = self.pos2_original, self.ids2
+            self.pos2_original, self.ids2 = self.load(frame+1) 
+            self.pos, self.pos2 = self.same_rings(self.pos, self.ids, self.pos2_original, self.ids2)
     
     def update_pos_same_ids_pre_calc(self, frame):
         self.pos = self.pos2_original
@@ -293,17 +304,16 @@ class SolverReplay:
         self.pos = self.pos[self.all_ids[frame, 0, :self.all_ids_size[frame]]]
         self.pos2 = self.pos2_original[self.all_ids[frame, 1, :self.all_ids_size[frame]]]
 
-     
     def update_normal(self, frame):
         self.update_pos_normal(frame)
 
     def update_same_ids(self, frame):
         self.update_pos_same_ids(frame)
-        self.calc_vel_cm()
+        self.calc_vel_cm(frame)
     
     def update_same_ids_pre_calc(self, frame):
         self.update_pos_same_ids_pre_calc(frame)
-        self.calc_vel_cm()
+        self.calc_vel_cm(frame)
 
 
     @staticmethod
@@ -324,8 +334,12 @@ class SolverReplay:
         ids = np.load(os.path.join(self.data_dir, f"ids_{frame}.npy"))
         return pos, ids
 
-    def calc_vel_cm(self):
-        vel = (self.pos2 - self.pos)/self.dt
+    def calc_vel_cm(self, frame):
+        if self.solver_cfg.vel_from_solver:
+            vel = np.load(os.path.join(self.data_dir, f"vel_{frame}.npy"))
+        else:
+            vel = (self.pos2 - self.pos)/self.dt
+        
         self.vel_cm = vel.sum(axis=1)/vel.shape[1]
         self.vel_cm_dir = np.arctan2(self.vel_cm[:, 1], self.vel_cm[:, 0])
 
@@ -335,11 +349,11 @@ class SolverReplay:
         x = self.cm[:, 0] + self.space_cfg.length/2
         y = self.cm[:, 1] + self.space_cfg.height/2
 
-        col_pos = (x / self.grid_size[1]).astype(int)
-        row_pos = (y / self.grid_size[0]).astype(int)
+        col_pos = (x / self.grid.size[0]).astype(int)
+        row_pos = (y / self.grid.size[1]).astype(int)
 
-        row_pos[row_pos == self.grid_shape[0]] -= 1
-        col_pos[col_pos == self.grid_shape[1]] -= 1
+        row_pos[row_pos == self.grid.shape_mpl[0]] -= 1
+        col_pos[col_pos == self.grid.shape_mpl[1]] -= 1
 
         self.ring_count[:] = 0
         for idx in range(col_pos.size):
@@ -348,8 +362,8 @@ class SolverReplay:
     def update(self):
         self.count += self.time_sign
         
-        if self.count > 1015: 
-            self.count = 1015
+        if self.count >= self.max_snap_id: 
+            self.count = self.max_snap_id-1
             return
         elif self.count < 0:
             self.count = 0
@@ -357,7 +371,6 @@ class SolverReplay:
 
         self.update_func(self.count)
         self.calc_density()
-
 
         self.time = self.times[self.count]
 

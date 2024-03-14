@@ -1,10 +1,11 @@
 from phystem.systems.ring.simulation import Simulation
 
 from phystem.systems.ring.configs import *
-from phystem.core.run_config import RunType, CheckpointCfg, CollectDataCfg
+from phystem.core.run_config import RunType, CheckpointCfg
 from phystem.core.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, ReplayDataCfg
 from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType, ParticleWindows
 from phystem.systems.ring.ui.graphs_cfg import *
+from phystem.systems.ring.solver_config import ReplaySolverCfg
 
 import pipeline
 
@@ -24,24 +25,24 @@ dynamic_cfg = RingCfg(
     p0_format=3.5449077018*1.0, # Círculo
     # area0=53,
 
-    k_invasion = 12,
+    k_invasion = 8,
     
     diameter  = 1,
     max_dist  = 1 + 0.1666,
-    rep_force = 40,
-    adh_force = 0.75,
+    rep_force = 12,
+    adh_force = 0.75*0,
     
-    relax_time=1,
+    relax_time=1000,
     mobility=1,
     vo=1,
     
-    trans_diff=0.1,
-    rot_diff=0.1,
+    trans_diff=0.05,
+    rot_diff=0.01,
 )
 
 space_cfg = SpaceCfg(
     height = 2*30,
-    length = 4*30,
+    length = 7*30,
 )
 
 creator_cfg = CreatorCfg(
@@ -52,15 +53,20 @@ creator_cfg = CreatorCfg(
 
 from math import cos, pi, ceil
 radius = dynamic_cfg.diameter / (2 * (1 - cos(2*pi/(creator_cfg.num_p))))**.5
+
+space_shape = (space_cfg.height/radius/2, space_cfg.length/radius/2)
+print(f"ring_radius: {radius}")
+print(f"channel shape: {space_shape}")
+
 stokes_cfg = StokesCfg(
     obstacle_r  = space_cfg.height/5,
     obstacle_x  = 0*space_cfg.length/8/2,
     obstacle_y  = 0*space_cfg.length/8/2,
     create_length = radius * 2.01,
     remove_length = radius * 2.01,
-    flux_force = 3, 
+    flux_force = 0, 
     obs_force = 15,
-    num_max_rings = 400, 
+    num_max_rings = int(space_shape[0] * space_shape[1] * 1.2), 
 )
 
 seed = 40028922
@@ -69,7 +75,7 @@ seed = 40028922
 ##
 ## Select Run Type
 ##
-run_type = RunType.REAL_TIME
+run_type = RunType.REPLAY_DATA
 
 
 num_cols = int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6)
@@ -89,16 +95,16 @@ collect_data_cfg = CollectDataCfg(
             in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
     ), 
     # tf=250 + 0.5 * 1000 ,
-    tf=3.2,
+    tf=space_cfg.length/dynamic_cfg.vo*3 + 0.5*300,
     folder_path="data",
     func=pipeline.collect_pipeline,
     func_cfg=pipeline.PipelineCfg(
         checkpoint_period=20, 
         snapshot_period=0.5,
-        save_type=pipeline.SaveType.checkpoint),
-    # checkpoint=CheckpointCfg(
-    #     folder_path="data_test/checkpoint"
-    # )
+        save_type=pipeline.SaveType.snapshot),
+    checkpoint=CheckpointCfg(
+        folder_path="data/checkpoint"
+    )
 )
 
 real_time_cfg = RealTimeCfg(
@@ -112,25 +118,33 @@ real_time_cfg = RealTimeCfg(
     #         in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
     # ), 
     int_cfg=collect_data_cfg.int_cfg,
-    num_steps_frame=1,
+    num_steps_frame=20,
     fps=30,
     graph_cfg = SimpleGraphCfg(begin_paused=False),
     # graph_cfg = MainGraphCfg(
     #     show_circles      = True,
-    #     show_f_spring     = False,
-    #     show_f_vol        = False,
-    #     show_f_area       = False,
-    #     show_f_total      = False,
-    #     show_center_mass  = False,
-    #     show_inside       = False,
-    #     begin_paused      = True,
     #     pause_on_high_vel = True,
-    #     cpp_is_debug      = True
     # ),
-    # checkpoint=CheckpointCfg(
-    #     folder_path="data/checkpoint",
-    #     override_cfgs=False,
-    # )
+    checkpoint=CheckpointCfg(
+        folder_path="data/checkpoint",
+        override_cfgs=False,
+    )
+)
+
+replay_cfg = ReplayDataCfg(
+    directory="data/snapshots",
+    graph_cfg=ReplayGraphCfg(
+        scatter_kwargs={"s": 1},
+        vel_colors=True,
+        show_rings=True,
+        show_cm=False,
+        show_density=False,
+    ),
+    solver_cfg=ReplaySolverCfg(
+        ring_per_grid=3,
+        vel_from_solver=False,
+        mode=ReplaySolverCfg.Mode.same_ids,
+    ),
 )
 
 video_cfg = SaveCfg(
@@ -157,6 +171,7 @@ run_type_to_cfg = {
     RunType.REAL_TIME: real_time_cfg,
     RunType.COLLECT_DATA: collect_data_cfg,
     RunType.SAVE_VIDEO: video_cfg,
+    RunType.REPLAY_DATA: replay_cfg,
 }
 
 sim = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type],

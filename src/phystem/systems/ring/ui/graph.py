@@ -461,10 +461,14 @@ class ReplayGraph(BaseGraph):
                 self.points = self.ax.scatter(*self.get_pos().T, zorder=2, **self.graph_cfg.scatter_kwargs)
 
         if self.graph_cfg.show_density:
-            self.density = ax.pcolormesh(*self.solver.edges, self.solver.ring_count, shading='flat',
+            self.density = ax.pcolormesh(*self.solver.grid.edges, self.solver.ring_count, shading='flat',
                 zorder=1, **self.graph_cfg.density_kwargs)
             fig.colorbar(self.density)
-
+        if self.graph_cfg.show_cm:
+            cm_s = graph_cfg.scatter_kwargs.get("s", None)
+            if cm_s is not None:
+                cm_s *= 3
+            self.cm = self.ax.scatter(*self.solver.cm.T, zorder=3, c="black", s=cm_s)
     
     def get_pos(self):
         pos = self.solver.pos
@@ -479,6 +483,9 @@ class ReplayGraph(BaseGraph):
             self.points.set_offsets(self.get_pos())
             if self.graph_cfg.vel_colors:
                 self.points.set_array(self.get_colors())
+        
+        if self.graph_cfg.show_cm:
+            self.cm.set_offsets(self.solver.cm)
 
         if self.graph_cfg.show_density:
             self.density.set_array(self.solver.ring_count)

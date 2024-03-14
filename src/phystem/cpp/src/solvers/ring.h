@@ -101,6 +101,7 @@ public:
     double rep_force;
 
     Vector3d pos; // Posições das partículas
+    Vector3d vel; // Velocidade das partículas
     vector<vector<double>> self_prop_angle; // Ângulo da direção da velocidade auto propulsora
     int num_particles; // Número de partículas em cada anel
     
@@ -242,6 +243,7 @@ public:
         auto zero_vector_2d = vector<array<double, 2>>(num_particles, {0., 0.}); 
 
         pos = Vector3d(num_max_rings, zero_vector_2d);
+        vel = Vector3d(num_max_rings, zero_vector_2d);
         self_prop_angle =  vector<vector<double>>(num_max_rings, zero_vector_1d);
         mask = vector<bool>(num_max_rings);
         rings_ids = vector<int>(num_max_rings);
@@ -1334,6 +1336,8 @@ public:
 
             angle_derivate = 1. / relax_time * asin(cross_prod) + noise_rot;
         }
+
+        vel[ring_id][particle_id] = vel_i;  
 
         vel_x = vel_i[0];
         vel_y = vel_i[1];
