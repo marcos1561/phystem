@@ -42,7 +42,7 @@ dynamic_cfg = RingCfg(
 
 space_cfg = SpaceCfg(
     height = 2*30,
-    length = 7*30,
+    length = 7*30*5,
 )
 
 creator_cfg = CreatorCfg(
@@ -75,7 +75,7 @@ seed = 40028922
 ##
 ## Select Run Type
 ##
-run_type = RunType.REPLAY_DATA
+run_type = RunType.REAL_TIME
 
 
 num_cols = int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6)
@@ -125,10 +125,10 @@ real_time_cfg = RealTimeCfg(
     #     show_circles      = True,
     #     pause_on_high_vel = True,
     # ),
-    checkpoint=CheckpointCfg(
-        folder_path="data/checkpoint",
-        override_cfgs=False,
-    )
+    # checkpoint=CheckpointCfg(
+    #     folder_path="data/checkpoint",
+    #     override_cfgs=False,
+    # )
 )
 
 replay_cfg = ReplayDataCfg(

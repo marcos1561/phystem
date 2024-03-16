@@ -10,8 +10,6 @@ class Collector(ABC):
     '''
     def __init__(self, solver: SolverCore, path: str, configs: dict) -> None:
         '''
-        $\pi = 3.14$
-
         Parameters:
         -----------
             solver:
@@ -30,7 +28,8 @@ class Collector(ABC):
         self.config_path = os.path.join(self.path, "config.yaml")
         
         if not os.path.exists(path):
-            raise ValueError(f"O caminho {path} não existe.")
+            # raise ValueError(f"O caminho {path} não existe.")
+            os.mkdir(path)
         
         self.save_cfg()
 
@@ -168,7 +167,7 @@ class State(Collector):
         '''
         raise Exception("Não implementado.")
 
-# TODO: Esse checkpoint aqui não tá uma porra. 
+# TODO: Esse checkpoint aqui tá uma porra. 
 class Checkpoint(Collector, ABC):
     file_names: list[str] = None
 

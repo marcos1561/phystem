@@ -3,7 +3,7 @@ import numpy as np
 from phystem.systems.ring.simulation import Simulation
 
 from phystem.systems.ring.configs import *
-from phystem.core.run_config import RunType, CheckpointCfg, CollectDataCfg, UiSettings
+from phystem.core.run_config import RunType, CheckpointCfg, CollectDataCfg
 from phystem.core.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, ReplayDataCfg
 from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType, ParticleWindows
 from phystem.systems.ring.ui.graphs_cfg import *
@@ -68,7 +68,7 @@ stokes_cfg = StokesCfg(
 ##
 ## Select Run Type
 ##
-run_type = RunType.REAL_TIME
+run_type = RunType.COLLECT_DATA
 
 
 num_cols = int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6)
@@ -88,12 +88,12 @@ collect_data_cfg = CollectDataCfg(
         in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
     ), 
     tf=-1,
-    folder_path="data/data2",
+    folder_path="data_test",
     func=pipeline.collect_pipeline,
     func_cfg={
-        "wait_time": 250,
-        "collect_time": 100,
-        "flux_range": np.linspace(0.1, 5, 20),
+        "wait_time": 20,
+        "collect_time": 5,
+        "flux_range": np.linspace(0.1, 5, 10),
     },
 )
 

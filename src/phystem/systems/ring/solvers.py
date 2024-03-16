@@ -349,8 +349,8 @@ class SolverReplay:
         x = self.cm[:, 0] + self.space_cfg.length/2
         y = self.cm[:, 1] + self.space_cfg.height/2
 
-        col_pos = (x / self.grid.size[0]).astype(int)
-        row_pos = (y / self.grid.size[1]).astype(int)
+        col_pos = (x / self.grid.cell_size[0]).astype(int)
+        row_pos = (y / self.grid.cell_size[1]).astype(int)
 
         row_pos[row_pos == self.grid.shape_mpl[0]] -= 1
         col_pos[col_pos == self.grid.shape_mpl[1]] -= 1

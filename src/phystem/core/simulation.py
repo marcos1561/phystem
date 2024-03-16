@@ -86,14 +86,14 @@ class SimulationCore(ABC):
         self.init_sim()    
 
     @staticmethod
-    def load_cfg(cfg_path, is_recursive=False):
+    def load_cfg(cfg_path, load_checkpoints_cfgs=False):
         with open(cfg_path, "r") as f:
             cfgs = yaml.unsafe_load(f)
         
         checkpoint: CheckpointCfg = cfgs["run_cfg"].checkpoint 
-        if checkpoint and not is_recursive:
+        if load_checkpoints_cfgs and checkpoint:
             checkpoint_cfg_path = os.path.join(checkpoint.folder_path, "config.yaml")
-            checkpoint.configs = SimulationCore.load_cfg(checkpoint_cfg_path, is_recursive=True)    
+            checkpoint.configs = SimulationCore.load_cfg(checkpoint_cfg_path)    
 
         return cfgs
 

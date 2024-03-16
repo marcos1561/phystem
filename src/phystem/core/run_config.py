@@ -29,7 +29,7 @@ Enumerações
         Tipo do solver a ser utilizado
 '''
 from enum import Flag, Enum, auto
-import yaml, os
+import yaml, os, copy
 from phystem.gui_phystem import config_ui
 
 def load_cfg(cfg_path, is_recursive=False):
@@ -73,6 +73,12 @@ class CheckpointCfg:
         self.override_cfgs = override_cfgs
 
         self.configs: dict = None
+    
+    def get_sim_configs(self, run_cfg=None):
+        configs = copy.deepcopy(self.configs)
+        if run_cfg is not None:
+            configs["run_cfg"] = run_cfg
+        return configs
 
 class IntegrationCfg:
     def __init__(self, dt: float, solver_type=SolverType.CPP) -> None:
@@ -211,6 +217,10 @@ class RealTimeCfg(RunCfg):
         
         if ui_settings is None:
             ui_settings = config_ui.UiSettings()
+
+        
+        if self.checkpoint is not None and not self.checkpoint.override_cfgs and self.int_cfg is None:
+            self.int_cfg = self.checkpoint.configs["run_cfg"].int_cfg
 
         self.ui_settings = ui_settings
         self.num_steps_frame = num_steps_frame
