@@ -81,6 +81,9 @@ class Simulation(SimulationCore):
         real_time_cfg: RealTimeCfg = self.run_cfg
         graph_cfg = real_time_cfg.graph_cfg
 
+        if graph_cfg is None:
+            graph_cfg = graphs_cfg.SimpleGraphCfg()
+
         # fig, ax = plt.subplots()
         fig = Figure(dpi=real_time_cfg.ui_settings.dpi)
         ax = fig.add_subplot()

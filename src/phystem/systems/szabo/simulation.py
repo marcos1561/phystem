@@ -60,11 +60,11 @@ class Simulation(SimulationCore):
             if not widget_manager.is_paused:
                 i = 0
                 while i < real_time_cfg.num_steps_frame:
-                    self.time_it.decorator(self.solver.update)
+                    self.time_it.decorator("solver", self.solver.update)
                     i += 1
 
             info_graph.update()
-            particles_graph.update()
+            self.time_it.decorator("graph", particles_graph.update)
             # mean_vel_graph.update()
 
         if self.run_cfg.id is RunType.SAVE_VIDEO:

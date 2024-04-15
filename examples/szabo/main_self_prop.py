@@ -6,25 +6,27 @@ from phystem.core.run_config import CollectDataCfg, RealTimeCfg, SaveCfg
 from phystem.systems.szabo.run_config import GraphCfg, IntegrationCfg, UpdateType
 
 self_propelling_cfg = SelfPropellingCfg(
+    r_eq =  1,
+    max_r = 1 + 0.1,
+    max_repulsive_force = 30,
+    max_attractive_force = 0.75,
+    
     mobility = 1.,
     relaxation_time = 1.,
-    nabla = 0.6,
-    vo = 0.5,
-    max_repulsive_force = 10,
-    max_attractive_force = 0.75,
-    r_eq =  5/6,
-    max_r = 1.,
+    vo = 1,
+    
+    nabla = 0.3,
 )
 
 space_cfg = SpaceCfg(
     # size = 18.2574185,
     # size = 57.73502691, # 0.3
     # size = 40.824829046, # 0.6
-    size = 90, # 0.6
+    size = 40, # 0.6
 )
 
 creator_cfg = CreatorCfg(
-    n = 10000,
+    n = 2000,
     r = space_cfg.size/2,
     type = CreateType.SQUARE,
 )
@@ -37,12 +39,12 @@ run_type = RunType.REAL_TIME
 real_time_cfg = RealTimeCfg(
     int_cfg= IntegrationCfg(
         dt = 0.01,
-        num_col_windows=80,
+        num_col_windows=30,
         solver_type = SolverType.CPP,
         update_type = UpdateType.WINDOWS,
     ),
     num_steps_frame = 10,
-    fps = 120,
+    fps = 60,
     graph_cfg = GraphCfg(
         show_circles=False),
 )

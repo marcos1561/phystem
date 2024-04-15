@@ -17,7 +17,7 @@ dynamic_cfg = RingCfg(
     area_potencial="target_area_and_format",
     # area_potencial="target_area",
     k_area=2,
-    k_format=0.5,
+    k_format=0.1,
     # p0=4.828427, # Triângulo retângulo
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
@@ -32,17 +32,17 @@ dynamic_cfg = RingCfg(
     rep_force = 12,
     adh_force = 0.75*0,
     
-    relax_time=1000,
+    relax_time=1,
     mobility=1,
     vo=1,
     
-    trans_diff=0.05,
-    rot_diff=0.01,
+    trans_diff=0,
+    rot_diff=0.5,
 )
 
 space_cfg = SpaceCfg(
     height = 2*30,
-    length = 7*30*5,
+    length = 4*30,
 )
 
 creator_cfg = CreatorCfg(
@@ -64,9 +64,9 @@ stokes_cfg = StokesCfg(
     obstacle_y  = 0*space_cfg.length/8/2,
     create_length = radius * 2.01,
     remove_length = radius * 2.01,
-    flux_force = 0, 
+    flux_force = 1, 
     obs_force = 15,
-    num_max_rings = int(space_shape[0] * space_shape[1] * 1.2), 
+    num_max_rings = int(space_shape[0] * space_shape[1] * 2), 
 )
 
 seed = 40028922
@@ -86,7 +86,7 @@ num_rows_cm = int(ceil(space_cfg.height / (2.5*radius)))
 
 collect_data_cfg = CollectDataCfg(
     int_cfg=IntegrationCfg(
-            dt = 0.01,
+            dt = 0.01/2,
             particle_win_cfg=ParticleWindows(
                 num_cols=num_cols, num_rows=num_rows,
                 update_freq=1),
@@ -118,9 +118,15 @@ real_time_cfg = RealTimeCfg(
     #         in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
     # ), 
     int_cfg=collect_data_cfg.int_cfg,
-    num_steps_frame=20,
+    num_steps_frame=60,
     fps=30,
-    graph_cfg = SimpleGraphCfg(begin_paused=False),
+    graph_cfg = SimpleGraphCfg(
+        show_density=False,
+        show_rings=True,
+        rings_kwargs={"s": 0.5},
+        # density_kwargs={"vmin": 0, "vmax":6},
+        # cell_shape=2,
+    ),
     # graph_cfg = MainGraphCfg(
     #     show_circles      = True,
     #     pause_on_high_vel = True,

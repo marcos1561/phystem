@@ -130,7 +130,7 @@ class Collector(LastState):
             metadata = yaml.unsafe_load(f)
         self.snapshot_count = metadata["count"]
         self.frame = metadata["frame"]
-            
+
 def collect_pipeline(sim: Simulation, cfg: PipelineCfg):
     collect_cfg: CollectDataCfg = sim.run_cfg
     solver = sim.solver

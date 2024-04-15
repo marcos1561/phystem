@@ -12,6 +12,8 @@ from matplotlib import colors, cm
 from .graphs_cfg import MainGraphCfg, SimpleGraphCfg, ReplayGraphCfg
 from phystem.systems.ring.solvers import CppSolver, SolverReplay
 from phystem.systems.ring.configs import RingCfg, SpaceCfg, RingCfg
+from phystem.systems.ring import utils
+
 
 class BaseGraph(ABC):
     @abstractmethod
@@ -361,6 +363,9 @@ class SimpleGraph(BaseGraph):
         self.graph_cfg = graph_cfg
         space_cfg: SpaceCfg = sim_configs["space_cfg"]
 
+        if self.graph_cfg is None:
+            self.graph_cfg = SimpleGraphCfg()
+
         h = space_cfg.height/2
         l = space_cfg.length/2
         r_scale = 1
@@ -378,15 +383,33 @@ class SimpleGraph(BaseGraph):
         self.cmap = cm.Set1
         
         stokes_cfg = self.solver.cpp_solver.stokes_cfg
-        self.ax.add_patch(Circle((stokes_cfg.obstacle_x, stokes_cfg.obstacle_y), stokes_cfg.obstacle_r, fill=False))
+        self.ax.add_patch(Circle((stokes_cfg.obstacle_x, stokes_cfg.obstacle_y), stokes_cfg.obstacle_r, fill=False,  zorder=3))
 
         self.update_ring_ids()
         self.colors = self.init_colors(self.solver.num_max_rings, self.solver.num_particles) 
 
-        points_s = 8
-        self.points = self.ax.scatter(*self.get_pos().T, s=points_s, cmap=self.cmap, 
-            c=self.colors[self.ring_ids].flatten(), vmin=0, vmax=len(self.cmap.colors)-1)
+        if self.graph_cfg.show_rings:
+            self.unique_ring_color = False
+            if self.graph_cfg.rings_kwargs.get("c", None) is not None:
+                self.unique_ring_color = True
+                self.points = self.ax.scatter(*self.get_pos().T, zorder=2, 
+                   **self.graph_cfg.rings_kwargs)
+            else:
+                self.points = self.ax.scatter(*self.get_pos().T, cmap=self.cmap, zorder=2, 
+                    c=self.colors[self.ring_ids].flatten(), vmin=0, vmax=len(self.cmap.colors)-1, **self.graph_cfg.rings_kwargs)
         
+        if self.graph_cfg.show_density:
+            cell_shape = self.graph_cfg.cell_shape
+            l, h = space_cfg.length, space_cfg.height
+            ring_d = utils.get_ring_radius(sim_configs["dynamic_cfg"].diameter, sim_configs["creator_cfg"].num_p) * 2
+            num_cols = int(l/(ring_d * cell_shape))
+            num_rows = int(h/(ring_d * cell_shape))
+            self.grid = utils.RegularGrid(space_cfg.length, space_cfg.height, num_cols, num_rows)
+
+            self.density = ax.pcolormesh(*self.grid.edges, self.get_density(), shading='flat',
+                    zorder=1, **self.graph_cfg.density_kwargs)
+            fig.colorbar(self.density)
+
         # self.points = self.ax.scatter(*self.get_pos().T, s=points_s, cmap=cm.hsv, 
         #     c=self.get_colors(), vmin=-np.pi, vmax=np.pi)
         
@@ -400,6 +423,12 @@ class SimpleGraph(BaseGraph):
 
         return pos.reshape(pos.shape[0] * pos.shape[1], pos.shape[2])
     
+    def get_density(self):
+        cm = utils.get_cm(np.array(self.solver.pos)[self.ring_ids])
+        coords = self.grid.coords(cm)
+        count = self.grid.count(coords)
+        return count
+
     def init_colors(self, num_rings, num_particles):
         c = np.zeros((num_rings, num_particles), dtype=np.int16)
         color_id = np.random.choice(range(len(self.cmap.colors)), num_rings)
@@ -413,8 +442,14 @@ class SimpleGraph(BaseGraph):
     
     def update(self):
         self.update_ring_ids()
-        self.points.set_offsets(self.get_pos())
-        self.points.set_array(self.get_colors())
+        if self.graph_cfg.show_rings:
+            self.points.set_offsets(self.get_pos())
+            if not self.unique_ring_color:
+                self.points.set_array(self.get_colors())
+
+        if self.graph_cfg.show_density:
+            self.density.set_array(self.get_density())
+
 
 class ReplayGraph(BaseGraph):
     def __init__(self, fig: Figure, ax: Axes, solver: SolverReplay, sim_configs: dict, graph_cfg: ReplayGraphCfg=None):
@@ -448,8 +483,9 @@ class ReplayGraph(BaseGraph):
         self.ax.plot([ l, -l], [ h,  h], color="black")
         self.ax.plot([ l, -l], [-h, -h], color="black")
 
-        stokes_cfg = sim_configs["other_cfgs"]["stokes"]
-        self.ax.add_patch(Circle((stokes_cfg.obstacle_x, stokes_cfg.obstacle_y), stokes_cfg.obstacle_r, fill=False, zorder=3))
+        if sim_configs["other_cfgs"] is not None:
+            stokes_cfg = sim_configs["other_cfgs"]["stokes"]
+            self.ax.add_patch(Circle((stokes_cfg.obstacle_x, stokes_cfg.obstacle_y), stokes_cfg.obstacle_r, fill=False, zorder=3))
 
         if self.graph_cfg.show_rings:
             if self.graph_cfg.vel_colors:

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-import os, yaml
+import os, yaml, copy
 import numpy as np
 
 from phystem.core.solvers import SolverCore
@@ -47,8 +47,16 @@ class Collector(ABC):
 
     def save_cfg(self) -> None:
         '''Salva as configurações da simulação.'''
+        configs = copy.deepcopy(self.configs)
+        configs["run_cfg"].func = "nao salvo"
+        
+        # Impede o salvamento de todos os checkpoints utilizados
+        # caso seja salvado um checkpoint que foi carregado de outro checkpoint.
+        if configs["run_cfg"].checkpoint:
+            configs["run_cfg"].checkpoint.configs = "nao salvo"
+        
         with open(self.config_path, "w") as f:
-            yaml.dump(self.configs, f)
+            yaml.dump(configs, f)
     
 class State(Collector):
     def __init__(self, solver: SolverCore, path: str, configs: dict, tf: float, dt: float, to=0.0, 

@@ -40,6 +40,17 @@ def get_vel_cm(vel: np.ndarray):
 def get_speed(vel_grid: np.array):
     return np.sqrt((np.square(vel_grid)).sum(axis=0))
 
+def get_dist_pb(pos1: np.array, pos2: np.array, height, length):
+    diff = pos2 - pos1
+
+    x_filter = np.abs(diff[:,0]) > length/2 
+    y_filter = np.abs(diff[:,1]) > height/2 
+    
+    diff[x_filter, 0] -= np.copysign(length, diff[x_filter, 0]) 
+    diff[y_filter, 1] -= np.copysign(height, diff[y_filter, 1]) 
+    return diff
+
+
 def same_rings(pos1, ids1, pos2, ids2):
     '''
     Retorna a intersecção entre `pos1` e `pos2` de forma
@@ -241,6 +252,17 @@ class RegularGrid(RetangularGrid):
         coords = np.array([col_pos, row_pos]).T
         return coords
 
+def pos_to_scatter(pos: np.ndarray):
+    '''
+    Dado um array que representa polígonos com shape (N, P, D) em que
+
+    N: Número de polígonos
+    P: Número de pontos dos polígonos
+    D: Número de dimensões dos pontos
+
+    Retorna todos os pontos organizados no shape (D, N*P). 
+    '''
+    return pos.reshape(pos.shape[0] * pos.shape[1], pos.shape[2]).T
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt

@@ -50,8 +50,20 @@ class MainGraphCfg(BaseGraphCfg):
             self.show_f_total = value
 
 class SimpleGraphCfg(BaseGraphCfg):
-    def __init__(self, begin_paused=False, pause_on_high_vel=False, cpp_is_debug=True) -> None:
+    def __init__(self, begin_paused=False, pause_on_high_vel=False, show_rings=True, show_density=False,
+        density_kwargs=None, rings_kwargs=None, cell_shape=None, cpp_is_debug=True) -> None:
         super().__init__(begin_paused, pause_on_high_vel, cpp_is_debug)
+        self.show_rings = show_rings
+        self.show_density = show_density
+        self.cell_shape = cell_shape
+
+        self.density_kwargs = density_kwargs
+        if density_kwargs is None:
+            self.density_kwargs = {}
+        
+        self.rings_kwargs = rings_kwargs
+        if rings_kwargs is None:
+            self.rings_kwargs = {}
 
 class ReplayGraphCfg(BaseGraphCfg):
     def __init__(self, scatter_kwargs=None, density_kwargs=None, x_lims=None, vel_colors=False,

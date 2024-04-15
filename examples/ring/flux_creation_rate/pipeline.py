@@ -104,7 +104,7 @@ def main(configs):
     #     p.map(calc_flux, args)
 
     for id, flux in enumerate(flux_range):
-        configs["other_cfgs"]["stokes"].flux_force = flux
+        configs["other_cfgs"]["stokes"].flux_force = float(flux)
         configs["run_cfg"].func_cfg["id"] = id
         sim = Simulation(**configs)
         sim.run()

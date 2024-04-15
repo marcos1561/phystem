@@ -29,9 +29,9 @@
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
-                "${fileDirname}/main.cpp",
-                "${fileDirname}/creator.cpp",
-                // "${file}",
+                // "${fileDirname}/main.cpp",
+                // "${fileDirname}/creator.cpp",
+                "${file}",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}"
             ],

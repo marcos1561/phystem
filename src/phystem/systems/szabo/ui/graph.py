@@ -91,7 +91,8 @@ class Info(graph.Info):
 
     def get_info(self):
         sim_info = (
-            f"$\Delta$T (ms): {self.time_it.mean_time():.3f}\n\n"
+            f"Solver $\Delta$T (ms): {self.time_it.mean_time('solver'):.3f}\n"
+            f"Graph  $\Delta$T (ms): {self.time_it.mean_time('graph'):.3f}\n\n"
             f"t : {self.solver.time:.3f}\n"
             f"dt: {self.solver.dt:.3f}\n"
             f"<V> = {self.solver.mean_vel():.3f}\n"

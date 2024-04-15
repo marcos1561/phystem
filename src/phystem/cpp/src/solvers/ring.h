@@ -1,5 +1,6 @@
 #include <cmath>
 #include <vector>
+#include <random>
 #include <array>
 #include <map>
 #include <iostream>
@@ -457,8 +458,18 @@ public:
             stokes_init_pos.push_back(stokes_init_pos_i);
         }
         
-        stokes_init_self_angle = vector<double>(num_particles, 0.0);
+        
+        // int num_angles = 10;
+        // std::random_device dev;
+        // std::mt19937 rng(dev());
+        // std::uniform_int_distribution<std::mt19937::result_type> int_dist(1, num_angles); // distribution in range [1, 6]
 
+        // for (int i = 0; i < num_angles; i++)
+        // {
+        //     double angle = -M_PI/2. + (double)i/(double)(num_angles-1) * M_PI;
+        //     stokes_init_self_angle.push_back(angle);
+        // }
+        stokes_init_self_angle = vector<double>(num_particles, 0.0);
 
         /**
          * Cálculo das janelas que contém a região onde os anéis são criados.
@@ -558,9 +569,16 @@ public:
         */
         for (size_t i = 0; i < mask.size(); i++) {
             if (mask[i] == false) {
-                pos[i] = stokes_init_pos[add_ring_id];
-                self_prop_angle[i] = stokes_init_self_angle;
                 unique_rings_ids[i] = unique_id_mng.new_id();
+                pos[i] = stokes_init_pos[add_ring_id];
+                
+                self_prop_angle[i] = stokes_init_self_angle;
+                // double angle = stokes_init_self_angle[int_dist(rng)];
+                // std::cout << "angulo: " << angle << std::endl;
+                // for (int j = 0; j < num_particles; i++)
+                // {
+                //     self_prop_angle[i][j] = angle;
+                // }
 
                 mask[i] = true;
                 num_active_rings += 1;
