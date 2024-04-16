@@ -220,6 +220,9 @@ public:
     update_type(update_type), integration_type(integration_type), 
     stokes_cfg(stokes_cfg) 
     {
+        int NTHREADS = omp_get_max_threads();
+        std::cout << "Número de Threads disponíveis: " << NTHREADS << std::endl;
+
         // if ((update_type == RingUpdateType::stokes) && 
         //     (dynamic_cfg.area_potencial != AreaPotencialType::target_area)) 
         // {
