@@ -148,6 +148,7 @@ def collect_pipeline(sim: Simulation, cfg: PipelineCfg):
     t1 = time.time()
     
     prog = progress.Continuos(collect_cfg.tf, solver.cpp_solver.sim_time)
+    print(solver.time, collect_cfg.tf)
     while solver.time < collect_cfg.tf:
         collector.save()
         solver.update()

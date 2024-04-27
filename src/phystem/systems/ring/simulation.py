@@ -49,7 +49,8 @@ class Simulation(SimulationCore):
 
         if self.run_cfg.id is RunType.SAVE_VIDEO:
             if self.run_cfg.replay is not None:
-                return SolverReplay(self.run_cfg.replay)
+                # return SolverReplay(self.run_cfg.replay)
+                return SolverReplay(self.run_cfg.replay, self.dynamic_cfg, self.space_cfg)
 
         if self.run_cfg.checkpoint:
             from phystem.systems.ring.collectors import StateCheckpoint

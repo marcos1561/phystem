@@ -17,7 +17,7 @@ dynamic_cfg = RingCfg(
     area_potencial="target_area_and_format",
     # area_potencial="target_area",
     k_area=2,
-    k_format=0.1,
+    k_format=0.01,
     # p0=4.828427, # Triângulo retângulo
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
@@ -32,12 +32,12 @@ dynamic_cfg = RingCfg(
     rep_force = 12,
     adh_force = 0.75*0,
     
-    relax_time=1,
+    relax_time=0.1,
     mobility=1,
     vo=1,
     
-    trans_diff=0,
-    rot_diff=0.5,
+    trans_diff=0.0,
+    rot_diff=1,
 )
 
 space_cfg = SpaceCfg(
@@ -47,7 +47,7 @@ space_cfg = SpaceCfg(
 
 creator_cfg = CreatorCfg(
     num_rings = 0,
-    num_p = 15,
+    num_p = 30,
     r = None, angle = [], center = [],
 )
 
@@ -75,7 +75,7 @@ seed = 40028922
 ##
 ## Select Run Type
 ##
-run_type = RunType.REAL_TIME
+run_type = RunType.COLLECT_DATA
 
 
 num_cols = int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6)
@@ -86,7 +86,7 @@ num_rows_cm = int(ceil(space_cfg.height / (2.5*radius)))
 
 collect_data_cfg = CollectDataCfg(
     int_cfg=IntegrationCfg(
-            dt = 0.01/2,
+            dt = 0.01,
             particle_win_cfg=ParticleWindows(
                 num_cols=num_cols, num_rows=num_rows,
                 update_freq=1),
@@ -95,16 +95,17 @@ collect_data_cfg = CollectDataCfg(
             in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
     ), 
     # tf=250 + 0.5 * 1000 ,
-    tf=space_cfg.length/dynamic_cfg.vo*3 + 0.5*300,
-    folder_path="data",
+    # tf=space_cfg.length/dynamic_cfg.vo*3 + 0.5*300,
+    tf=100,
+    folder_path="data/test2",
     func=pipeline.collect_pipeline,
     func_cfg=pipeline.PipelineCfg(
-        checkpoint_period=20, 
+        checkpoint_period=0, 
         snapshot_period=0.5,
         save_type=pipeline.SaveType.snapshot),
-    checkpoint=CheckpointCfg(
-        folder_path="data/checkpoint"
-    )
+    # checkpoint=CheckpointCfg(
+    #     folder_path="data/data_checkpoint/checkpoint"
+    # )
 )
 
 real_time_cfg = RealTimeCfg(
@@ -121,9 +122,10 @@ real_time_cfg = RealTimeCfg(
     num_steps_frame=60,
     fps=30,
     graph_cfg = SimpleGraphCfg(
+        begin_paused=False,
         show_density=False,
         show_rings=True,
-        rings_kwargs={"s": 0.5},
+        rings_kwargs={"s": 2},
         # density_kwargs={"vmin": 0, "vmax":6},
         # cell_shape=2,
     ),
@@ -132,7 +134,7 @@ real_time_cfg = RealTimeCfg(
     #     pause_on_high_vel = True,
     # ),
     # checkpoint=CheckpointCfg(
-    #     folder_path="data/checkpoint",
+    #     folder_path="data/data_checkpoint/checkpoint",
     #     override_cfgs=False,
     # )
 )
