@@ -103,7 +103,8 @@ public:
 
     Vector3d pos; // Posições das partículas
     Vector3d vel; // Velocidade das partículas
-    vector<vector<double>> self_prop_angle; // Ângulo da direção da velocidade auto propulsora
+    vector<double> self_prop_angle; // Ângulo da direção da velocidade auto propulsora
+    // vector<vector<double>> self_prop_angle; // Ângulo da direção da velocidade auto propulsora
     int num_particles; // Número de partículas em cada anel
     
     int num_active_rings; 
@@ -158,7 +159,7 @@ public:
     vector<bool> to_create_new_ring;
     vector<array<int, 2>> begin_windows_ids;
     vector<Vector2d> stokes_init_pos;
-    vector<double> stokes_init_self_angle;
+    double stokes_init_self_angle;
     int num_created_rings;
 
     double create_border;
@@ -212,7 +213,7 @@ public:
     AreaDebug area_debug = {0};
     //=========//
 
-    Ring(Vector3d &pos0, vector<vector<double>>& self_prop_angle0, int num_particles, RingCfg dynamic_cfg, 
+    Ring(Vector3d &pos0, vector<double>& self_prop_angle0, int num_particles, RingCfg dynamic_cfg, 
         double height, double length, double dt, ParticleWindowsCfg particle_windows_cfg,
         RingUpdateType update_type=RingUpdateType::periodic_borders, RingIntegrationType integration_type=RingIntegrationType::euler, 
         StokesCfg stokes_cfg=StokesCfg(), InPolCheckerCfg in_pol_checker_cfg=InPolCheckerCfg(3, 3, 1, true), int seed=-1) 
@@ -248,7 +249,7 @@ public:
 
         pos = Vector3d(num_max_rings, zero_vector_2d);
         vel = Vector3d(num_max_rings, zero_vector_2d);
-        self_prop_angle =  vector<vector<double>>(num_max_rings, zero_vector_1d);
+        self_prop_angle =  vector<double>(num_max_rings);
         mask = vector<bool>(num_max_rings);
         rings_ids = vector<int>(num_max_rings);
         unique_rings_ids = vector<unsigned long int>(num_max_rings);
@@ -472,7 +473,7 @@ public:
         //     double angle = -M_PI/2. + (double)i/(double)(num_angles-1) * M_PI;
         //     stokes_init_self_angle.push_back(angle);
         // }
-        stokes_init_self_angle = vector<double>(num_particles, 0.0);
+        stokes_init_self_angle = 0.0;
 
         /**
          * Cálculo das janelas que contém a região onde os anéis são criados.
@@ -1307,21 +1308,17 @@ public:
         // }
     }
 
-    void calc_derivate(double &vel_x, double &vel_y, double &angle_deriv_i, int ring_id, int particle_id) {
+    void calc_derivate(double &vel_x, double &vel_y, Vec2d self_vel_i, int ring_id, int particle_id) {
         int i = particle_id;
-        Vec2d self_vel_i = {cos(self_prop_angle[ring_id][i]), sin(self_prop_angle[ring_id][i])};
 
         #if DEBUG == 1    
             auto& rng_nums = rng_manager.get_random_num(i, ring_id);
-            double rng_rot = (double)rng_nums[0]/(double)RAND_MAX * 2. - 1.;
             double rng_trans_x = (double)rng_nums[1]/(double)RAND_MAX * 2. - 1.;
             double rng_trans_y = (double)rng_nums[2]/(double)RAND_MAX * 2. - 1.;
         #else
-            double rng_rot = (double)rand()/(double)RAND_MAX * 2. - 1.;
             double rng_trans_x = (double)rand()/(double)RAND_MAX * 2. - 1.;
             double rng_trans_y = (double)rand()/(double)RAND_MAX * 2. - 1.;
         #endif
-        double noise_rot = rng_rot * sqrt(2. * rot_diff) / sqrt(dt); 
         double noise_trans_x = rng_trans_x * sqrt(2. * trans_diff) / sqrt(dt); 
         double noise_trans_y = rng_trans_y * sqrt(2. * trans_diff) / sqrt(dt); 
         
@@ -1332,21 +1329,49 @@ public:
         if (update_type == RingUpdateType::stokes)
             stokes_resolve_collisions(pos[ring_id][particle_id], vel_i);
 
-        double speed = sqrt(vel_i[0]*vel_i[0] + vel_i[1] * vel_i[1]);
-
         #if DEBUG == 1
+        double speed = sqrt(vel_i[0]*vel_i[0] + vel_i[1] * vel_i[1]);
         if (speed > 1e6) {
             update_debug.high_vel = true;
             std::cout << "Error: High velocity" << std::endl;
         }
         #endif
         
+        vel[ring_id][particle_id] = vel_i;  
+
+        vel_x = vel_i[0];
+        vel_y = vel_i[1];
+    }
+
+    double self_angle_derivate(Vec2d self_vel, double ring_id) {
+        // Velocidade do centro de massa
+        Vec2d cm_vel = {0.0, 0.0};
+        for (int i = 0; i < num_particles; i++)
+        {
+            cm_vel[0] += vel[ring_id][i][0];
+            cm_vel[1] += vel[ring_id][i][1];
+        }
+        cm_vel[0] /= (double)num_particles;
+        cm_vel[1] /= (double)num_particles;
+    
+        double speed = vector_mod(cm_vel);
+
+        // Geração do ruíno rotacional
+        #if DEBUG == 1    
+            auto& rng_nums = rng_manager.get_random_num(0, ring_id);
+            double rng_rot = (double)rng_nums[0]/(double)RAND_MAX * 2. - 1.;
+        #else
+            double rng_rot = (double)rand()/(double)RAND_MAX * 2. - 1.;
+        #endif
+        double noise_rot = rng_rot * sqrt(2. * rot_diff) / sqrt(dt); 
+        
+        // Derivada do ângulo da velocidade auto propulsora
         double angle_derivate;
-        if (speed == 0.) {
+        if (speed == 0.0) {
             update_debug.count_zero_speed += 1;
             angle_derivate = 0.;
         } else {
-            double cross_prod = self_vel_i[0] * vel_i[1]/speed - self_vel_i[1] * vel_i[0]/speed;
+            double cross_prod = self_vel[0] * cm_vel[1]/speed - self_vel[1] * cm_vel[0]/speed;
             
             if (abs(cross_prod) > 1) {
                 #if DEBUG == 1
@@ -1358,73 +1383,22 @@ public:
             angle_derivate = 1. / relax_time * asin(cross_prod) + noise_rot;
         }
 
-        vel[ring_id][particle_id] = vel_i;  
-
-        vel_x = vel_i[0];
-        vel_y = vel_i[1];
-        angle_deriv_i = angle_derivate;
+        return angle_derivate;
     }
 
     void advance_time() {
-        double angle_deriv_i;
         Vec2d vel_i;
 
-        // #if DEBUG == 1
-        // if (is_low_dt == true) {
-        //     dt_count ++;
-
-        //     if (dt_count > num_low_dt) {
-        //         is_low_dt = false;
-        //         dt = base_dt;
-        //     }
-        // }
-
-        // if (is_low_dt == false) {
-        //     double max_force = 0;
-        //     for (int ring_id = 0; ring_id < num_max_rings; ring_id++) {
-        //         for (auto& f: total_forces[ring_id]) {
-        //             double f_mod = vector_mod(f);
-        //             if (f_mod > max_force) {
-        //                 max_force = f_mod;
-        //             }
-        //         }
-        //     }
-            
-        //     // std::cout << "Max Force: " << max_force << std::endl;
-
-        //     if (max_force > 15) {
-        //         dt = low_dt;
-        //         is_low_dt = true;
-        //         dt_count = 0;
-        //     }
-        // }
-        // #endif
-
         #pragma omp parallel for schedule(dynamic, 10)
-        // for (int ring_id = 0; ring_id < num_max_rings; ring_id++) {
         for (int i = 0; i < num_active_rings; i++)
         {
             int ring_id = rings_ids[i];
+            Vec2d self_vel_i = {cos(self_prop_angle[ring_id]), sin(self_prop_angle[ring_id])};
             for (int i=0; i < num_particles; i++) {
-                // if (update_type == RingUpdateType::invagination) {
-                //     bool skip = false;
-                //     if ((ring_id == 0) && (inv_is_lfix[i]))
-                //         skip = true;
-                //     else if ((ring_id == num_active_rings-1) && (inv_is_rfix[i]))
-                //         skip = true;
-
-                //     if (skip) {
-                //         sum_forces_matrix[ring_id][i][0] = 0.f;
-                //         sum_forces_matrix[ring_id][i][1] = 0.f;
-                //         continue;
-                //     }
-                // }
-
-                calc_derivate(vel_i[0], vel_i[1], angle_deriv_i, ring_id, i);
+                calc_derivate(vel_i[0], vel_i[1], self_vel_i, ring_id, i);
 
                 pos[ring_id][i][0] += vel_i[0] * dt;
                 pos[ring_id][i][1] += vel_i[1] * dt;
-                self_prop_angle[ring_id][i] += angle_deriv_i * dt;
 
                 #if DEBUG == 1
                 if (isnan(pos[ring_id][i][0]) == true) {
@@ -1445,24 +1419,25 @@ public:
                 sum_forces_matrix[ring_id][i][0] = 0.f;
                 sum_forces_matrix[ring_id][i][1] = 0.f;
             }        
+
+            double angle_deriv = self_angle_derivate(self_vel_i, ring_id);
+            self_prop_angle[ring_id] += angle_deriv * dt;
         }
     }
 
     void advance_time_stokes() {
-        double angle_deriv_i;
         Vec2d vel_i;
 
         #pragma omp parallel for schedule(dynamic, 10)
         for (int i = 0; i < num_active_rings; i++)
         {
             int ring_id = rings_ids[i];
-
+            Vec2d self_vel_i = {cos(self_prop_angle[ring_id]), sin(self_prop_angle[ring_id])};
             for (int i=0; i < num_particles; i++) {
-                calc_derivate(vel_i[0], vel_i[1], angle_deriv_i, ring_id, i);
+                calc_derivate(vel_i[0], vel_i[1], self_vel_i, ring_id, i);
                 
                 pos[ring_id][i][0] += vel_i[0] * dt;
                 pos[ring_id][i][1] += vel_i[1] * dt;
-                self_prop_angle[ring_id][i] += angle_deriv_i * dt;
 
                 #if DEBUG == 1
                 if (isnan(pos[ring_id][i][0]) == true) {
@@ -1479,6 +1454,9 @@ public:
             
             if (center_mass[ring_id][0] > remove_border) {
                 remove_ring(ring_id);
+            } else {
+                double angle_deriv = self_angle_derivate(self_vel_i, ring_id);
+                self_prop_angle[ring_id] += angle_deriv * dt;
             }
         }
 
@@ -1488,108 +1466,112 @@ public:
     }
 
     void advance_time_verlet() {
-        for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
-        {
-            for (int i=0; i < num_particles; i++) {
-                auto& vel_x = k_matrix[0][ring_id][i][0];
-                auto& vel_y = k_matrix[0][ring_id][i][1];
-                auto& angle_deriv_i = k_matrix[0][ring_id][i][2];
+        std::cout << "Esse método está desatualizado!" << std::endl;
+        // for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
+        // {
+        //     Vec2d self_vel_i = {cos(self_prop_angle[ring_id]), sin(self_prop_angle[ring_id])};
+        //     for (int i=0; i < num_particles; i++) {
+        //         auto& vel_x = k_matrix[0][ring_id][i][0];
+        //         auto& vel_y = k_matrix[0][ring_id][i][1];
+        //         auto& angle_deriv_i = k_matrix[0][ring_id][i][2];
 
-                #if DEBUG == 1
-                if (isnan(vel_x) == true) {
-                    std::cout << "Error: vel nan 1" << std::endl;
-                }
-                #endif
+        //         #if DEBUG == 1
+        //         if (isnan(vel_x) == true) {
+        //             std::cout << "Error: vel nan 1" << std::endl;
+        //         }
+        //         #endif
                 
-                calc_derivate(vel_x, vel_y, angle_deriv_i, ring_id, i);
+        //         calc_derivate(vel_x, vel_y, angle_deriv_i, self_vel_i, ring_id, i);
 
-                #if DEBUG == 1
-                if (isnan(vel_x) == true) {
-                    std::cout << "Error: vel nan 2" << std::endl;
-                }
-                #endif
+        //         #if DEBUG == 1
+        //         if (isnan(vel_x) == true) {
+        //             std::cout << "Error: vel nan 2" << std::endl;
+        //         }
+        //         #endif
 
-                old_pos[ring_id][i][0] = pos[ring_id][i][0];
-                old_pos[ring_id][i][1] = pos[ring_id][i][1];
-                old_self_prop_angle[ring_id][i] = self_prop_angle[ring_id][i];
+        //         old_pos[ring_id][i][0] = pos[ring_id][i][0];
+        //         old_pos[ring_id][i][1] = pos[ring_id][i][1];
+        //         old_self_prop_angle[ring_id][i] = self_prop_angle[ring_id][i];
                 
-                pos[ring_id][i][0] += vel_x * dt;
-                pos[ring_id][i][1] += vel_y * dt;
-                self_prop_angle[ring_id][i] += angle_deriv_i * dt;
+        //         pos[ring_id][i][0] += vel_x * dt;
+        //         pos[ring_id][i][1] += vel_y * dt;
+        //         self_prop_angle[ring_id][i] += angle_deriv_i * dt;
 
-                #if DEBUG == 1
-                if (isnan(pos[ring_id][i][0]) == true) {
-                    std::cout << "Error: pos nan 1" << std::endl;
-                }
-                #endif
+        //         #if DEBUG == 1
+        //         if (isnan(pos[ring_id][i][0]) == true) {
+        //             std::cout << "Error: pos nan 1" << std::endl;
+        //         }
+        //         #endif
 
-                periodic_border(pos[ring_id][i]);
+        //         periodic_border(pos[ring_id][i]);
 
-                // for (int dim = 0; dim < 2.f; dim ++) {
-                //     if (pos[ring_id][i][dim] > height/2.f)
-                //         pos[ring_id][i][dim] -= height;
-                //     else if (pos[ring_id][i][dim] < -height/2.f)
-                //         pos[ring_id][i][dim] += height;
-                // }
+        //         // for (int dim = 0; dim < 2.f; dim ++) {
+        //         //     if (pos[ring_id][i][dim] > height/2.f)
+        //         //         pos[ring_id][i][dim] -= height;
+        //         //     else if (pos[ring_id][i][dim] < -height/2.f)
+        //         //         pos[ring_id][i][dim] += height;
+        //         // }
 
-                #if DEBUG == 1
-                if (isnan(pos[ring_id][i][0]) == true)
-                    std::cout << "Error: pos_nan 2" << std::endl;
-                #endif
+        //         #if DEBUG == 1
+        //         if (isnan(pos[ring_id][i][0]) == true)
+        //             std::cout << "Error: pos_nan 2" << std::endl;
+        //         #endif
 
-                sum_forces_matrix[ring_id][i][0] = 0.f;
-                sum_forces_matrix[ring_id][i][1] = 0.f;
-            } 
-        }
+        //         sum_forces_matrix[ring_id][i][0] = 0.f;
+        //         sum_forces_matrix[ring_id][i][1] = 0.f;
+        //     } 
+        // }
         
-        calc_forces_windows();
+        // calc_forces_windows();
 
-        double angle_deriv_2;
-        Vec2d vel2;
-        for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
-        {
-            for (int i=0; i < num_particles; i++) {
-                calc_derivate(vel2[0], vel2[1], angle_deriv_2, ring_id, i);
+        // double angle_deriv_2;
+        // Vec2d vel2;
+        // for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
+        // {
+        //     Vec2d self_vel_i = {cos(self_prop_angle[ring_id]), sin(self_prop_angle[ring_id])};
+        //     for (int i=0; i < num_particles; i++) {
+        //         calc_derivate(vel2[0], vel2[1], angle_deriv_2, self_vel_i, ring_id, i);
                 
-                auto& old_pos_i = old_pos[ring_id][i];
-                auto& old_angle_i = old_self_prop_angle[ring_id][i];
+        //         auto& old_pos_i = old_pos[ring_id][i];
+        //         auto& old_angle_i = old_self_prop_angle[ring_id][i];
 
-                auto& k1 = k_matrix[0][ring_id][i];
-                Vec2d vel1 = {k1[0], k1[1]};
-                auto angle_deriv_1 = k1[2];
+        //         auto& k1 = k_matrix[0][ring_id][i];
+        //         Vec2d vel1 = {k1[0], k1[1]};
+        //         auto angle_deriv_1 = k1[2];
 
-                pos[ring_id][i][0] = old_pos_i[0] + 0.5 * (vel1[0] + vel2[0]) * dt;
-                pos[ring_id][i][1] = old_pos_i[1] + 0.5 * (vel1[1] + vel2[1]) * dt;
-                self_prop_angle[ring_id][i] = old_angle_i + 0.5 * (angle_deriv_1 + angle_deriv_2) * dt;
+        //         pos[ring_id][i][0] = old_pos_i[0] + 0.5 * (vel1[0] + vel2[0]) * dt;
+        //         pos[ring_id][i][1] = old_pos_i[1] + 0.5 * (vel1[1] + vel2[1]) * dt;
+        //         self_prop_angle[ring_id][i] = old_angle_i + 0.5 * (angle_deriv_1 + angle_deriv_2) * dt;
 
-                if (isnan(pos[ring_id][i][0]) == true) {
-                    std::cout << "Error: pos nan 1" << std::endl;
-                }
+        //         if (isnan(pos[ring_id][i][0]) == true) {
+        //             std::cout << "Error: pos nan 1" << std::endl;
+        //         }
                 
-                periodic_border(pos[ring_id][i]);
+        //         periodic_border(pos[ring_id][i]);
         
-                // for (int dim = 0; dim < 2.f; dim ++) {
-                //     if (pos[ring_id][i][dim] > height/2.f)
-                //         pos[ring_id][i][dim] -= height;
-                //     else if (pos[ring_id][i][dim] < -height/2.f)
-                //         pos[ring_id][i][dim] += height;
-                // }
+        //         // for (int dim = 0; dim < 2.f; dim ++) {
+        //         //     if (pos[ring_id][i][dim] > height/2.f)
+        //         //         pos[ring_id][i][dim] -= height;
+        //         //     else if (pos[ring_id][i][dim] < -height/2.f)
+        //         //         pos[ring_id][i][dim] += height;
+        //         // }
 
-                #if DEBUG == 1
-                if (isnan(pos[ring_id][i][0]) == true)
-                    std::cout << "Error: pos_nan 2" << std::endl;
+        //         #if DEBUG == 1
+        //         if (isnan(pos[ring_id][i][0]) == true)
+        //             std::cout << "Error: pos_nan 2" << std::endl;
 
-                total_forces[ring_id][i][0] = sum_forces_matrix[ring_id][i][0];
-                total_forces[ring_id][i][1] = sum_forces_matrix[ring_id][i][1];
-                #endif
+        //         total_forces[ring_id][i][0] = sum_forces_matrix[ring_id][i][0];
+        //         total_forces[ring_id][i][1] = sum_forces_matrix[ring_id][i][1];
+        //         #endif
 
-                sum_forces_matrix[ring_id][i][0] = 0.f;
-                sum_forces_matrix[ring_id][i][1] = 0.f;
-            }
-        }
+        //         sum_forces_matrix[ring_id][i][0] = 0.f;
+        //         sum_forces_matrix[ring_id][i][1] = 0.f;
+        //     }
+        // }
     }
 
     void advance_time_rk4() {
+        std::cout << "Esse método está desatualizado!" << std::endl;
         // if (is_low_dt == true) {
         //     dt_count ++;
 
@@ -1620,128 +1602,132 @@ public:
         // }
 
         
-        for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
-        {
-            for (int p_id = 0; p_id < num_particles; p_id++)
-            {
-                old_pos[ring_id][p_id][0] = pos[ring_id][p_id][0];
-                old_pos[ring_id][p_id][1] = pos[ring_id][p_id][1];
-                old_self_prop_angle[ring_id][p_id] = self_prop_angle[ring_id][p_id];
-            }
-        }
+        // for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
+        // {
+        //     for (int p_id = 0; p_id < num_particles; p_id++)
+        //     {
+        //         old_pos[ring_id][p_id][0] = pos[ring_id][p_id][0];
+        //         old_pos[ring_id][p_id][1] = pos[ring_id][p_id][1];
+        //         old_self_prop_angle[ring_id][p_id] = self_prop_angle[ring_id][p_id];
+        //     }
+        // }
         
-        for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
-        {
-            for (int i=0; i < num_particles; i++) {
-                double& vel_i_x = k_matrix[0][ring_id][i][0];
-                double& vel_i_y = k_matrix[0][ring_id][i][1];
-                double& angle_deriv_i = k_matrix[0][ring_id][i][2];
+        // for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
+        // {
+        //     Vec2d self_vel_i = {cos(self_prop_angle[ring_id]), sin(self_prop_angle[ring_id])};
+        //     for (int i=0; i < num_particles; i++) {
+        //         double& vel_i_x = k_matrix[0][ring_id][i][0];
+        //         double& vel_i_y = k_matrix[0][ring_id][i][1];
+        //         double& angle_deriv_i = k_matrix[0][ring_id][i][2];
 
-                calc_derivate(vel_i_x, vel_i_y, angle_deriv_i, ring_id, i);
+        //         calc_derivate(vel_i_x, vel_i_y, angle_deriv_i, self_vel_i, ring_id, i);
 
-                pos[ring_id][i][0] += vel_i_x * dt * 0.5;
-                pos[ring_id][i][1] += vel_i_y * dt * 0.5;
-                self_prop_angle[ring_id][i] += angle_deriv_i * dt * 0.5;
+        //         pos[ring_id][i][0] += vel_i_x * dt * 0.5;
+        //         pos[ring_id][i][1] += vel_i_y * dt * 0.5;
+        //         self_prop_angle[ring_id][i] += angle_deriv_i * dt * 0.5;
 
-                periodic_border(pos[ring_id][i]);
-                // for (int dim = 0; dim < 2.f; dim ++) {
-                //     if (pos[ring_id][i][dim] > height/2.f)
-                //         pos[ring_id][i][dim] -= height;
-                //     else if (pos[ring_id][i][dim] < -height/2.f)
-                //         pos[ring_id][i][dim] += height;
-                // }
+        //         periodic_border(pos[ring_id][i]);
+        //         // for (int dim = 0; dim < 2.f; dim ++) {
+        //         //     if (pos[ring_id][i][dim] > height/2.f)
+        //         //         pos[ring_id][i][dim] -= height;
+        //         //     else if (pos[ring_id][i][dim] < -height/2.f)
+        //         //         pos[ring_id][i][dim] += height;
+        //         // }
 
-                sum_forces_matrix[ring_id][i][0] = 0.f;
-                sum_forces_matrix[ring_id][i][1] = 0.f;
-            } 
-        }
-        calc_forces_windows();
-        for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
-        {
-            for (int i=0; i < num_particles; i++) {
-                double& vel_i_x = k_matrix[1][ring_id][i][0];
-                double& vel_i_y = k_matrix[1][ring_id][i][1];
-                double& angle_deriv_i = k_matrix[1][ring_id][i][2];
+        //         sum_forces_matrix[ring_id][i][0] = 0.f;
+        //         sum_forces_matrix[ring_id][i][1] = 0.f;
+        //     } 
+        // }
+        // calc_forces_windows();
+        // for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
+        // {
+        //     Vec2d self_vel_i = {cos(self_prop_angle[ring_id]), sin(self_prop_angle[ring_id])};
+        //     for (int i=0; i < num_particles; i++) {
+        //         double& vel_i_x = k_matrix[1][ring_id][i][0];
+        //         double& vel_i_y = k_matrix[1][ring_id][i][1];
+        //         double& angle_deriv_i = k_matrix[1][ring_id][i][2];
 
-                calc_derivate(vel_i_x, vel_i_y, angle_deriv_i, ring_id, i);
+        //         calc_derivate(vel_i_x, vel_i_y, angle_deriv_i, self_vel_i, ring_id, i);
 
-                pos[ring_id][i][0] = old_pos[ring_id][i][0] + vel_i_x * dt * 0.5;
-                pos[ring_id][i][1] = old_pos[ring_id][i][1] + vel_i_y * dt * 0.5;
-                self_prop_angle[ring_id][i] = old_self_prop_angle[ring_id][i] + angle_deriv_i * dt * 0.5;
+        //         pos[ring_id][i][0] = old_pos[ring_id][i][0] + vel_i_x * dt * 0.5;
+        //         pos[ring_id][i][1] = old_pos[ring_id][i][1] + vel_i_y * dt * 0.5;
+        //         self_prop_angle[ring_id][i] = old_self_prop_angle[ring_id][i] + angle_deriv_i * dt * 0.5;
 
-                periodic_border(pos[ring_id][i]);
-                // for (int dim = 0; dim < 2.f; dim ++) {
-                //     if (pos[ring_id][i][dim] > height/2.f)
-                //         pos[ring_id][i][dim] -= height;
-                //     else if (pos[ring_id][i][dim] < -height/2.f)
-                //         pos[ring_id][i][dim] += height;
-                // }
+        //         periodic_border(pos[ring_id][i]);
+        //         // for (int dim = 0; dim < 2.f; dim ++) {
+        //         //     if (pos[ring_id][i][dim] > height/2.f)
+        //         //         pos[ring_id][i][dim] -= height;
+        //         //     else if (pos[ring_id][i][dim] < -height/2.f)
+        //         //         pos[ring_id][i][dim] += height;
+        //         // }
 
-                sum_forces_matrix[ring_id][i][0] = 0.f;
-                sum_forces_matrix[ring_id][i][1] = 0.f;
-            } 
-        }
-        calc_forces_windows();
-        for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
-        {
-            for (int i=0; i < num_particles; i++) {
-                double& vel_i_x = k_matrix[2][ring_id][i][0];
-                double& vel_i_y = k_matrix[2][ring_id][i][1];
-                double& angle_deriv_i = k_matrix[2][ring_id][i][2];
+        //         sum_forces_matrix[ring_id][i][0] = 0.f;
+        //         sum_forces_matrix[ring_id][i][1] = 0.f;
+        //     } 
+        // }
+        // calc_forces_windows();
+        // for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
+        // {
+        //     Vec2d self_vel_i = {cos(self_prop_angle[ring_id]), sin(self_prop_angle[ring_id])};
+        //     for (int i=0; i < num_particles; i++) {
+        //         double& vel_i_x = k_matrix[2][ring_id][i][0];
+        //         double& vel_i_y = k_matrix[2][ring_id][i][1];
+        //         double& angle_deriv_i = k_matrix[2][ring_id][i][2];
 
-                calc_derivate(vel_i_x, vel_i_y, angle_deriv_i, ring_id, i);
+        //         calc_derivate(vel_i_x, vel_i_y, angle_deriv_i, self_vel_i, ring_id, i);
 
-                pos[ring_id][i][0] = old_pos[ring_id][i][0] + vel_i_x * dt;
-                pos[ring_id][i][1] = old_pos[ring_id][i][1] + vel_i_y * dt;
-                self_prop_angle[ring_id][i] = old_self_prop_angle[ring_id][i] + angle_deriv_i * dt;
+        //         pos[ring_id][i][0] = old_pos[ring_id][i][0] + vel_i_x * dt;
+        //         pos[ring_id][i][1] = old_pos[ring_id][i][1] + vel_i_y * dt;
+        //         self_prop_angle[ring_id][i] = old_self_prop_angle[ring_id][i] + angle_deriv_i * dt;
 
-                periodic_border(pos[ring_id][i]);
-                // for (int dim = 0; dim < 2.f; dim ++) {
-                //     if (pos[ring_id][i][dim] > height/2.f)
-                //         pos[ring_id][i][dim] -= height;
-                //     else if (pos[ring_id][i][dim] < -height/2.f)
-                //         pos[ring_id][i][dim] += height;
-                // }
+        //         periodic_border(pos[ring_id][i]);
+        //         // for (int dim = 0; dim < 2.f; dim ++) {
+        //         //     if (pos[ring_id][i][dim] > height/2.f)
+        //         //         pos[ring_id][i][dim] -= height;
+        //         //     else if (pos[ring_id][i][dim] < -height/2.f)
+        //         //         pos[ring_id][i][dim] += height;
+        //         // }
 
-                sum_forces_matrix[ring_id][i][0] = 0.f;
-                sum_forces_matrix[ring_id][i][1] = 0.f;
-            } 
-        }
-        calc_forces_windows();
-        for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
-        {
-            for (int i=0; i < num_particles; i++) {
-                double& vel_i_x = k_matrix[3][ring_id][i][0];
-                double& vel_i_y = k_matrix[3][ring_id][i][1];
-                double& angle_deriv_i = k_matrix[3][ring_id][i][2];
+        //         sum_forces_matrix[ring_id][i][0] = 0.f;
+        //         sum_forces_matrix[ring_id][i][1] = 0.f;
+        //     } 
+        // }
+        // calc_forces_windows();
+        // for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
+        // {
+        //     Vec2d self_vel_i = {cos(self_prop_angle[ring_id]), sin(self_prop_angle[ring_id])};
+        //     for (int i=0; i < num_particles; i++) {
+        //         double& vel_i_x = k_matrix[3][ring_id][i][0];
+        //         double& vel_i_y = k_matrix[3][ring_id][i][1];
+        //         double& angle_deriv_i = k_matrix[3][ring_id][i][2];
 
-                calc_derivate(vel_i_x, vel_i_y, angle_deriv_i, ring_id, i);
-                sum_forces_matrix[ring_id][i][0] = 0.f;
-                sum_forces_matrix[ring_id][i][1] = 0.f;
-            } 
-        }
+        //         calc_derivate(vel_i_x, vel_i_y, angle_deriv_i, self_vel_i, ring_id, i);
+        //         sum_forces_matrix[ring_id][i][0] = 0.f;
+        //         sum_forces_matrix[ring_id][i][1] = 0.f;
+        //     } 
+        // }
         
-        for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
-        {
-            for (int i=0; i < num_particles; i++) {
-                auto& k1 = k_matrix[0][ring_id][i];
-                auto& k2 = k_matrix[1][ring_id][i];
-                auto& k3 = k_matrix[2][ring_id][i];
-                auto& k4 = k_matrix[3][ring_id][i];
+        // for (int ring_id = 0; ring_id < num_max_rings; ring_id++)
+        // {
+        //     for (int i=0; i < num_particles; i++) {
+        //         auto& k1 = k_matrix[0][ring_id][i];
+        //         auto& k2 = k_matrix[1][ring_id][i];
+        //         auto& k3 = k_matrix[2][ring_id][i];
+        //         auto& k4 = k_matrix[3][ring_id][i];
 
-                pos[ring_id][i][0] = old_pos[ring_id][i][0] + dt * (1./6. * k1[0] + 1./3. * k2[0] + 1./3. * k3[0] + 1./6. * k4[0]);
-                pos[ring_id][i][1] = old_pos[ring_id][i][1] + dt * (1./6. * k1[1] + 1./3. * k2[1] + 1./3. * k3[1] + 1./6. * k4[1]);
-                self_prop_angle[ring_id][i] = old_self_prop_angle[ring_id][i] + dt * (1./6. * k1[2] + 1./3. * k2[2] + 1./3. * k3[2] + 1./6. * k4[2]);
+        //         pos[ring_id][i][0] = old_pos[ring_id][i][0] + dt * (1./6. * k1[0] + 1./3. * k2[0] + 1./3. * k3[0] + 1./6. * k4[0]);
+        //         pos[ring_id][i][1] = old_pos[ring_id][i][1] + dt * (1./6. * k1[1] + 1./3. * k2[1] + 1./3. * k3[1] + 1./6. * k4[1]);
+        //         self_prop_angle[ring_id][i] = old_self_prop_angle[ring_id][i] + dt * (1./6. * k1[2] + 1./3. * k2[2] + 1./3. * k3[2] + 1./6. * k4[2]);
 
-                periodic_border(pos[ring_id][i]);
-                // for (int dim = 0; dim < 2.f; dim ++) {
-                //     if (pos[ring_id][i][dim] > height/2.f)
-                //         pos[ring_id][i][dim] -= height;
-                //     else if (pos[ring_id][i][dim] < -height/2.f)
-                //         pos[ring_id][i][dim] += height;
-                // }
-            } 
-        }
+        //         periodic_border(pos[ring_id][i]);
+        //         // for (int dim = 0; dim < 2.f; dim ++) {
+        //         //     if (pos[ring_id][i][dim] > height/2.f)
+        //         //         pos[ring_id][i][dim] -= height;
+        //         //     else if (pos[ring_id][i][dim] < -height/2.f)
+        //         //         pos[ring_id][i][dim] += height;
+        //         // }
+        //     } 
+        // }
     }
 
     void update_normal() {

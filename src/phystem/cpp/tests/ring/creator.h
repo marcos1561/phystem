@@ -11,8 +11,7 @@ using Vector3d = vector<vector<array<double, 2>>>;
 namespace ring {
     struct Data {
         Vector3d pos;
-        Vector3d vel;
-        vector<vector<double>> self_prop_angle;
+        vector<double> self_prop_angle;
     };
 
     Data init_cfg(int num_rings, int num_p, double r, double v0);

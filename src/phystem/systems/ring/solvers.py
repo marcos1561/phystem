@@ -50,10 +50,9 @@ class CppSolver:
         }
 
         pos_in = [cpp_lib.data_types.PosVec(ring_pos) for ring_pos in pos]
-        angle_in = [cpp_lib.data_types.List(ring_angle) for ring_angle in self_prop_angle]
 
         pos = cpp_lib.data_types.Vector3d(pos_in)
-        self_prop_angle = cpp_lib.data_types.List2d(angle_in)
+        self_prop_angle = cpp_lib.data_types.List(self_prop_angle)
         
         self.cpp_solver = cpp_lib.solvers.Ring(
             pos, self_prop_angle, 

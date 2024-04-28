@@ -169,7 +169,7 @@ PYBIND11_MODULE(cpp_lib, m) {
         ;      
 
     py::class_<Ring>(solvers, "Ring")
-        .def(py::init<Vector3d&, vector<vector<double>>&, int, RingCfgPy,
+        .def(py::init<Vector3d&, vector<double>&, int, RingCfgPy,
             double, double, double, ParticleWindowsCfg, RingUpdateType, RingIntegrationType, 
             StokesCfgPy, InPolCheckerCfg, double>(),
             py::arg("pos0"), py::arg("self_prop_angle0"), py::arg("num_particles"),  

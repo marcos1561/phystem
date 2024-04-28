@@ -12,7 +12,7 @@ class InitData:
             pos: ndarray (num_rings, num_particles, 2)
                     Posição inicial das partículas em cada anel.
                 
-            self_prop_angle: ndarray (num_rings, n)
+            self_prop_angle: ndarray (num_rings)
                 Ângulo inicial da direção da velocidade auto propulsora em cada anel.
         '''
 
@@ -87,10 +87,8 @@ class Creator(CreatorCore):
             ring_pos[0] += self.center[ring_id][0]
             ring_pos[1] += self.center[ring_id][1]
 
-            ring_self_prop_angle = self.angle[ring_id] * np.ones(self.num_p, dtype=np.float64)
-
             pos.append(ring_pos.T)
-            self_prop_angle.append(ring_self_prop_angle)
+            self_prop_angle.append(self.angle[ring_id])
 
         return InitData(np.array(pos), np.array(self_prop_angle))
 

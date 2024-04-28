@@ -55,7 +55,7 @@ int main() {
 
     auto data = ring::init_cfg(2, n, r, cfg.vo);
     data.pos = Vector3d(0);
-    data.self_prop_angle = std::vector<vector<double>>(0);
+    data.self_prop_angle = std::vector<double>(0);
 
     auto solver = Ring(data.pos, data.self_prop_angle, n, cfg, size, size, dt, p_win_cfg, 
         RingUpdateType::stokes, RingIntegrationType::euler, stokes_cfg, InPolCheckerCfg(3, 4, 10));

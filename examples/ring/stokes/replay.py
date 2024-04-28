@@ -6,7 +6,7 @@ from phystem.systems.ring.simulation import Simulation
 from phystem.systems.ring.solver_config import ReplaySolverCfg
 
 run_cfg = ReplayDataCfg(
-    directory="data/test2/snapshots",
+    directory="data/single_self_prop_test/snapshots",
     data_dir="data",
     graph_cfg=graphs_cfg.ReplayGraphCfg(
         density_kwargs={"vmin": 0, "vmax": 14}, 
@@ -27,12 +27,12 @@ run_cfg = ReplayDataCfg(
 
 save_cfg = SaveCfg(
     int_cfg=run_cfg.int_cfg, 
-    path="./data/test3.mp4", 
+    path="./data/single_pol.mp4", 
     fps=30,
     dt=0.5,
     ti=0,
-    tf=120,
-    duration=5,
+    tf=650,
+    duration=30,
     replay=run_cfg,
     graph_cfg=graphs_cfg.ReplayGraphCfg(
         # scatter_kwargs={"s": 0.1, "c":"black"}, 

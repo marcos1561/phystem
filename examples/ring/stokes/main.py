@@ -17,7 +17,7 @@ dynamic_cfg = RingCfg(
     area_potencial="target_area_and_format",
     # area_potencial="target_area",
     k_area=2,
-    k_format=0.01,
+    k_format=0.03,
     # p0=4.828427, # Triângulo retângulo
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
@@ -30,19 +30,19 @@ dynamic_cfg = RingCfg(
     diameter  = 1,
     max_dist  = 1 + 0.1666,
     rep_force = 12,
-    adh_force = 0.75*0,
+    adh_force = 0.7,
     
-    relax_time=0.1,
+    relax_time=0.5,
     mobility=1,
     vo=1,
     
     trans_diff=0.0,
-    rot_diff=1,
+    rot_diff=0.1,
 )
 
 space_cfg = SpaceCfg(
-    height = 2*30,
-    length = 4*30,
+    height = 3*30,
+    length = 6*30,
 )
 
 creator_cfg = CreatorCfg(
@@ -75,7 +75,7 @@ seed = 40028922
 ##
 ## Select Run Type
 ##
-run_type = RunType.COLLECT_DATA
+run_type = RunType.REAL_TIME
 
 
 num_cols = int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6)
@@ -96,8 +96,8 @@ collect_data_cfg = CollectDataCfg(
     ), 
     # tf=250 + 0.5 * 1000 ,
     # tf=space_cfg.length/dynamic_cfg.vo*3 + 0.5*300,
-    tf=100,
-    folder_path="data/test2",
+    tf=700,
+    folder_path="data/single_self_prop_test",
     func=pipeline.collect_pipeline,
     func_cfg=pipeline.PipelineCfg(
         checkpoint_period=0, 
@@ -126,8 +126,8 @@ real_time_cfg = RealTimeCfg(
         show_density=False,
         show_rings=True,
         rings_kwargs={"s": 2},
-        # density_kwargs={"vmin": 0, "vmax":6},
-        # cell_shape=2,
+        density_kwargs={"vmin": 0, "vmax":5},
+        cell_shape=2,
     ),
     # graph_cfg = MainGraphCfg(
     #     show_circles      = True,
