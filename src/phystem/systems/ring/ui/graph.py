@@ -402,8 +402,11 @@ class SimpleGraph(BaseGraph):
             cell_shape = self.graph_cfg.cell_shape
             l, h = space_cfg.length, space_cfg.height
             ring_d = utils.get_ring_radius(sim_configs["dynamic_cfg"].diameter, sim_configs["creator_cfg"].num_p) * 2
-            num_cols = int(l/(ring_d * cell_shape))
-            num_rows = int(h/(ring_d * cell_shape))
+            num_rows = int(h/(ring_d * cell_shape[0]))
+            num_cols = int(l/(ring_d * cell_shape[1]))
+
+            print(f"grid_shape: {num_rows}, {num_cols}")
+
             self.grid = utils.RegularGrid(space_cfg.length, space_cfg.height, num_cols, num_rows)
 
             self.density = ax.pcolormesh(*self.grid.edges, self.get_density(), shading='flat',
@@ -492,7 +495,7 @@ class ReplayGraph(BaseGraph):
                 self.points = self.ax.scatter(*self.get_pos().T, zorder=2, **self.graph_cfg.scatter_kwargs, cmap=cm.hsv, 
                     c=self.get_colors(), vmin=-np.pi, vmax=np.pi)
                 
-                fig.colorbar(self.points)
+                fig.colorbar(self.points, location="right", label="(rad)")
             else:
                 self.points = self.ax.scatter(*self.get_pos().T, zorder=2, **self.graph_cfg.scatter_kwargs)
 

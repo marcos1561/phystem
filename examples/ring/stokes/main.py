@@ -6,6 +6,7 @@ from phystem.core.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, Replay
 from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType, ParticleWindows
 from phystem.systems.ring.ui.graphs_cfg import *
 from phystem.systems.ring.solver_config import ReplaySolverCfg
+import phystem.systems.ring.utils as ring_utils
 
 import pipeline
 
@@ -51,11 +52,9 @@ creator_cfg = CreatorCfg(
     r = None, angle = [], center = [],
 )
 
-from math import cos, pi, ceil
-radius = dynamic_cfg.diameter / (2 * (1 - cos(2*pi/(creator_cfg.num_p))))**.5
-
+radius = ring_utils.get_ring_radius(dynamic_cfg.diameter, creator_cfg.num_p)
 space_shape = (space_cfg.height/radius/2, space_cfg.length/radius/2)
-print(f"ring_radius: {radius}")
+print(f"ring radius  : {radius:.2f}")
 print(f"channel shape: {space_shape}")
 
 stokes_cfg = StokesCfg(
@@ -78,11 +77,13 @@ seed = 40028922
 run_type = RunType.REAL_TIME
 
 
-num_cols = int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6)
-num_rows = int(ceil(space_cfg.height/(dynamic_cfg.diameter*1.2)) * 0.6)
+# num_cols = int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6)
+# num_rows = int(ceil(space_cfg.height/(dynamic_cfg.diameter*1.2)) * 0.6)
+# num_cols_cm = int(ceil(space_cfg.length / (2.5*radius)))
+# num_rows_cm = int(ceil(space_cfg.height / (2.5*radius)))
 
-num_cols_cm = int(ceil(space_cfg.length / (2.5*radius)))
-num_rows_cm = int(ceil(space_cfg.height / (2.5*radius)))
+num_cols, num_rows = ring_utils.particle_grid_shape(space_cfg, dynamic_cfg.max_dist)
+num_cols_cm, num_rows_cm = ring_utils.rings_grid_shape(space_cfg, radius)
 
 collect_data_cfg = CollectDataCfg(
     int_cfg=IntegrationCfg(
@@ -96,16 +97,16 @@ collect_data_cfg = CollectDataCfg(
     ), 
     # tf=250 + 0.5 * 1000 ,
     # tf=space_cfg.length/dynamic_cfg.vo*3 + 0.5*300,
-    tf=700,
-    folder_path="data/single_self_prop_test",
+    tf=2000 + 0.5*3,
+    folder_path="data/init_state_snaps",
     func=pipeline.collect_pipeline,
     func_cfg=pipeline.PipelineCfg(
         checkpoint_period=0, 
         snapshot_period=0.5,
         save_type=pipeline.SaveType.snapshot),
-    # checkpoint=CheckpointCfg(
-    #     folder_path="data/data_checkpoint/checkpoint"
-    # )
+    checkpoint=CheckpointCfg(
+        folder_path="data/init_state/checkpoint"
+    )
 )
 
 real_time_cfg = RealTimeCfg(
@@ -126,34 +127,34 @@ real_time_cfg = RealTimeCfg(
         show_density=False,
         show_rings=True,
         rings_kwargs={"s": 2},
-        density_kwargs={"vmin": 0, "vmax":5},
-        cell_shape=2,
+        density_kwargs={"vmin": 0, "vmax":space_shape[0]*1*1.1},
+        cell_shape=[space_shape[0], 1],
     ),
     # graph_cfg = MainGraphCfg(
     #     show_circles      = True,
     #     pause_on_high_vel = True,
     # ),
     # checkpoint=CheckpointCfg(
-    #     folder_path="data/data_checkpoint/checkpoint",
+    #     folder_path="data/init_state/checkpoint",
     #     override_cfgs=False,
     # )
 )
 
-replay_cfg = ReplayDataCfg(
-    directory="data/snapshots",
-    graph_cfg=ReplayGraphCfg(
-        scatter_kwargs={"s": 1},
-        vel_colors=True,
-        show_rings=True,
-        show_cm=False,
-        show_density=False,
-    ),
-    solver_cfg=ReplaySolverCfg(
-        ring_per_grid=3,
-        vel_from_solver=False,
-        mode=ReplaySolverCfg.Mode.same_ids,
-    ),
-)
+# replay_cfg = ReplayDataCfg(
+#     directory="data/snapshots",
+#     graph_cfg=ReplayGraphCfg(
+#         scatter_kwargs={"s": 1},
+#         vel_colors=True,
+#         show_rings=True,
+#         show_cm=False,
+#         show_density=False,
+#     ),
+#     solver_cfg=ReplaySolverCfg(
+#         ring_per_grid=3,
+#         vel_from_solver=False,
+#         mode=ReplaySolverCfg.Mode.same_ids,
+#     ),
+# )
 
 video_cfg = SaveCfg(
     int_cfg=collect_data_cfg.int_cfg,
@@ -179,7 +180,7 @@ run_type_to_cfg = {
     RunType.REAL_TIME: real_time_cfg,
     RunType.COLLECT_DATA: collect_data_cfg,
     RunType.SAVE_VIDEO: video_cfg,
-    RunType.REPLAY_DATA: replay_cfg,
+    # RunType.REPLAY_DATA: replay_cfg,
 }
 
 sim = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type],

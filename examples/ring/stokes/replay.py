@@ -6,14 +6,14 @@ from phystem.systems.ring.simulation import Simulation
 from phystem.systems.ring.solver_config import ReplaySolverCfg
 
 run_cfg = ReplayDataCfg(
-    directory="data/single_self_prop_test/snapshots",
+    directory="data/init_state_snaps/snapshots",
     data_dir="data",
     graph_cfg=graphs_cfg.ReplayGraphCfg(
         density_kwargs={"vmin": 0, "vmax": 14}, 
         # scatter_kwargs={"s": 0.1, "c":"black", "alpha": 0.1}, 
-        scatter_kwargs={"s": 1}, 
+        scatter_kwargs={"s": 4}, 
         # x_lims=(-300, 300),
-        begin_paused=False,
+        begin_paused=True,
         show_density=False,
         show_rings=True,
         vel_colors=True,
@@ -23,6 +23,9 @@ run_cfg = ReplayDataCfg(
         ring_per_grid=3, 
     ),
     num_steps_frame=1,
+    ui_settings=UiSettings(
+        left_pannel_size=0.1,
+        always_update=False),
 )
 
 save_cfg = SaveCfg(
@@ -43,7 +46,7 @@ save_cfg = SaveCfg(
 )
 
 configs = run_cfg.system_cfg
-configs["run_cfg"] = save_cfg
+# configs["run_cfg"] = save_cfg
 
 sim = Simulation(**configs)
 sim.run()

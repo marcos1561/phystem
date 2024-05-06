@@ -31,6 +31,7 @@ class AppCore:
         self.update_func = update_func
         self.canvas: FigureCanvasTkAgg = None
         self.run_cfg: RealTimeCfg = cfgs["run_cfg"]
+        self.always_update = ui_settings.always_update
 
         self.fig.set_dpi(ui_settings.dpi)
 
@@ -125,8 +126,8 @@ class AppCore:
             
 
     def update_ui(self, *args):
-        # if not self.control.control_mng.is_paused:
-        self.canvas.draw()
+        if self.always_update or not self.control.control_mng.is_paused:
+            self.canvas.draw()
         
         self.info.update()
 

@@ -48,7 +48,6 @@ class IntegrationCfg(run_config.IntegrationCfg):
 
         super().__init__(dt, solver_type)
         
-        
         self.update_type = update_type
         self.particle_win_cfg = particle_win_cfg
         self.integration_type = integration_type

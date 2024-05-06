@@ -50,7 +50,6 @@ def get_dist_pb(pos1: np.array, pos2: np.array, height, length):
     diff[y_filter, 1] -= np.copysign(height, diff[y_filter, 1]) 
     return diff
 
-
 def same_rings(pos1, ids1, pos2, ids2):
     '''
     Retorna a intersecção entre `pos1` e `pos2` de forma
@@ -263,6 +262,23 @@ def pos_to_scatter(pos: np.ndarray):
     Retorna todos os pontos organizados no shape (D, N*P). 
     '''
     return pos.reshape(pos.shape[0] * pos.shape[1], pos.shape[2]).T
+
+
+
+from phystem.systems.ring.configs import SpaceCfg
+
+def particle_grid_shape(space_cfg: SpaceCfg, max_dist, frac=0.6):
+    from math import ceil
+    num_cols = int(ceil(space_cfg.length/(max_dist)) * frac)
+    num_rows = int(ceil(space_cfg.height/(max_dist)) * frac)
+    return (num_cols, num_rows)
+
+def rings_grid_shape(space_cfg: SpaceCfg, radius, frac=0.5):
+    from math import ceil
+    num_cols = int(ceil(space_cfg.length / ((2 + frac)*radius)))
+    num_rows = int(ceil(space_cfg.height / ((2 + frac)*radius)))
+    return (num_cols, num_rows)
+
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt

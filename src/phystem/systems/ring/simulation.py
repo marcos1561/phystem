@@ -86,7 +86,8 @@ class Simulation(SimulationCore):
             graph_cfg = graphs_cfg.SimpleGraphCfg()
 
         # fig, ax = plt.subplots()
-        fig = Figure(dpi=real_time_cfg.ui_settings.dpi)
+        # fig = Figure(dpi=real_time_cfg.ui_settings.dpi)
+        fig = Figure()
         ax = fig.add_subplot()
 
         # particles_graph = graph_cfg.GraphCls(

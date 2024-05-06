@@ -139,26 +139,26 @@ def quick_collect(sim: Simulation, cfg=None):
     np.save("pos.npy", np.array(sim.solver.pos))
     return
 
-collect_cfg = CollectDataCfg(
-    int_cfg=IntegrationCfg(
-        dt = 0.001,
-        particle_win_cfg=ParticleWindows(
-            num_cols=num_windows, num_rows=num_windows+1,
-            update_freq=1),
-        integration_type=IntegrationType.euler,
-        update_type=UpdateType.PERIODIC_WINDOWS,
-        in_pol_checker=InPolCheckerCfg(
-            num_col_windows=n, num_rows_windows=n+1, update_freq=1, disable=False),
-    ),
-    tf = 1,
-    folder_path= "texture/data",
-    func=collect_pipelines.last_state,
-)
+# collect_cfg = CollectDataCfg(
+#     int_cfg=IntegrationCfg(
+#         dt = 0.001,
+#         particle_win_cfg=ParticleWindows(
+#             num_cols=num_windows, num_rows=num_windows+1,
+#             update_freq=1),
+#         integration_type=IntegrationType.euler,
+#         update_type=UpdateType.PERIODIC_WINDOWS,
+#         in_pol_checker=InPolCheckerCfg(
+#             num_col_windows=n, num_rows_windows=n+1, update_freq=1, disable=False),
+#     ),
+#     tf = 1,
+#     folder_path= "texture/data",
+#     func=collect_pipelines.last_state,
+# )
 
 run_type_to_cfg = {
     RunType.REAL_TIME: real_time_cfg, 
     RunType.SAVE_VIDEO: save_cfg,
-    RunType.COLLECT_DATA: collect_cfg,
+    # RunType.COLLECT_DATA: collect_cfg,
 }
 
 sim = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type], rng_seed=seed)
