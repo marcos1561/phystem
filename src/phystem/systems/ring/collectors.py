@@ -1,5 +1,5 @@
 import numpy as np
-import os, pickle
+import os, pickle, yaml
 
 from phystem.systems.ring.solvers import CppSolver
 from phystem.core import collectors
@@ -131,13 +131,23 @@ class LastState(collectors.Collector):
     def collect(self, count: int) -> None:
         pass
 
-    def save(self, pos_name="pos", angle_name="angle", ids_name="ids", directory=None, continuos_ring=False) -> None:
+    def save(self, pos_name="pos", angle_name="angle", ids_name="ids", directory=None, 
+            continuos_ring=False, metadata=None) -> None:
         if directory is None:
             directory = self.path
 
         pos_path = os.path.join(directory, pos_name + ".npy")
         angle_path = os.path.join(directory, angle_name + ".npy")
         ids_path = os.path.join(directory, ids_name + ".npy")
+        metadata_path = os.path.join(directory, "metadata.yaml")
+
+        if metadata is None:
+            metadata = {
+                "time": self.solver.time,
+                "num_time_steps": self.solver.num_time_steps,
+            }
+        with open(metadata_path, "w") as f:
+            yaml.dump(metadata, f)
 
         self.ring_ids = self.solver.rings_ids[:self.solver.num_active_rings]
         

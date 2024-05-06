@@ -2,7 +2,7 @@ import unittest
 import os, yaml
 
 from phystem.systems.ring.simulation import Simulation
-from phystem.systems.ring import collect_pipelines
+from phystem.systems.ring import collect_pipelines, utils
 
 from phystem.systems.ring.configs import *
 from phystem.systems.ring.run_config import IntegrationCfg, UpdateType, ParticleWindows
@@ -25,15 +25,12 @@ class TestRing(unittest.TestCase):
         run_cfg: CollectDataCfg = cfg["run_cfg"] 
         int_cfg: IntegrationCfg = run_cfg.int_cfg
 
-        from math import ceil
-        size = cfg["space_cfg"].length
-        diameter = cfg["dynamic_cfg"].diameter
-
         run_cfg.folder_path = folder_path
         
-        num_cols = int(ceil(size/(diameter*1.2)) * 0.6)
+        # num_cols = int(ceil(size/(diameter*1.2)) * 0.6)
+        num_cols, num_rows = utils.particle_grid_shape(cfg["space_cfg"], cfg["dynamic_cfg"].max_dist)
         int_cfg.particle_win_cfg = ParticleWindows(
-            num_cols=num_cols, num_rows=num_cols-1,
+            num_cols=num_cols, num_rows=num_rows,
             update_freq= 1
         )
         int_cfg.update_type = UpdateType.PERIODIC_WINDOWS

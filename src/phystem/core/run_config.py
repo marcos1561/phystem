@@ -79,6 +79,11 @@ class CheckpointCfg:
         if run_cfg is not None:
             configs["run_cfg"] = run_cfg
         return configs
+    
+    def get_metadata(self):
+        with open(os.path.join(self.folder_path, "metadata.yaml")) as f:
+            metadata = yaml.unsafe_load(f)
+        return metadata
 
 class IntegrationCfg:
     def __init__(self, dt: float, solver_type=SolverType.CPP) -> None:

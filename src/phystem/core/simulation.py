@@ -49,6 +49,9 @@ class SimulationCore(ABC):
             checkpoint_cfgs = self.run_cfg.checkpoint.configs
             if not self.run_cfg.checkpoint.override_cfgs:
                 self.run_cfg.int_cfg = checkpoint_cfgs["run_cfg"].int_cfg 
+                if type(self.run_cfg) is CollectDataCfg:
+                     self.run_cfg.func_cfg = checkpoint_cfgs["run_cfg"].func_cfg
+
                 self.creator_cfg = checkpoint_cfgs["creator_cfg"]
                 self.space_cfg = checkpoint_cfgs["space_cfg"]
                 self.dynamic_cfg = checkpoint_cfgs["dynamic_cfg"]

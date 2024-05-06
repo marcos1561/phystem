@@ -7,9 +7,9 @@ from phystem.core.run_config import RunType, CheckpointCfg, CollectDataCfg
 from phystem.core.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, ReplayDataCfg
 from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType, ParticleWindows
 from phystem.systems.ring.ui.graphs_cfg import *
+from phystem.systems.ring import utils
 
 import pipeline
-
 
 dynamic_cfg = RingCfg(
     spring_k=8,
@@ -18,7 +18,7 @@ dynamic_cfg = RingCfg(
     area_potencial="target_area_and_format",
     # area_potencial="target_area",
     k_area=2,
-    k_format=0.5,
+    k_format=0.03,
     # p0=4.828427, # Triângulo retângulo
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
@@ -26,19 +26,19 @@ dynamic_cfg = RingCfg(
     p0_format=3.5449077018*1.0, # Círculo
     # area0=53,
 
-    k_invasion = 12,
+    k_invasion = 8,
     
     diameter  = 1,
-    max_dist  = 1 + 0.1666,
-    rep_force = 40,
-    adh_force = 0.75,
+    max_dist  = 1 + 0.5*0.1,
+    rep_force = 12,
+    adh_force = 0.5,
     
     relax_time=1,
     mobility=1,
     vo=1,
     
-    trans_diff=0.1,
-    rot_diff=0.1,
+    trans_diff=0,
+    rot_diff=0.5,
 )
 
 space_cfg = SpaceCfg(
@@ -52,8 +52,7 @@ creator_cfg = CreatorCfg(
     r = None, angle = [], center = [],
 )
 
-from math import cos, pi, ceil
-radius = dynamic_cfg.diameter / (2 * (1 - cos(2*pi/(creator_cfg.num_p))))**.5
+radius = utils.get_ring_radius(dynamic_cfg.diameter, creator_cfg.num_p) 
 stokes_cfg = StokesCfg(
     obstacle_r  = space_cfg.height/5,
     obstacle_x  = 0*space_cfg.length/8/2,
@@ -68,14 +67,11 @@ stokes_cfg = StokesCfg(
 ##
 ## Select Run Type
 ##
-run_type = RunType.REAL_TIME
+run_type = RunType.COLLECT_DATA
 
 
-num_cols = int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6)
-num_rows = int(ceil(space_cfg.height/(dynamic_cfg.diameter*1.2)) * 0.6)
-
-num_cols_cm = int(ceil(space_cfg.length / (2.5*radius)))
-num_rows_cm = int(ceil(space_cfg.height / (2.5*radius)))
+num_cols, num_rows = utils.particle_grid_shape(space_cfg, dynamic_cfg.max_dist)
+num_cols_cm, num_rows_cm = utils.rings_grid_shape(space_cfg, radius)
 
 collect_data_cfg = CollectDataCfg(
     int_cfg=IntegrationCfg(
@@ -88,14 +84,17 @@ collect_data_cfg = CollectDataCfg(
         in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
     ), 
     tf=-1,
-    folder_path="data_test",
+    folder_path="data/test2",
     func=pipeline.collect_pipeline,
     func_cfg={
-        "wait_time": 20,
-        "collect_time": 5,
-        "flux_range": np.linspace(0.1, 5, 3),
+        "wait_time": 30,
+        "collect_time": 30,
+        "collect_dt": 1,
+        "autosave_dt": 5,
+        # "flux_range": np.linspace(0.1),
+        "flux_range": [0.1],
     },
-    checkpoint=CheckpointCfg("cp_0")
+    # checkpoint=CheckpointCfg("data/test/autosave")
 )
 
 real_time_cfg = RealTimeCfg(
@@ -149,7 +148,7 @@ configs = {
 }
 
 if run_type is RunType.COLLECT_DATA:
-    pipeline.main(configs)
+    pipeline.main(configs, rng_seed=996925520)
 else:
     sim = Simulation(**configs)
     sim.run()
