@@ -8,6 +8,8 @@ from phystem.systems.ring.ui.graphs_cfg import *
 from phystem.systems.ring.solver_config import ReplaySolverCfg
 import phystem.systems.ring.utils as ring_utils
 
+from phystem.gui_phystem.config_ui import UiSettings
+
 import pipeline
 
 
@@ -98,14 +100,14 @@ collect_data_cfg = CollectDataCfg(
     # tf=250 + 0.5 * 1000 ,
     # tf=space_cfg.length/dynamic_cfg.vo*3 + 0.5*300,
     tf=2000 + 0.5*3,
-    folder_path="data/init_state_snaps",
+    folder_path="data/init_state_low_flux_force_snaps",
     func=pipeline.collect_pipeline,
     func_cfg=pipeline.PipelineCfg(
         checkpoint_period=0, 
         snapshot_period=0.5,
         save_type=pipeline.SaveType.snapshot),
     checkpoint=CheckpointCfg(
-        folder_path="data/init_state/checkpoint"
+        folder_path="data/init_state_low_flux_force/checkpoint"
     )
 )
 
@@ -123,21 +125,24 @@ real_time_cfg = RealTimeCfg(
     num_steps_frame=60,
     fps=30,
     graph_cfg = SimpleGraphCfg(
-        begin_paused=False,
-        show_density=False,
-        show_rings=True,
-        rings_kwargs={"s": 2},
-        density_kwargs={"vmin": 0, "vmax":space_shape[0]*1*1.1},
-        cell_shape=[space_shape[0], 1],
+        begin_paused=True,
+        show_density=True,
+        show_rings=False,
+        rings_kwargs={"s": 0.5},
+        density_kwargs={"vmin": 0, "vmax":50*1*1.1},
+        cell_shape=[50, 1],
+    ),
+    ui_settings=UiSettings(
+        always_update=False
     ),
     # graph_cfg = MainGraphCfg(
     #     show_circles      = True,
     #     pause_on_high_vel = True,
     # ),
-    # checkpoint=CheckpointCfg(
-    #     folder_path="data/init_state/checkpoint",
-    #     override_cfgs=False,
-    # )
+    checkpoint=CheckpointCfg(
+        folder_path="../flux_creation_rate/data/low_adh_align_flux/autosave"
+        # folder_path="data/init_state_low_flux_force/checkpoint",
+    )
 )
 
 # replay_cfg = ReplayDataCfg(

@@ -26,7 +26,7 @@ space_cfg = SpaceCfg(
 )
 
 creator_cfg = CreatorCfg(
-    n = 2000,
+    n = 50,
     r = space_cfg.size/2,
     type = CreateType.SQUARE,
 )
@@ -41,7 +41,7 @@ real_time_cfg = RealTimeCfg(
         dt = 0.01,
         num_col_windows=30,
         solver_type = SolverType.CPP,
-        update_type = UpdateType.WINDOWS,
+        update_type = UpdateType.NORMAL,
     ),
     num_steps_frame = 10,
     fps = 60,
@@ -62,22 +62,22 @@ if run_type is RunType.REPLAY_DATA:
         },
     )
 
-collect_data_cfg = CollectDataCfg(
-    int_cfg= IntegrationCfg(
-        dt = 0.01,
-        num_col_windows=10,
-        solver_type = SolverType.CPP,
-        update_type = UpdateType.WINDOWS,
-    ),
-    tf = 100,
-    folder_path="data/self_propelling/teste",
-    func = collect_pipelines.state,
-    # func_id = collect_pipelines.FuncID.state,
-    # get_func= collect_pipelines.get_func,
-    func_cfg = collect_pipelines.CollectPlCfg(
-        only_last=False, 
-    ),
-)
+# collect_data_cfg = CollectDataCfg(
+#     int_cfg= IntegrationCfg(
+#         dt = 0.01,
+#         num_col_windows=10,
+#         solver_type = SolverType.CPP,
+#         update_type = UpdateType.WINDOWS,
+#     ),
+#     tf = 100,
+#     folder_path="data/self_propelling/teste",
+#     func = collect_pipelines.state,
+#     # func_id = collect_pipelines.FuncID.state,
+#     # get_func= collect_pipelines.get_func,
+#     func_cfg = collect_pipelines.CollectPlCfg(
+#         only_last=False, 
+#     ),
+# )
 
 save_cfg = SaveCfg(
     int_cfg= IntegrationCfg(
@@ -96,8 +96,12 @@ save_cfg = SaveCfg(
     ),
 )
 
-run_type_to_cfg = {RunType.COLLECT_DATA: collect_data_cfg, RunType.REAL_TIME: real_time_cfg, 
-    RunType.SAVE_VIDEO: save_cfg, RunType.REPLAY_DATA: replay_data_cfg}
+run_type_to_cfg = {
+    # RunType.COLLECT_DATA: collect_data_cfg, 
+    RunType.REAL_TIME: real_time_cfg, 
+    RunType.SAVE_VIDEO: save_cfg, 
+    RunType.REPLAY_DATA: replay_data_cfg,
+}
 
 sim = Simulation(creator_cfg, self_propelling_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type], rng_seed=seed)
 sim.run()

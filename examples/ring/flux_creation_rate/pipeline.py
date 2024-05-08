@@ -127,9 +127,6 @@ class Collector(collectors.Collector):
         np.save(os.path.join(dir, f"num_created_{self.id}.npy"), self.num_created_arr)
         np.save(os.path.join(dir, f"num_active_{self.id}.npy"), self.num_active_arr)
 
-
-
-
 def collect_pipeline(sim: Simulation, cfg):
     collect_cfg: CollectDataCfg = sim.run_cfg
     solver = sim.solver

@@ -60,7 +60,8 @@ class SolverType(Enum):
     CPP = auto()
 
 class CheckpointCfg:
-    def __init__(self, folder_path: str, override_cfgs: bool = False) -> None:
+    def __init__(self, folder_path: str, override_cfgs: bool = False,
+                 override_func_cfg=True) -> None:
         '''
         Parameters:
             folder_path:
@@ -68,9 +69,14 @@ class CheckpointCfg:
             
             override_cfgs:
                 Se for 'True', as configurações salvas no checkpoint serão ignoradas.
+            
+            override_func_cfg:
+                Apenas se aplica se o modo de execução é `CollectDataCfg`.
+                Se for 'True', as configurações da pipeline salvas no checkpoint serão ignoradas.
         '''
         self.folder_path = folder_path
         self.override_cfgs = override_cfgs
+        self.override_func_cfg = override_func_cfg
 
         self.configs: dict = None
     

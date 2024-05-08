@@ -125,8 +125,9 @@ class Simulation(SimulationCore):
 
                     self.time_it.decorator("solver", self.solver.update)
                     i += 1
-                
-            self.time_it.decorator("graph", particles_graph.update)
+            
+            if real_time_cfg.ui_settings.always_update or not control_mng.is_paused:
+                self.time_it.decorator("graph", particles_graph.update)
 
         if self.run_cfg.id is RunType.SAVE_VIDEO:
             def update_video(frame=None):
