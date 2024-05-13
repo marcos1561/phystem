@@ -1,12 +1,9 @@
-import time, os, copy, pickle
+import os, pickle
 import numpy as np
 from enum import Flag, auto
 from pathlib import Path
 
-from phystem.utils import progress
-from phystem.core.run_config import CollectDataCfg
 from phystem.core import collectors
-from phystem.systems.ring.simulation import Simulation
 from phystem.systems.ring.collectors import LastState
 from phystem.systems.ring import utils
 
@@ -42,14 +39,26 @@ class Neighbors:
         self.num_rows = 0
         self.row_mask[:] = False
 
-class Collector(collectors.Collector):
-    def __init__(self, wait_time, xlims, edge_k, solver: collectors.SolverCore, path: str, configs: dict,
-                 to_debug=False) -> None:
-        super().__init__(solver, path, configs)
+class DeltaCol(collectors.Collector):
+    save_name = "col_state.pickle"
+
+    def __init__(self, wait_time, wait_dist, xlims, edge_k, 
+        solver: collectors.SolverCore, path: str, configs: dict,
+        autosave_cfg: collectors.AutoSaveCfg=None,  to_debug=False) -> None:
+        super().__init__(solver, path, configs, autosave_cfg)
 
         self.data_path = Path(self.path) / "data"
-        if not self.data_path.exists():
-            os.mkdir(self.data_path)
+        for p in [self.data_path]:
+            p.mkdir(exist_ok=True)
+
+        self.data_names = {
+            "times": "times.npy",
+            "deltas": "deltas.npy"
+        }
+
+        if autosave_cfg is not None:
+            self.state_col = LastState(self.solver, self.autosave_path, self.configs)
+            self.autosave_last_time = self.solver.time
 
         self.to_debug = to_debug    
         if to_debug:    
@@ -60,11 +69,11 @@ class Collector(collectors.Collector):
         self.ring_d = d
         
         self.wait_time = wait_time
+        self.wait_dist = wait_dist
         self.xlims = xlims
         self.xlims_extended = (xlims[0] - 2*d, xlims[1] + 2*d)
         
-        # self.xlims[0] = xlims[0] 
-        # self.xlims[1] = xlims[1]
+        self.edge_tol = d * edge_k
         
         self.state = State.starting 
         self.init_time = -1
@@ -74,32 +83,64 @@ class Collector(collectors.Collector):
         num_max_rings = int(h*w / (np.pi * (d/2)**2) * 2)
         num_max_neighs = 10
         self.rings_neighs = Neighbors(num_max_rings, num_max_neighs)
+        
         self.mask: np.ndarray = None
         self.in_center: np.ndarray = None
-        
+        self.num_in_center: np.ndarray = None
+
         num_total_rings = np.array(self.solver.center_mass).shape[0]
         self.mask_active: np.ndarray = np.full(num_total_rings, False)
 
-        self.edge_tol = d * edge_k
+        self.end_x = np.zeros(num_max_rings, dtype=np.float64)
+        self.delta_done = np.full(num_max_rings, False)
+
+        self.deltas_arr = np.zeros(num_max_rings, dtype=np.float64)
+        
         self.deltas = []
         self.times = []
 
+    @property
+    def vars_to_save(self):
+        return [
+            "state",
+            "init_time",
+            "rings_neighs",
+            "mask",
+            "in_center",
+            "num_in_center",
+            "mask_active",
+            "end_x",
+            "delta_done",
+            "deltas_arr",
+            "deltas",
+            "times",
+        ]
+
     def collect(self):
         if self.state is State.waiting:
-            if self.solver.time - self.init_time > self.wait_time:
-                self.finish()
+            all_done = self.finish_dist()
+            if all_done:
+                self.rings_neighs.reset()
                 self.state = State.starting
             return
+
+            ### Time based
+            # if self.solver.time - self.init_time > self.wait_time:
+            #     self.finish()
+            #     self.state = State.starting
+            # return
         
         if self.state is State.starting:
             if self.start():
                 self.init_time = self.solver.time
                 self.times.append(self.init_time)
                 self.state = State.waiting
-
+        
+        
     def start(self):
         ring_ids = self.solver.rings_ids[:self.solver.num_active_rings]
         
+        self.delta_done[:] = False
         self.mask_active[:] = False
         self.mask_active[ring_ids] = True
 
@@ -109,6 +150,9 @@ class Collector(collectors.Collector):
 
         cm = cm[self.mask]
         self.in_center = (cm[:, 0] > self.xlims[0]) & (cm[:, 0] < self.xlims[1])
+        self.num_in_center = self.in_center.sum()
+
+        self.end_x[:cm.shape[0]] = cm[:, 0] + self.wait_dist
 
         if not self.in_center.any():
             return False
@@ -128,39 +172,71 @@ class Collector(collectors.Collector):
 
         return True
 
-    def finish(self):
+    def finish_dist(self):
         cm = np.array(self.solver.center_mass)[self.mask]
-        delta_total = 0
-        
-        deltas_arr = np.zeros(self.in_center.sum(), dtype=np.float64)
-        delta_id = 0
-
+        all_done = True
+        delta_id = -1
         for i in range(cm.shape[0]):
             if not self.in_center[i]:
                 continue
+            delta_id += 1
 
-            diff = cm[self.rings_neighs.rings_neighs(i)] - cm[i]
-            dist_square = np.square(diff).sum(axis=1)
+            if self.delta_done[i]:
+                continue
+            
+            if cm[i][0] < self.end_x[i]:
+                all_done = False
+                continue
+            
+            self.deltas_arr[delta_id] = self.calc_delta(cm, i)
+            self.delta_done[i] = True
+        
+        if all_done:
+            if self.to_debug:
+                self.debug.save_finish(cm, self.deltas_arr[:self.num_in_center])
 
-            r_sum = (np.square(self.rings_neighs.dists(i)) / dist_square).sum()
+            self.deltas.append(self.deltas_arr[:self.num_in_center].sum()/self.num_in_center)
 
-            deltas_arr[delta_id] = 1 - r_sum / self.rings_neighs.neigh_count[i] 
-            delta_total += deltas_arr[delta_id]
-
+        return all_done
+    
+    def finish_time(self):
+        cm = np.array(self.solver.center_mass)[self.mask]
+        delta_total = 0
+        
+        delta_id = 0
+        for i in range(cm.shape[0]):
+            if not self.in_center[i]:
+                continue
+            
+            delta_i = self.calc_delta(cm, i)
+            self.deltas_arr[delta_id] = delta_i
+            delta_total += delta_i
             delta_id += 1
         
-        self.deltas.append(delta_total/self.in_center.sum())
+        self.deltas.append(delta_total/self.num_in_center)
         self.rings_neighs.reset()
 
         if self.to_debug:
-            self.debug.save_finish(cm, deltas_arr)
+            self.debug.save_finish(cm, self.deltas_arr[:self.num_in_center])
 
-    def save(self):
-        np.save(self.data_path / "times.npy", np.array(self.times))
-        np.save(self.data_path / "deltas.npy", np.array(self.deltas))
+    def calc_delta(self, cm, i):
+        diff = cm[self.rings_neighs.rings_neighs(i)] - cm[i]
+        dist_square = np.square(diff).sum(axis=1)
+
+        r_sum = (np.square(self.rings_neighs.dists(i)) / dist_square).sum()
+
+        delta = 1 - r_sum / self.rings_neighs.neigh_count[i] 
+        return delta
+
+    def save(self, dir=None):
+        if dir is None:
+            dir = self.data_path
+
+        np.save(dir / self.data_names["times"], np.array(self.times))
+        np.save(dir / self.data_names["deltas"], np.array(self.deltas))
 
 class Debug:
-    def __init__(self, path, collector: Collector) -> None:
+    def __init__(self, path, collector: DeltaCol) -> None:
         self.root_path = Path(path) / "debug"
 
         if not self.root_path.exists():
@@ -209,28 +285,3 @@ class Debug:
             ids_name=f"ids_{suffix}",
         )
 
-
-def collect_pipeline(sim: Simulation, cfg):
-    collect_cfg: CollectDataCfg = sim.run_cfg
-    solver = sim.solver
-    
-    print("\nIniciando simulação")
-    t1 = time.time()
-
-    collector = Collector(cfg["delta_wait_time"], cfg["xlims"], cfg["edge_k"],
-        solver, collect_cfg.folder_path, sim.configs_container,
-        to_debug=cfg["debug"])
-
-    end_time = collect_cfg.tf
-    prog = progress.Continuos(end_time)
-    
-    while solver.time < end_time:
-        solver.update()
-        collector.collect()
-        prog.update(solver.time)
-
-    collector.save()
-
-    t2 = time.time()
-    from datetime import timedelta
-    print("Elapsed time:", timedelta(seconds=t2-t1))

@@ -96,6 +96,14 @@ class Collector(collectors.Collector):
             "last_time": self.last_time,
             "flux_id": self.id,
         }
+
+        if self.autosave_cfg.to_save_state:
+            self.state_col.save(metadata={
+                "is_autosave": True,
+                "time": self.solver.time,
+                "num_time_steps": self.solver.num_time_steps,
+            })
+
         LastState(self.solver, self.autosave_dir, self.configs).save(
             metadata=metadata
         )

@@ -76,7 +76,7 @@ seed = 40028922
 ##
 ## Select Run Type
 ##
-run_type = RunType.REAL_TIME
+run_type = RunType.COLLECT_DATA
 
 
 # num_cols = int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6)
@@ -100,7 +100,7 @@ collect_data_cfg = CollectDataCfg(
     # tf=250 + 0.5 * 1000 ,
     # tf=space_cfg.length/dynamic_cfg.vo*3 + 0.5*300,
     tf=2000 + 0.5*3,
-    folder_path="data/init_state_low_flux_force_snaps",
+    folder_path="data/teste",
     func=pipeline.collect_pipeline,
     func_cfg=pipeline.PipelineCfg(
         checkpoint_period=0, 
@@ -129,18 +129,22 @@ real_time_cfg = RealTimeCfg(
         show_density=True,
         show_rings=False,
         rings_kwargs={"s": 0.5},
-        density_kwargs={"vmin": 0, "vmax":50*1*1.1},
-        cell_shape=[50, 1],
+        density_kwargs={"vmin": -1, "vmax":1},
+        cbar_kwargs={"orientation": "horizontal", "label": "Densidade relativa"},
+        ax_kwargs={"title": "t=5000"},
+        cell_shape=[3, 3],
     ),
     ui_settings=UiSettings(
-        always_update=False
+        always_update=False,
+        dpi=200,
     ),
     # graph_cfg = MainGraphCfg(
     #     show_circles      = True,
     #     pause_on_high_vel = True,
     # ),
     checkpoint=CheckpointCfg(
-        folder_path="../flux_creation_rate/data/low_adh_align_flux/autosave"
+        # folder_path="../flux_creation_rate/data/low_adh_align_flux/autosave"
+        folder_path="../flux_creation_rate/data/init_state_low_flux_force/checkpoint"
         # folder_path="data/init_state_low_flux_force/checkpoint",
     )
 )

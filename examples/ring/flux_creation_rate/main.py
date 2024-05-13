@@ -83,18 +83,18 @@ collect_data_cfg = CollectDataCfg(
         update_type=UpdateType.STOKES,
         in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
     ), 
-    tf=-1,
-    folder_path="data/test2",
+    tf=3,
+    folder_path="data/test",
     func=pipeline.collect_pipeline,
     func_cfg={
-        "wait_time": 30,
-        "collect_time": 30,
-        "collect_dt": 1,
-        "autosave_dt": 5,
+        "wait_time": 1,
+        "collect_time": 2,
+        "collect_dt": 0.5,
+        "autosave_dt": 1,
         # "flux_range": np.linspace(0.1),
-        "flux_range": [0.1],
+        "flux_range": [0.2],
     },
-    # checkpoint=CheckpointCfg("data/test/autosave")
+    checkpoint=CheckpointCfg("data/init_state_low_flux_force/checkpoint")
 )
 
 real_time_cfg = RealTimeCfg(
@@ -114,6 +114,7 @@ real_time_cfg = RealTimeCfg(
     #     pause_on_high_vel = True,
     #     cpp_is_debug      = True
     # ),
+    checkpoint=CheckpointCfg("data/low_adh_align_flux/autosave")
 )
 
 video_cfg = SaveCfg(

@@ -406,12 +406,14 @@ class SimpleGraph(BaseGraph):
             num_cols = int(l/(ring_d * cell_shape[1]))
 
             print(f"grid_shape: {num_rows}, {num_cols}")
-
+            self.density_eq = cell_shape[0]*cell_shape[1]
             self.grid = utils.RegularGrid(space_cfg.length, space_cfg.height, num_cols, num_rows)
 
             self.density = ax.pcolormesh(*self.grid.edges, self.get_density(), shading='flat',
-                    zorder=1, **self.graph_cfg.density_kwargs)
-            fig.colorbar(self.density)
+                    zorder=1, cmap="coolwarm" ,**self.graph_cfg.density_kwargs)
+            
+            fig.colorbar(self.density, **self.graph_cfg.cbar_kwargs)
+            ax.set(**self.graph_cfg.ax_kwargs)
 
         # self.points = self.ax.scatter(*self.get_pos().T, s=points_s, cmap=cm.hsv, 
         #     c=self.get_colors(), vmin=-np.pi, vmax=np.pi)
@@ -429,7 +431,7 @@ class SimpleGraph(BaseGraph):
     def get_density(self):
         cm = utils.get_cm(np.array(self.solver.pos)[self.ring_ids])
         coords = self.grid.coords(cm)
-        count = self.grid.count(coords)
+        count = self.grid.count(coords)/self.density_eq - 1
         return count
 
     def init_colors(self, num_rings, num_particles):

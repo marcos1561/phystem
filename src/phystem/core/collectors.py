@@ -1,19 +1,28 @@
 from abc import ABC, abstractmethod
-import os, yaml, copy
+import os, yaml, copy, pickle
+from pathlib import Path
 import numpy as np
 
 from phystem.core.solvers import SolverCore
 
+class AutoSaveCfg:
+    def __init__(self, freq_dt: float=None, root_dir: str="autosave", to_save_state: bool = True) -> None:
+        self.root_dir = Path(root_dir)
+        self.freq_dt = freq_dt
+        self.to_save_state = to_save_state
+
+        self.data_path = self.root_dir / "data"
+    
 class Collector(ABC):
     '''
     Responsável pela coleta de dados gerados pelo solver.
     '''
-    def __init__(self, solver: SolverCore, path: str, configs: dict) -> None:
+    def __init__(self, solver: SolverCore, path: str, configs: dict, autosave_cfg: AutoSaveCfg=None) -> None:
         '''
         Parameters:
         -----------
             solver:
-                Auto explicativo.
+                Solver do sistema em que será coletado os dados.
             path:
                 Caminho da pasta que vai conter os dados coletados.
             
@@ -21,15 +30,35 @@ class Collector(ABC):
                 Lista com todas as configurações da simulação.\n
                 Apenas utilizado para salver as configurações no fim da coleta,
                 na mesma pasta dos dados com o nome 'config.yaml'.
+
+            autosave_cfg:
+                Configurações do auto-salvamento:
+                
+                * root_dir:
+                    Diretório relativo a `path` onde será guardado os salvamentos automáticos.
+                
+                * freq_dt:
+                    Frequência temporal em que é feito o auto-salvamento.
+                
+                * to_save_state:
+                    Se é para salvar o estado do sistema.
         '''
         self.solver = solver
         self.configs = configs
         self.path = path
         self.config_path = os.path.join(self.path, "config.yaml")
         
-        if not os.path.exists(path):
-            # raise ValueError(f"O caminho {path} não existe.")
-            os.mkdir(path)
+        paths_check = [Path(self.path)]
+
+        if autosave_cfg is not None:
+            self.autosave_cfg = autosave_cfg
+            self.autosave_path = Path(self.path) / autosave_cfg.root_dir
+            self.autosave_data_path = Path(self.path) / autosave_cfg.data_path
+            paths_check.append(self.autosave_path)
+            paths_check.append(self.autosave_data_path)
+
+        for p in paths_check:
+            p.mkdir(parents=True, exist_ok=True)
         
         self.save_cfg()
 
@@ -44,6 +73,38 @@ class Collector(ABC):
                 Contador do número de passos temporais que já foram dados.
         '''
         pass
+
+    @property
+    def vars_to_save(self):
+        raise Exception("'vars_to_save' não foi definido.")
+
+    def get_vars_to_save(self):
+        return {name: getattr(self, name) for name in self.vars_to_save}
+    
+    def set_vars_to_save(self, values: dict):
+        for name, value in values.items():
+            setattr(self, name, value)
+
+    def check_autosave(self):
+        if self.solver.time - self.autosave_last_time > self.autosave_dt:
+            self.autosave_last_time = self.solver.time
+            self.autosave()
+
+    def autosave(self):
+        with open(self.autosave_path / self.save_name, "wb") as f:
+            pickle.dump(self.get_vars_to_save(), f)
+
+        if self.autosave_cfg.to_save_state:
+            self.state_col.save(metadata={
+                "is_autosave": True,
+                "time": self.solver.time,
+                "num_time_steps": self.solver.num_time_steps,
+            })
+    
+    def load_autosave(self):
+        with open(self.autosave_path / self.save_name, "rb") as f:
+            saved_vars = pickle.load(f)
+            self.set_vars_to_save(saved_vars)
 
     def save_cfg(self) -> None:
         '''Salva as configurações da simulação.'''

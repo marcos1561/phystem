@@ -42,8 +42,8 @@ dynamic_cfg = RingCfg(
 )
 
 space_cfg = SpaceCfg(
-    height = 2*30,
-    length = 4*30,
+    height = 1.5*30,
+    length = 2*30,
 )
 
 creator_cfg = CreatorCfg(
@@ -67,9 +67,10 @@ stokes_cfg = StokesCfg(
 ##
 ## Select Run Type
 ##
-run_type = RunType.REAL_TIME
+run_type = RunType.COLLECT_DATA
 
 
+print(2*radius)
 num_cols, num_rows = utils.particle_grid_shape(space_cfg, dynamic_cfg.max_dist)
 num_cols_cm, num_rows_cm = utils.rings_grid_shape(space_cfg, radius)
 
@@ -83,16 +84,30 @@ collect_data_cfg = CollectDataCfg(
         update_type=UpdateType.STOKES,
         in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
     ), 
-    tf=1000,
-    folder_path="data/test",
+    tf=200,
+    folder_path="data/teste",
     func=pipeline.collect_pipeline,
     func_cfg={
-        "delta_wait_time": radius*2 * 5,
-        "xlims": (-20, -20+2*radius),
-        "edge_k": 1.3,
-        "debug": False,
+        "autosave_dt": 10,
+        "den_vel": {
+            "xlims": (-20, -20+2*radius),
+            "vel_dt": 0.5,
+            "den_dt": 0.5,
+        },
+        "delta": {
+            "delta_wait_time": radius*2 * 5,
+            "delta_wait_dist": radius*2 * 1,
+            "xlims": (-2*radius, 0),
+            "edge_k": 1.4,
+            "debug": False,
+        },
+        "creation_rate": {
+            "wait_time": 10,
+            "collect_time": 90,
+            "collect_dt": 0.5,
+        },
     },
-    # checkpoint=CheckpointCfg("data/test/autosave")
+    checkpoint=CheckpointCfg("data/teste/autosave")
 )
 
 real_time_cfg = RealTimeCfg(
