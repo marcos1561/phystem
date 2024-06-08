@@ -28,23 +28,31 @@ Enumerações
     SolverType:
         Tipo do solver a ser utilizado
 '''
+from pathlib import Path
 from enum import Flag, Enum, auto
 import yaml, os, copy
 from phystem.gui_phystem import config_ui
+from . import settings
 
-def load_cfg(cfg_path, is_recursive=False):
-    with open(cfg_path, "r") as f:
-        cfgs = yaml.unsafe_load(f)
-    
+
+def load_configs(root_path: Path, configs_name="config", load_checkpoint_cfgs=False):
+    root_path = Path(root_path)
+    config_path = root_path / (configs_name + ".yaml")
+    with open(config_path, "r") as f:
+            cfgs = yaml.unsafe_load(f)
+        
     checkpoint: CheckpointCfg = cfgs["run_cfg"].checkpoint 
-    if checkpoint and not is_recursive:
-        checkpoint_cfg_path = os.path.join(checkpoint.folder_path, "config.yaml")
-        if os.path.exists(checkpoint_cfg_path):
-            checkpoint.configs = load_cfg(checkpoint_cfg_path, is_recursive=True)    
-        else:
-            checkpoint.configs = "configurações não encontradas"    
-
+    if load_checkpoint_cfgs and checkpoint:
+        try:
+            checkpoint.configs = load_configs(checkpoint.folder_path)    
+        except FileNotFoundError as e:
+            checkpoint.configs = "configurações não encontradas" 
     return cfgs
+
+def save_configs(configs, root_path: Path, configs_name="config"):
+    configs_path = Path(root_path) / (configs_name + ".yaml")
+    with open(configs_path, "w") as f:
+        yaml.dump(configs, f)
 
 class RunType(Flag):
     COLLECT_DATA = auto()
@@ -53,9 +61,7 @@ class RunType(Flag):
     REPLAY_DATA = auto()
 
 class SolverType(Enum):
-    '''
-    Tipo do solver a ser utilizado.
-    '''
+    '''Tipo do solver a ser utilizado.'''
     PYTHON = auto()
     CPP = auto()
 
@@ -71,14 +77,14 @@ class CheckpointCfg:
                 Se for 'True', as configurações salvas no checkpoint serão ignoradas.
             
             override_func_cfg:
-                Apenas se aplica se o modo de execução é `CollectDataCfg`.
-                Se for 'True', as configurações da pipeline salvas no checkpoint serão ignoradas.
+                Apenas se aplica se o modo de execução for `CollectDataCfg`.
+                Se for 'True', as configurações da pipeline salvas no checkpoint (`func_cfg`) serão ignoradas.
         '''
         self.folder_path = folder_path
         self.override_cfgs = override_cfgs
         self.override_func_cfg = override_func_cfg
 
-        self.configs: dict = None
+        self.configs: dict = load_configs(folder_path)
     
     def get_sim_configs(self, run_cfg=None):
         configs = copy.deepcopy(self.configs)
@@ -90,6 +96,10 @@ class CheckpointCfg:
         with open(os.path.join(self.folder_path, "metadata.yaml")) as f:
             metadata = yaml.unsafe_load(f)
         return metadata
+    
+    @property
+    def is_autosave(self):
+        return self.get_metadata().get(settings.autosave_flag_name, False)
 
 class IntegrationCfg:
     def __init__(self, dt: float, solver_type=SolverType.CPP) -> None:
@@ -105,20 +115,13 @@ class IntegrationCfg:
         self.dt = dt
         self.solver_type = solver_type
 
-# class UiSettings:
-#     def __init__(self, window_scale=0.83, dpi=190, left_pannel_size=0.3) -> None:
-#         self.window_scale = window_scale
-#         self.dpi = dpi
-#         self.left_pannel_size = left_pannel_size
-
 class RunCfg:
-    '''
-    Base para as configurações do mode de execução.
+    '''Base para as configurações do mode de execução.
     
     Attributes:
     ----------
         id:
-            Id identificando qual é o mode de execução .
+            Id identificando qual é o modo de execução .
     '''
     id: RunType
     def __init__(self, int_cfg: IntegrationCfg, checkpoint: CheckpointCfg = None) -> None:
@@ -129,27 +132,19 @@ class RunCfg:
                 Configurações relacionadas a integração do sistema.
             
             checkpoint:
-                Configurações para carregar um checkpoint. Caso seja 'none', o checkpoint
-                não é carregado.
+                Configurações para carregar um checkpoint.
         '''
         self.int_cfg = int_cfg
         self.checkpoint = checkpoint
-        
-        if checkpoint is not None:
-            # Carrega as configurações utilizadas nos dados salvos.
-            with open(os.path.join(checkpoint.folder_path, "config.yaml"), "r") as f:
-                self.checkpoint.configs = yaml.unsafe_load(f)
                 
 class CollectDataCfg(RunCfg):
-    '''
-    Modo de coleta de dados sem renderização ou informações
+    '''Modo de coleta de dados sem renderização ou informações
     não relevantes para a integração do sistema.
     '''
     id = RunType.COLLECT_DATA
     def __init__(self, int_cfg: IntegrationCfg, tf: float, folder_path: str, func_cfg=None, func: callable=None,
         func_id=None, get_func: callable=None, checkpoint: CheckpointCfg = None) -> None:
-        '''
-        Configurações da coleta de dados de acordo com um pipeline. A pipeline pode ser especificada de duas formas.
+        '''Configurações da coleta de dados de acordo com um pipeline. A pipeline pode ser especificada de duas formas.
 
         * Diretamente especificando o parâmetro `func`.
 
@@ -190,9 +185,8 @@ class CollectDataCfg(RunCfg):
         
         super().__init__(int_cfg, checkpoint)
         self.tf = tf
-        self.folder_path = folder_path
-        if not os.path.exists(self.folder_path):
-            os.mkdir(self.folder_path)
+        self.folder_path = Path(folder_path)
+        self.folder_path.mkdir(parents=True, exist_ok=True)
         
         self.func = func
         self.func_id = func_id
@@ -201,15 +195,18 @@ class CollectDataCfg(RunCfg):
         if func_id is not None:
             self.func = get_func(func_id) 
 
+    @property
+    def is_autosave(self):
+        return self.checkpoint and self.checkpoint.is_autosave
+
 class RealTimeCfg(RunCfg):
-    '''
-    Renderização em tempo real da simulação.
-    '''
+    '''Renderização em tempo real da simulação.'''
     id = RunType.REAL_TIME
     def __init__(self, int_cfg: IntegrationCfg, num_steps_frame: int, fps: int=60, graph_cfg=None,
         ui_settings: config_ui.UiSettings=None, checkpoint: CheckpointCfg=None) -> None:
         '''
         Parameters:
+        -----------
             int_cfg:
                 Configurações relacionadas a integração do sistema.
 
@@ -241,12 +238,10 @@ class RealTimeCfg(RunCfg):
         self.graph_cfg = graph_cfg
 
 class ReplayDataCfg(RealTimeCfg):
-    '''
-    Reproduz dados salvos utilizando a interface visual da renderização em tempo real.
-    '''
+    '''Reproduz dados salvos utilizando a interface visual da renderização em tempo real.'''
     id = RunType.REPLAY_DATA
 
-    def __init__(self, directory: str, data_dir="data", num_steps_frame=1, fps=30, 
+    def __init__(self, root_path: Path, data_dirname="data", num_steps_frame=1, fps=30, 
         graph_cfg=None, solver_cfg=None,  ui_settings: config_ui.UiSettings=None) -> None:
         '''
         Parameters:
@@ -274,30 +269,26 @@ class ReplayDataCfg(RealTimeCfg):
             graph_cfg:
                 Configurações passadas para o gerenciador do gráfico da simulação.
         '''
+        self.root_path = Path(root_path)
+        self.solver_cfg = solver_cfg
+        self.data_path = root_path / data_dirname
+        
         # Carrega as configurações utilizadas nos dados salvos.
-        cfg_path = os.path.join(directory, "config.yaml") 
-        self.system_cfg = load_cfg(cfg_path)
+        self.system_cfg = load_configs(root_path)
 
         init_cfg = self.system_cfg["run_cfg"].int_cfg
         super().__init__(int_cfg=init_cfg, num_steps_frame=num_steps_frame, fps=fps, 
                          graph_cfg=graph_cfg, ui_settings=ui_settings)
 
-        self.solver_cfg = solver_cfg
-        self.directory = directory
-        self.data_dir = os.path.join(directory, data_dir)
-        
         self.system_cfg["run_cfg"] = self
 
 class SaveCfg(RunCfg):
-    '''
-    Salva um vídeo da simulação.
-    '''
+    '''Salva um vídeo da simulação.'''
     id = RunType.SAVE_VIDEO
     def __init__(self, int_cfg: IntegrationCfg, path:str, fps: int, speed: float=None, duration: float = None, 
         tf: float = None, ti=0, num_frames=None, graph_cfg=None, dt=None, 
         ui_settings: config_ui.UiSettings=None, checkpoint: CheckpointCfg=None, replay: ReplayDataCfg=None) -> None:  
-        '''
-        Salva um vídeo da simulação em `path`. Ao menos um dos seguintes parâmetros deve ser 
+        '''Salva um vídeo da simulação em `path`. Ao menos um dos seguintes parâmetros deve ser 
         especificado:
 
         * duration

@@ -144,7 +144,7 @@ def collect_pipeline(sim: Simulation, cfg):
     print("\nIniciando simulação")
     t1 = time.time()
 
-    collector = Collector(solver, collect_cfg.folder_path, sim.configs_container)
+    collector = Collector(solver, collect_cfg.folder_path, sim.configs)
 
     prog = progress.Continuos(end_time)
     if not collector.wait_time_done:

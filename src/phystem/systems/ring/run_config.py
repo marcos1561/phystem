@@ -4,17 +4,22 @@ from phystem.core import run_config
 from phystem.core.run_config import SolverType
 
 class UpdateType(Enum):
-    '''
-    Modo de integração a ser utilizado pelo solver.
+    '''Modo de integração a ser utilizado pelo solver.
 
-    Variants:
+    Variantes:
     ---------
-        NORMAL:
-            Integração normal, sem mágicas envolvidas.
+        PERIODIC_NORMAL:
+            Integração normal, sem mágicas envolvidas, com bordas periódicas.
         
-        WINDOWS:
-            Divide o espaço em janelas e mantém atualizado quem está em cada
-            janela.
+        PERIODIC_WINDOWS:
+            Técnica das janelas com bordas periódicas.
+
+        STOKES:
+            Geometria do fluxo de Stokes.
+
+        INVAGINATION:
+            Anel feito de anéis com controle das configurações da superfície
+            interna e externa do anel.
     '''
     PERIODIC_NORMAL = auto()
     PERIODIC_WINDOWS = auto()

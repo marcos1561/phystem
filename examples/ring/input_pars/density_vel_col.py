@@ -2,7 +2,7 @@ import numpy as np
 import os, pickle
 from pathlib import Path
 
-from phystem.core.collectors import Collector, AutoSaveCfg
+from phystem.core.collectors import Collector, ColAutoSaveCfg
 from phystem.core.solvers import SolverCore
 
 from phystem.systems.ring import utils
@@ -12,7 +12,7 @@ class DensityVelCol(Collector):
 
     def __init__(self, xlims, vel_dt, density_dt,
         solver: SolverCore, path: str, configs: dict,
-        autosave_cfg: AutoSaveCfg=None,
+        autosave_cfg: ColAutoSaveCfg=None,
         ) -> None:
         super().__init__(solver, path, configs, autosave_cfg)
 
@@ -80,10 +80,13 @@ class DensityVelCol(Collector):
         self.density_arr.append(mask_sum/self.density_eq)
         self.time_den_arr.append(time)
 
+    def get_vel(self):
+        return np.array(self.solver.vel)
+
     def col_vel(self, time, ids, mask):
         self.last_time_vel = time
         
-        vel = np.array(self.solver.vel)[ids][mask]
+        vel = self.get_vel()[ids][mask]
         vel = vel.reshape(vel.shape[0] * vel.shape[1], vel.shape[2])
         speed = np.sqrt(np.square(vel).sum(axis=1))
 

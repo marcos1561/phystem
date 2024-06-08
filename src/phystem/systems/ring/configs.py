@@ -1,15 +1,12 @@
 '''
 Configurações relacionadas ao sistema em questão.
 '''
-
 from phystem.systems.ring import creators
 
 class RingCfg:
-    '''
-    Variáveis relacionadas a dinâmica do sistema.
-    '''
-    args_names = ("spring_k", "spring_r", "k_bend", "mobility", "relax_time",
-        "vo", "trans_diff", "rot_diff", "exclusion_vol", "diameter", "p0")
+    '''Variáveis relacionadas a dinâmica do sistema.'''
+    # args_names = ("spring_k", "spring_r", "k_bend", "mobility", "relax_time",
+    #     "vo", "trans_diff", "rot_diff", "exclusion_vol", "diameter", "p0")
 
     def __init__(self,  spring_k, spring_r, area_potencial, mobility, relax_time,
         vo, trans_diff, rot_diff, diameter, max_dist, rep_force, adh_force, k_invasion,
@@ -172,9 +169,7 @@ class InvaginationCfg:
         self.num_affected = num_affected 
 
 class CreatorCfg:
-    '''
-    Configurações passada ao construtor de configuração inicial.
-    '''
+    '''Configurações passadas ao construtor da configuração inicial.'''
     CreatorType = creators.Creator
     def __init__(self, num_rings: int,  num_p: int, r: list[float], angle: list[float],
         center: list[list[float]]) -> None:
@@ -191,7 +186,6 @@ class CreatorCfg:
             return [input] * self.num_rings
         else:
             return input
-        
 
     def set(self, other):
         self.r = other.r

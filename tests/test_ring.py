@@ -1,23 +1,29 @@
 import unittest
 import os, yaml
+from copy import deepcopy
+import shutil
+from pathlib import Path
+
+from phystem.core.run_config import CheckpointCfg, load_configs
 
 from phystem.systems.ring.simulation import Simulation
 from phystem.systems.ring import collect_pipelines, utils
+from phystem.systems.ring.collectors import StateSaver
 
 from phystem.systems.ring.configs import *
 from phystem.systems.ring.run_config import IntegrationCfg, UpdateType, ParticleWindows
 from phystem.core.run_config import CollectDataCfg
 
-current_folder = os.path.dirname(__file__)
+current_folder = Path(os.path.dirname(__file__))
 
 class TestRing(unittest.TestCase):
-    root_folder =  os.path.join(current_folder, "data_test/ring")
+    root_data_path = current_folder / "data_test/ring"
 
     def test_window(self):
-        truth_folder = os.path.join(self.root_folder, "normal_data")
-        cfg_path = os.path.join(truth_folder, "config.yaml")
+        truth_folder = self.root_data_path / "test_windows"
+        cfg_path = truth_folder / "config.yaml"
 
-        folder_path = os.path.join(self.root_folder, "test")
+        folder_path = self.root_data_path / "test"
 
         with open(cfg_path, "r") as f:
             cfg = yaml.unsafe_load(f)
@@ -41,8 +47,8 @@ class TestRing(unittest.TestCase):
         sim.run()
 
         import numpy as np
-        pos_truth = np.load(os.path.join(truth_folder, "pos.npy"))
-        pos_test = np.load(os.path.join(folder_path, "pos.npy"))
+        pos_truth = np.load(truth_folder / "pos.npy")
+        pos_test = np.load(folder_path / "pos.npy")
 
         error = 0
         for i in range(pos_test.shape[0]):
@@ -51,6 +57,47 @@ class TestRing(unittest.TestCase):
         print(f"pos error: {error}")
         self.assertTrue(error < 1e-5)
         # self.assertTrue((pos_test == pos_truth).all())
+
+    def test_checkpoint(self):
+        def func(sim: Simulation, cfg):
+            before_checkpoint_path = self.root_data_path / "before_checkpoint"
+            after_checkpoint_path = self.root_data_path / "after_checkpoint"
+
+            state_saver = StateSaver(sim.solver, before_checkpoint_path, sim.configs)
+
+            solver = sim.solver
+            while solver.time < 50:
+                solver.update()
+            
+            state_saver.save()
+
+            configs2 = deepcopy(sim.configs)
+            configs2["run_cfg"].checkpoint = CheckpointCfg(before_checkpoint_path)
+            sim2 = Simulation(**configs2)
+            state_saver2 = StateSaver(sim2.solver, after_checkpoint_path, sim2.configs)
+            state_saver2.save()
+
+            state_data, metadada = StateSaver.load(before_checkpoint_path)
+            state_data2, metadada2 = StateSaver.load(after_checkpoint_path)
+
+            def square_diff(a, b):
+                return ((a - b)**2).sum()
+
+            self.assertAlmostEqual(square_diff(state_data.pos, state_data2.pos), 0, msg="pos diff")
+            self.assertAlmostEqual(square_diff(state_data.uids, state_data2.uids), 0, msg="uids diff")
+            self.assertAlmostEqual(square_diff(state_data.ids, state_data2.ids), 0, msg="ids diff")
+            self.assertAlmostEqual(square_diff(state_data.angle, state_data2.angle), 0, msg="angle diff")
+
+            shutil.rmtree(before_checkpoint_path)
+            shutil.rmtree(after_checkpoint_path)
+
+        configs = load_configs(self.root_data_path / "configs", "checkpoint_configs")
+
+        run_cfg: CollectDataCfg = configs["run_cfg"]
+        run_cfg.func = func
+        
+        Simulation(**configs).run()
+
 
 class TestWindows(unittest.TestCase):
     def test_neighbor_ids(self):

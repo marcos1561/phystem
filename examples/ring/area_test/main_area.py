@@ -71,7 +71,7 @@ real_time_cfg = RealTimeCfg(
 replay_data_cfg = None
 if run_type is RunType.REPLAY_DATA:
     replay_data_cfg = ReplayDataCfg(
-        directory="data/ring/teste",
+        root_path="data/ring/teste",
         num_steps_frame=1,
         frequency=0,
         graph_cfg=GraphCfg(),

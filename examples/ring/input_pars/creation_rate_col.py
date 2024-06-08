@@ -9,7 +9,7 @@ from phystem.systems.ring.collectors import LastState
 class CreationRateCol(collectors.Collector):
     save_name = "col_state.pickle"
 
-    def __init__(self, wait_time, collect_time, collect_dt, id, solver: collectors.SolverCore, path: str, configs: dict, autosave_cfg: collectors.AutoSaveCfg = None) -> None:
+    def __init__(self, wait_time, collect_time, collect_dt, id, solver: collectors.SolverCore, path: str, configs: dict, autosave_cfg: collectors.ColAutoSaveCfg = None) -> None:
         super().__init__(solver, path, configs, autosave_cfg)
 
         collect_cfg: CollectDataCfg = configs["run_cfg"]
@@ -24,7 +24,7 @@ class CreationRateCol(collectors.Collector):
             p.mkdir(exist_ok=True, parents=True)
 
         if autosave_cfg is not None:
-            self.state_col = LastState(self.solver, self.autosave_path, self.configs)
+            self.state_col = LastState(self.solver, self.autosave_state_path, self.configs)
             self.autosave_last_time = self.solver.time
 
         self.id = id

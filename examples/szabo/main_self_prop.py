@@ -52,7 +52,7 @@ real_time_cfg = RealTimeCfg(
 replay_data_cfg = None
 if run_type is RunType.REPLAY_DATA:
     replay_data_cfg = ReplayDataCfg(
-        directory="data/self_propelling/teste",
+        root_path="data/self_propelling/teste",
         num_steps_frame=3,
         frequency=0,
         system_cfg = {

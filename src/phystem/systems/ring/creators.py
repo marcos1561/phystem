@@ -3,9 +3,8 @@ import numpy as np
 from phystem.core.creators import CreatorCore
 
 class InitData:
-    def __init__(self, pos: np.ndarray, self_prop_angle: np.ndarray) -> None:
-        '''
-        Dados da configurações inicial.
+    def __init__(self, pos: np.ndarray, self_prop_angle: np.ndarray, uids: np.ndarray=None) -> None:
+        '''Dados da configuração inicial.
 
         Parameters:
         -----------
@@ -14,11 +13,14 @@ class InitData:
                 
             self_prop_angle: ndarray (num_rings)
                 Ângulo inicial da direção da velocidade auto propulsora em cada anel.
-        '''
 
+            uids:
+                Ids únicos de cada anel.
+        '''
         self.pos = pos
         self.self_prop_angle = self_prop_angle
-    
+        self.uids = uids
+
     def get_data(self):
         return {
             "pos": self.pos,
@@ -29,8 +31,7 @@ class InitData:
 class Creator(CreatorCore):
     def __init__(self, num_rings: int, num_p: int, r: list[float], angle: list[float], center: list, 
         rng_seed: int = None) -> None:
-        '''
-        Cria a configuração inicial do anel em formato de círculo com todas as 
+        '''Cria a configuração inicial do anel em formato de círculo com todas as 
         velocidades auto propulsoras iguais.
 
         OBS: A função `create` é responsável por gerar a configuração inicial. 
@@ -65,8 +66,7 @@ class Creator(CreatorCore):
         self.center = center
 
     def create(self) -> InitData:
-        '''
-        Cria a configuração inicial.
+        '''Cria a configuração inicial.
         
         Return:
         -------

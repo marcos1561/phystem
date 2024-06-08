@@ -2,25 +2,18 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 class SolverCore(ABC):
-    '''
-    Responsável pela integração do sistema.
-    '''
+    '''Responsável pela integração do sistema.'''
     def __init__(self) -> None:
         self.dt: float
         self.time: float
 
     @abstractmethod
     def update(self) -> None:
-        '''
-        Deve avançar o sistema em um passo temporal
-        '''
+        '''Deve avançar o sistema em um passo temporal'''
         pass
 
-
 class ButcherTable:
-    '''
-    Classe que representa uma tabela de Butcher.
-    '''
+    '''Classe que representa uma tabela de Butcher.'''
     def __init__(self, q_values: list, a_values: list[int]) -> None:
         self.order = len(q_values) + 1
 
@@ -63,9 +56,7 @@ class ButcherTable:
         return table_str
 
 class ButcherTableCol:
-    '''
-    Coleção de algumas tabelas de Butcher.
-    '''
+    '''Coleção de algumas tabelas de Butcher.'''
     rk2_ralston = ButcherTable(
         q_values = [
             [2/3],

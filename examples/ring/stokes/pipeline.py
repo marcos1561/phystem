@@ -55,9 +55,9 @@ class Collector(LastState):
         self.save_type = save_type
         
         if self.save_type is SaveType.checkpoint:
-            shutil.copy2(self.config_path, self.cp_dir)
+            shutil.copy2(self.configs_path, self.cp_dir)
         elif self.save_type is SaveType.snapshot:
-            shutil.copy2(self.config_path, self.snapshot_dir)
+            shutil.copy2(self.configs_path, self.snapshot_dir)
         
         self.save_func = {
             SaveType.checkpoint: self.save_checkpoint,
@@ -142,7 +142,7 @@ def collect_pipeline(sim: Simulation, cfg: PipelineCfg):
         solver.cpp_solver.sim_time = metadata["time"] 
         solver.cpp_solver.num_time_steps = metadata["num_time_steps"] 
     
-    collector = Collector(solver, collect_cfg.folder_path, sim.configs, cfg.checkpoint_period, 
+    collector = Collector(solver, collect_cfg.folder_path, sim.init_configs, cfg.checkpoint_period, 
         cfg.snapshot_period, cfg.save_type)
 
     t1 = time.time()

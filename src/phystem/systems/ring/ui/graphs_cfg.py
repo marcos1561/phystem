@@ -88,3 +88,5 @@ class ReplayGraphCfg(BaseGraphCfg):
         if density_kwargs is None:
             self.density_kwargs = {}
 
+if __name__ == "__main__":
+    print(type(SimpleGraphCfg) == type)

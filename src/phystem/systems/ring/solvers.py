@@ -194,6 +194,16 @@ class CppSolver:
     def num_created_rings(self):
         return self.cpp_solver.num_created_rings
     
+    def load_checkpoint(self, pos, angle, ids, uids):
+        pos_in = [cpp_lib.data_types.PosVec(ring_pos) for ring_pos in pos]
+
+        pos = cpp_lib.data_types.Vector3d(pos_in)
+        angle = cpp_lib.data_types.List(angle)
+        ids = cpp_lib.data_types.ListInt(ids)
+        uids = cpp_lib.data_types.VecUInt(uids)
+
+        self.cpp_solver.load_checkpoint(pos, angle, ids, uids)
+
     def update_visual_aids(self):
         self.cpp_solver.update_visual_aids()
 
@@ -205,15 +215,14 @@ class CppSolver:
 
     def mean_vel(self, ring_id: int):
         return self.cpp_solver.mean_vel(ring_id)
-
+    
 class SolverReplay:
-    solver_cfg: ReplaySolverCfg
-
     def __init__(self, run_cfg: ReplayDataCfg, dynamic_cfg: RingCfg, space_cfg: SpaceCfg) -> None:
         self.main_dir = run_cfg.directory
-        self.data_dir = run_cfg.data_dir
+        self.data_dir = run_cfg.data_path
         self.dt = run_cfg.int_cfg.dt
 
+        self.solver_cfg: ReplaySolverCfg
         self.set_solver_cfg(run_cfg)
 
         with open(os.path.join(self.main_dir, "metadata.yaml")) as f:

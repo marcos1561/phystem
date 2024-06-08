@@ -98,7 +98,7 @@ run_type_to_cfg = {
 }
 
 if run_pipeline:
-    configs = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type], rng_seed=seed).configs 
+    configs = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=run_type_to_cfg[run_type], rng_seed=seed).init_configs 
     pipeline = Pipeline(configs)
     pipeline.run()
 else:

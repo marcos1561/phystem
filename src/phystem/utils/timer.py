@@ -48,3 +48,29 @@ class TimeIt:
 
     def mean_time(self, name: str):
         return self.times[name].mean_time()
+    
+class TimerCount:
+    def __init__(self, names) -> None:
+        ''' 
+        Contador incremental do tempo de execução de funções.
+        
+        Parâmetros:
+            names:
+                Chaves que podem ter o tempo incrementado. 
+        '''
+        self.total_time = {n: 0 for n in names}
+
+    def update(self, func, name):
+        '''
+        Executa `func` e incrementa o seu tempo de execução na
+        chave `name`.
+        '''
+        t1 = time.time()
+        r = func()
+        t2 = time.time()
+        self.total_time[name] += t2 - t1
+        return r
+    
+    def get_elapsed_time(self):
+        '''Soma do tempo total de todas as chaves'''
+        return sum(self.total_time.values()) 

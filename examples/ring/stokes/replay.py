@@ -6,8 +6,8 @@ from phystem.systems.ring.simulation import Simulation
 from phystem.systems.ring.solver_config import ReplaySolverCfg
 
 run_cfg = ReplayDataCfg(
-    directory="data/init_state_low_flux_force_snaps/snapshots",
-    data_dir="data",
+    root_path="data/init_state_low_flux_force_snaps/snapshots",
+    data_dirname="data",
     graph_cfg=graphs_cfg.ReplayGraphCfg(
         density_kwargs={"vmin": 0, "vmax": 14}, 
         # scatter_kwargs={"s": 0.1, "c":"black", "alpha": 0.1}, 

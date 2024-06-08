@@ -76,7 +76,7 @@ seed = 40028922
 ##
 ## Select Run Type
 ##
-run_type = RunType.COLLECT_DATA
+run_type = RunType.REAL_TIME
 
 
 # num_cols = int(ceil(space_cfg.length/(dynamic_cfg.diameter*1.2)) * 0.6)
@@ -143,8 +143,8 @@ real_time_cfg = RealTimeCfg(
     #     pause_on_high_vel = True,
     # ),
     checkpoint=CheckpointCfg(
-        # folder_path="../flux_creation_rate/data/low_adh_align_flux/autosave"
-        folder_path="../flux_creation_rate/data/init_state_low_flux_force/checkpoint"
+        folder_path="../flux_creation_rate/data/low_adh_align_flux/autosave"
+        # folder_path="../flux_creation_rate/data/init_state_low_flux_force/checkpoint"
         # folder_path="data/init_state_low_flux_force/checkpoint",
     )
 )

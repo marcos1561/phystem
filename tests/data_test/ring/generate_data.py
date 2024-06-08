@@ -64,13 +64,13 @@ def generate_normal_data():
             update_type=UpdateType.PERIODIC_NORMAL,
         ),
         tf = 100,
-        folder_path="normal_data",
+        folder_path="test_windows",
         func_id = collect_pipelines.FuncID.last_pos,
         get_func= collect_pipelines.get_func,
     )
 
     sim = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=collect_data_cfg, rng_seed=seed)
-    # sim.save_cfgs("normal_data/config")
+    # sim.save_cfgs("test_windows/config")
     sim.run()
 
 generate_normal_data()

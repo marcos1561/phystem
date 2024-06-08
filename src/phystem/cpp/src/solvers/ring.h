@@ -6,6 +6,7 @@
 #include <iostream>
 #include <cstdlib> 
 #include <omp.h>
+#include <algorithm>
 
 #include "../configs/ring.h"
 #include "../rng_manager.h"
@@ -548,6 +549,27 @@ public:
         // }
     }
 
+    void load_checkpoint(Vector3d& pos_cp, vector<double>& angle_cp, 
+        vector<int>& ids_cp, vector<unsigned long int>& uids_cp) {
+        /*Método para setar os uids em um carregamento de checkpoint*/
+        
+        for (size_t i = 0; i < mask.size(); i++) {
+            mask[i] = false;
+        }
+
+        for (size_t i = 0; i < ids_cp.size(); i++) {
+            int id = ids_cp[i];
+            
+            pos[id] = pos_cp[i];
+            self_prop_angle[id] = angle_cp[i];
+            unique_rings_ids[id] = uids_cp[i];
+            mask[id] = true;
+            rings_ids[i] = id;
+        }
+        auto max_uid = *std::max_element(uids_cp.begin(), uids_cp.end()); 
+        unique_id_mng.max_id = max_uid;
+    }
+
     void recalculate_rings_ids() {
         /**
          * Recalcula a lista dos ids dos anéis que estão
@@ -556,8 +578,7 @@ public:
         */
         to_recalculate_ids = false;
         int next_id = 0;
-        for (int i = 0; i < num_max_rings; i++)
-        {
+        for (int i = 0; i < num_max_rings; i++) {
             if (mask[i] == true) {
                 rings_ids[next_id] = i;
                 next_id += 1;

@@ -6,8 +6,8 @@ from phystem.systems.ring.simulation import Simulation
 from phystem.systems.ring.solver_config import ReplaySolverCfg
 
 run_cfg = ReplayDataCfg(
-    directory="data/rot_1",
-    data_dir="data",
+    root_path="data/rot_1",
+    data_dirname="data",
     graph_cfg=graphs_cfg.ReplayGraphCfg(
         begin_paused=True,
         # x_lims=(-300, 300),

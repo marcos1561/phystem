@@ -15,6 +15,7 @@ PYBIND11_MAKE_OPAQUE(vector<vector<double*>>);
 PYBIND11_MAKE_OPAQUE(vector<vector<double>>);
 PYBIND11_MAKE_OPAQUE(vector<double>);
 PYBIND11_MAKE_OPAQUE(vector<int>);
+PYBIND11_MAKE_OPAQUE(vector<unsigned long int>);
 
 using List = vector<double>;
 using List2d = vector<vector<double>>;
@@ -41,6 +42,7 @@ PYBIND11_MODULE(cpp_lib, m) {
     py::bind_vector<List2d>(data_types, "List2d");
     py::bind_vector<PyVecList>(data_types, "PyVecList");
     py::bind_vector<PyVecList3d>(data_types, "PyVecList3d");
+    py::bind_vector<vector<unsigned long int>>(data_types, "VecUInt");
 
     //==
     // Configs
@@ -181,6 +183,7 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def("update_stokes", &Ring::update_stokes, py::call_guard<py::gil_scoped_release>())
         .def("update_visual_aids", &Ring::update_visual_aids, py::call_guard<py::gil_scoped_release>())
         .def("init_invagination", &Ring::init_invagination, py::call_guard<py::gil_scoped_release>())
+        .def("load_checkpoint", &Ring::load_checkpoint, py::call_guard<py::gil_scoped_release>())
         .def_readwrite("sim_time", &Ring::sim_time, byref)
         .def_readwrite("num_time_steps", &Ring::num_time_steps, byref)
         .def_readonly("num_max_rings", &Ring::num_max_rings, byref)

@@ -28,7 +28,7 @@ class Progress(ABC):
     def to_inform_first_progress(self):
         if not self.has_inform_first_estimate:
             elapsed_time = time.time() - self.start_time
-            if elapsed_time > 2:
+            if elapsed_time > 10:
                 logger.debug("Call em informar primeiro progresso")
 
                 self.has_inform_first_estimate = True
@@ -88,7 +88,7 @@ class Continuos(Progress):
         interval_id = 0
         for id, lim in enumerate(self.interval_lims):
             if t < lim:
-                interval_id = id
+                interval_id = id - 1
                 break
         else:
             return self.interval_lims.size
@@ -116,14 +116,17 @@ class MplAnim(Discrete):
         super().update(t)
 
 if __name__ == "__main__":
-    from metcompb.odeint import runge_kutta
-    from metcompb.sistemas import pendulo
+    n = 100 + 50
+    dt = 1
 
-    logging.basicConfig(level=logging.DEBUG)
+    prog = Continuos(100, 10)
 
-    func = pendulo.get_general_func_forced(1, 1, 1, 1, 1)
-    xo = np.array([0, 1])
+    t = 0
+    while t < n:
+        t += dt
 
-    bt = runge_kutta.MethodButcherTable.rk4_classico
+        if t == 88:
+            print()
 
-    runge_kutta.rk_geral(xo, func, 20, 0.00001, bt, show_progress=True)
+        print(t)
+        prog.update(t)

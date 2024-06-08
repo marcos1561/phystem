@@ -3,17 +3,20 @@ import yaml
 from math import cos, pi
 from pathlib import Path
 
+from phystem.systems.ring.configs import SpaceCfg
 
 def get_ring_radius(p_diameter: float, num_particles: int):
-    '''
-    Raio de equilíbrio do anel dado o diâmetro das partículas (p_diameter)
+    '''Raio de equilíbrio do anel dado o diâmetro das partículas (p_diameter)
     e quantas partículas compõem o anel (num_particles).
     '''
     return p_diameter / (2 * (1 - cos(2*pi/(num_particles))))**.5
 
+def num_rings_in_rect(ring_diameter: float, space_cfg: SpaceCfg):
+    '''Número ne anéis que cabem dentro do espaço descrito em `space_cfg`.'''
+    return int(space_cfg.height * space_cfg.length / ring_diameter**2)
+
 def get_cm(rings: np.ndarray):
-    '''
-    Retorna os centros de massa dos anéis em `rings`.
+    '''Retorna os centros de massa dos anéis em `rings`.
 
     Parâmetros:
         rings:
@@ -342,12 +345,11 @@ def load_configs(path):
         cfgs = yaml.unsafe_load(f)
     return cfgs
 
-from phystem.systems.ring.configs import SpaceCfg
 
 def particle_grid_shape(space_cfg: SpaceCfg, max_dist, frac=0.6):
     from math import ceil
-    num_cols = int(ceil(space_cfg.length/(max_dist)) * frac)
-    num_rows = int(ceil(space_cfg.height/(max_dist)) * frac)
+    num_cols = int(ceil(space_cfg.length/max_dist) * frac)
+    num_rows = int(ceil(space_cfg.height/max_dist) * frac)
     return (num_cols, num_rows)
 
 def rings_grid_shape(space_cfg: SpaceCfg, radius, frac=0.5):

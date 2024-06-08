@@ -1,14 +1,12 @@
-import numpy as np
-
 from phystem.systems.ring.simulation import Simulation
 
 from phystem.systems.ring.configs import *
 from phystem.core.run_config import RunType, CheckpointCfg, CollectDataCfg
-from phystem.core.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, ReplayDataCfg
+from phystem.core.run_config import RealTimeCfg, CollectDataCfg
 from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType, ParticleWindows
 from phystem.systems.ring.ui.graphs_cfg import *
 from phystem.systems.ring import utils
-
+from phystem.gui_phystem.config_ui import UiSettings
 import pipeline
 
 dynamic_cfg = RingCfg(
@@ -31,19 +29,19 @@ dynamic_cfg = RingCfg(
     diameter  = 1,
     max_dist  = 1 + 0.5*0.1,
     rep_force = 12,
-    adh_force = 0.3,
+    adh_force = 20,
     
-    relax_time=1,
+    relax_time=0.5,
     mobility=1,
     vo=1,
     
     trans_diff=0,
-    rot_diff=1.5,
+    rot_diff=0.1,
 )
 
 space_cfg = SpaceCfg(
     height = 1.5*30,
-    length = 2*30,
+    length = 3*30,
 )
 
 creator_cfg = CreatorCfg(
@@ -55,11 +53,11 @@ creator_cfg = CreatorCfg(
 radius = utils.get_ring_radius(dynamic_cfg.diameter, creator_cfg.num_p) 
 stokes_cfg = StokesCfg(
     obstacle_r  = space_cfg.height/5,
-    obstacle_x  = 100 + 0*space_cfg.length/8/2,
+    obstacle_x  = 0*100 + 0*space_cfg.length/8/2,
     obstacle_y  = 0*space_cfg.length/8/2,
     create_length = radius * 2.01,
     remove_length = radius * 2.01,
-    flux_force = 5, 
+    flux_force = 2, 
     obs_force = 15,
     num_max_rings = 400, 
 )
@@ -67,8 +65,7 @@ stokes_cfg = StokesCfg(
 ##
 ## Select Run Type
 ##
-run_type = RunType.COLLECT_DATA
-
+run_type = RunType.REAL_TIME
 
 print(2*radius)
 num_cols, num_rows = utils.particle_grid_shape(space_cfg, dynamic_cfg.max_dist)
@@ -84,11 +81,12 @@ collect_data_cfg = CollectDataCfg(
         update_type=UpdateType.STOKES,
         in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
     ), 
-    tf=200,
-    folder_path="data/teste",
+    tf=150,
+    folder_path="data/teste2",
     func=pipeline.collect_pipeline,
     func_cfg={
-        "autosave_dt": 10,
+        "time_it": False,
+        "autosave_dt": 1,
         "den_vel": {
             "xlims": (-20, -20+2*radius),
             "vel_dt": 0.5,
@@ -96,10 +94,12 @@ collect_data_cfg = CollectDataCfg(
         },
         "delta": {
             "delta_wait_time": radius*2 * 5,
-            "delta_wait_dist": radius*2 * 1,
-            "xlims": (-2*radius, 0),
+            # "delta_wait_dist": radius*2 * 1,
+            # "xlims": (-2*radius, 0),
+            "delta_wait_dist": 24.04867172372065,
+            "xlims": (-185.174772272649, -180.36503792790487),
             "edge_k": 1.4,
-            "debug": False,
+            "debug": True,
         },
         "creation_rate": {
             "wait_time": 10,
@@ -108,25 +108,30 @@ collect_data_cfg = CollectDataCfg(
         },
     },
     checkpoint=CheckpointCfg("data/teste/autosave")
+    # checkpoint=CheckpointCfg("../flux_creation_rate/data/init_state_low_flux_force/checkpoint")
 )
+# collect_data_cfg.checkpoint.configs["dynamic_cfg"] = dynamic_cfg
 
 real_time_cfg = RealTimeCfg(
     int_cfg=collect_data_cfg.int_cfg,
     num_steps_frame=100,
     fps=30,
-    graph_cfg = SimpleGraphCfg(begin_paused=False),
-    # graph_cfg = MainGraphCfg(
-    #     show_circles      = True,
-    #     show_f_spring     = False,
-    #     show_f_vol        = False,
-    #     show_f_area       = False,
-    #     show_f_total      = False,
-    #     show_center_mass  = False,
-    #     show_inside       = False,
-    #     begin_paused      = True,
-    #     pause_on_high_vel = True,
-    #     cpp_is_debug      = True
-    # ),
+    graph_cfg = SimpleGraphCfg(
+        begin_paused=False,
+        show_density=False,
+        show_rings=True,
+        rings_kwargs={"s": 1},
+        density_kwargs={"vmin": -1, "vmax":1},
+        cbar_kwargs={"orientation": "horizontal", "label": "Densidade relativa"},
+        ax_kwargs={"title": "t=8000"},
+        cell_shape=[3, 3],
+    ),
+    ui_settings=UiSettings(
+        always_update=False,
+        dpi=200,
+    ),
+    # checkpoint=CheckpointCfg("data/little_adh_3/autosave")
+    # checkpoint=CheckpointCfg("../flux_creation_rate/data/init_state_low_flux_force/checkpoint")
 )
 
 run_type_to_cfg = {
@@ -140,5 +145,9 @@ configs = {
     "other_cfgs": {"stokes": stokes_cfg}
 }
 
+
 sim = Simulation(**configs)
 sim.run()
+
+# import cProfile
+# cProfile.run("sim.run()", "stats")

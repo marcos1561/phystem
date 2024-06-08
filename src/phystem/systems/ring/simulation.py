@@ -24,7 +24,7 @@ class Simulation(SimulationCore):
     def __init__(self, creator_cfg: CreatorCfg, dynamic_cfg: RingCfg, space_cfg, run_cfg: RunCfg, other_cfgs: dict = None, rng_seed: float = None) -> None:
         int_cfg: IntegrationCfg = run_cfg.int_cfg
         if int_cfg.update_type is UpdateType.INVAGINATION and type(creator_cfg) != InvaginationCreatorCfg:
-            raise ValueError(f"No mode 'invagination', a configuração de criação deve ser 'InvaginationCreatorCfg', mas é {type(creator_cfg)}.")
+            raise ValueError(f"No mode 'INVAGINATION', a configuração de criação deve ser 'InvaginationCreatorCfg', mas é {type(creator_cfg)}.")
 
         pos = creator_cfg.CreatorType(**creator_cfg.get_pars(), rng_seed=rng_seed).create().pos
         if pos.shape[0] > 0:
@@ -53,8 +53,9 @@ class Simulation(SimulationCore):
                 return SolverReplay(self.run_cfg.replay, self.dynamic_cfg, self.space_cfg)
 
         if self.run_cfg.checkpoint:
-            from phystem.systems.ring.collectors import StateCheckpoint
-            init_data, metadata = StateCheckpoint.load(self.run_cfg.checkpoint.folder_path)
+            from phystem.systems.ring.collectors import StateSaver
+            state_data, metadata = StateSaver.load(self.run_cfg.checkpoint.folder_path)
+            init_data = state_data.get_init_date()
         else:
             init_data = self.creator.create()
         
@@ -65,6 +66,14 @@ class Simulation(SimulationCore):
         solver = CppSolver(**init_data.get_data(), num_particles=self.creator_cfg.num_p, 
             dynamic_cfg=self.dynamic_cfg, stokes_cfg=stokes_cfg, space_cfg=self.space_cfg,
             int_cfg=self.run_cfg.int_cfg, rng_seed=self.rng_seed)
+        
+        if self.run_cfg.checkpoint:
+            solver.load_checkpoint(state_data.pos, state_data.angle, 
+                state_data.ids, state_data.uids)
+            
+            if self.run_cfg.checkpoint.is_autosave:
+                solver.cpp_solver.sim_time = metadata["time"] 
+                solver.cpp_solver.num_time_steps = metadata["num_time_steps"] 
         
         int_cfg: IntegrationCfg = self.run_cfg.int_cfg
         if int_cfg.update_type is UpdateType.INVAGINATION:
@@ -93,8 +102,8 @@ class Simulation(SimulationCore):
         # particles_graph = graph_cfg.GraphCls(
         #     ax=ax, solver=self.solver, space_cfg=self.space_cfg, dynamic_cfg=self.dynamic_cfg, 
         #     graph_cfg=real_time_cfg.graph_cfg)
-        particles_graph = graph_type.get_graph(graph_cfg)(
-            fig=fig, ax=ax, solver=self.solver, sim_configs=self.configs_container,
+        particles_graph = graph_type.get_graph_type(graph_cfg)(
+            fig=fig, ax=ax, solver=self.solver, sim_configs=self.configs,
             graph_cfg=graph_cfg
         )
 

@@ -50,7 +50,7 @@ def collect_pipeline(sim: Simulation, cfg):
     collect_cfg: CollectDataCfg = sim.run_cfg
     solver = sim.solver
     
-    collector = Collector(solver, collect_cfg.folder_path, sim.configs, cfg["dt"])
+    collector = Collector(solver, collect_cfg.folder_path, sim.init_configs, cfg["dt"])
 
     t1 = time.time()
 

@@ -44,7 +44,7 @@ def state(sim: Simulation, collect_cfg: CollectPlCfg):
     prog = progress.Continuos(run_cfg.tf)
     if not collect_cfg.only_last:
         state_collector = collectors.State(
-            solver, run_cfg.folder_path, sim.configs,
+            solver, run_cfg.folder_path, sim.init_configs,
             dt=run_cfg.int_cfg.dt, tf=run_cfg.tf, num_points=1000,
         )
         
@@ -60,7 +60,7 @@ def state(sim: Simulation, collect_cfg: CollectPlCfg):
         state_collector.save()
     else:
         state_collector = collectors.State(
-            solver, run_cfg.folder_path, sim.configs,
+            solver, run_cfg.folder_path, sim.init_configs,
             tf=0, dt=run_cfg.int_cfg.dt, num_points=2,
         )
         

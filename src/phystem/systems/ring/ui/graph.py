@@ -455,7 +455,6 @@ class SimpleGraph(BaseGraph):
         if self.graph_cfg.show_density:
             self.density.set_array(self.get_density())
 
-
 class ReplayGraph(BaseGraph):
     def __init__(self, fig: Figure, ax: Axes, solver: SolverReplay, sim_configs: dict, graph_cfg: ReplayGraphCfg=None):
         if type(solver) != SolverReplay:

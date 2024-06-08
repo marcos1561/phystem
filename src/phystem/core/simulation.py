@@ -1,5 +1,6 @@
 from copy import deepcopy
 from abc import ABC, abstractmethod
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -7,7 +8,7 @@ from matplotlib.figure import Figure
 import os, yaml
 
 from phystem.utils.timer import TimeIt
-from phystem.core.run_config import RunType, RunCfg, CollectDataCfg, SaveCfg, RealTimeCfg, CheckpointCfg
+from phystem.core.run_config import RunType, RunCfg, CollectDataCfg, SaveCfg, RealTimeCfg, save_configs, load_configs
 from phystem.core.creators import CreatorCore
 from phystem.core.solvers import SolverCore
 
@@ -47,6 +48,7 @@ class SimulationCore(ABC):
         
         if self.run_cfg.checkpoint:
             checkpoint_cfgs = self.run_cfg.checkpoint.configs
+            
             if not self.run_cfg.checkpoint.override_cfgs:
                 self.run_cfg.int_cfg = checkpoint_cfgs["run_cfg"].int_cfg 
                 if type(self.run_cfg) is CollectDataCfg and not self.run_cfg.checkpoint.override_func_cfg:
@@ -62,7 +64,7 @@ class SimulationCore(ABC):
                 # que foi gerado com as configurações do checkpoint.
                 self.creator_cfg = checkpoint_cfgs["creator_cfg"]
 
-        self.configs_container = {
+        self.configs = {
             "creator_cfg": self.creator_cfg,
             "dynamic_cfg": self.dynamic_cfg,
             "space_cfg": self.space_cfg,
@@ -71,41 +73,30 @@ class SimulationCore(ABC):
             "rng_seed": self.rng_seed,
         }
 
-        # Cópia das configurações para salvá-las.
-        self.configs = {name: deepcopy(cfg) for name, cfg in self.configs_container.items()}
+        # Cópia das configurações inciais.
+        self.init_configs = {name: deepcopy(cfg) for name, cfg in self.configs.items()}
 
         if run_cfg.id is RunType.COLLECT_DATA:
             # Como a configuração 'func' é uma função, ela não é salva.
-            self.configs["run_cfg"].func = "nao salvo"
+            self.init_configs["run_cfg"].func = "nao salvo"
 
         if run_cfg.checkpoint:
             # Impede o salvamento de todos os checkpoints utilizados
             # caso seja salvado um checkpoint que foi carregado de outro checkpoint.
-            self.configs["run_cfg"].checkpoint.configs = "nao salvo"
+            self.init_configs["run_cfg"].checkpoint.configs = "nao salvo"
 
         self.app: AppCore = None
         self.time_it = TimeIt(funcs_names=["solver", "graph"], num_samples=5)
 
         self.init_sim()    
 
-    @staticmethod
-    def load_cfg(cfg_path, load_checkpoints_cfgs=False):
-        with open(cfg_path, "r") as f:
-            cfgs = yaml.unsafe_load(f)
-        
-        checkpoint: CheckpointCfg = cfgs["run_cfg"].checkpoint 
-        if load_checkpoints_cfgs and checkpoint:
-            checkpoint_cfg_path = os.path.join(checkpoint.folder_path, "config.yaml")
-            checkpoint.configs = SimulationCore.load_cfg(checkpoint_cfg_path)    
+    def save_configs(self, root_path, configs_name="config"):
+        save_configs(self.configs, root_path, configs_name)
 
-        return cfgs
-
-    def save_cfgs(self, cfg_path: str):
-        if ".yaml" not in cfg_path:
-            cfg_path += ".yaml"
-
-        with open(cfg_path, "w") as f:
-            yaml.dump(self.configs, f)
+    @classmethod
+    def load_from_configs(cls, root_path: Path, config_name="config"):
+        cfgs = load_configs(root_path, config_name)
+        return cls(**cfgs)
 
     @abstractmethod
     def get_creator(self) -> CreatorCore:
@@ -141,11 +132,20 @@ class SimulationCore(ABC):
                 "A função que executa a simulação não está setada! "
                 "(Atributo 'func' da configuração 'CollectDataCfg')",
             ))
+        
+        is_autosave = False
+        if run_cfg.checkpoint is not None:
+            metadata = run_cfg.checkpoint.get_metadata()
+            
+            if metadata.get("is_autosave", False):
+                is_autosave = True
+                self.solver.cpp_solver.sim_time = metadata["time"] 
+                self.solver.cpp_solver.num_time_steps = metadata["num_time_steps"] 
 
         run_cfg.func(self, run_cfg.func_cfg)
 
     def run_app(self, fig: Figure, update, title=None, ui_settings: config_ui.UiSettings=None):
-        self.app = AppCore(fig, self.configs_container, self.solver, self.time_it, 
+        self.app = AppCore(fig, self.configs, self.solver, self.time_it, 
             update, title, ui_settings)
         self.app.run()
 
@@ -194,9 +194,7 @@ class SimulationCore(ABC):
         progress = Progress(frames, 10)
         ani = animation.FuncAnimation(fig, update, frames=frames)
 
-        config_path = os.path.join(folder_path, f"{video_name}_config.yaml")
-        with open(config_path, "w") as f:
-            yaml.dump(self.configs, f)
+        self.save_configs(folder_path, video_name + "_config")
         ani.save(save_video_cfg.path, fps=save_video_cfg.fps, progress_callback=progress.update)
 
         t2 = time.time()

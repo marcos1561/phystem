@@ -5,8 +5,8 @@ from phystem.systems.ring.ui import graphs_cfg, ui_components
 from phystem.systems.ring.simulation import Simulation
 
 run_cfg = ReplayDataCfg(
-    directory="/home/marcos/Documents/Programacao/IC/dirdip/demos/data/big_snaps",
-    data_dir="snaps",
+    root_path="/home/marcos/Documents/Programacao/IC/dirdip/demos/data/big_snaps",
+    data_dirname="snaps",
     graph_cfg=graphs_cfg.ReplayGraphCfg(
         density_kwargs={"vmin": 0, "vmax": 14}, 
         # scatter_kwargs={"s": 0.1, "c":"black", "alpha": 0.1}, 
