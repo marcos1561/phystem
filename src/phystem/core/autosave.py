@@ -16,7 +16,7 @@ class AutoSavePaths:
         self.state_path = Path(root_dirname, state_filename + ".pickle")
 
 class AutoSavable():
-    def __init__(self, root_dir: str | Path, autosave_root_name="autosave", 
+    def __init__(self, root_path: str | Path, autosave_root_name="autosave", 
         state_name="state") -> None:
         '''
         Parâmetros:
@@ -27,15 +27,15 @@ class AutoSavable():
                 Carregar o auto-save nesse inicializador quando
                 configurado.
         '''
-        root_dir = Path(root_dir)
-        self.autosave_root_path = root_dir / autosave_root_name
-        self.autosave_state_path = root_dir / autosave_root_name / (state_name + ".pickle")
+        root_path = Path(root_path)
+        self.autosave_root_path = root_path / autosave_root_name
+        self.autosave_state_path = root_path / autosave_root_name / (state_name + ".pickle")
 
         self.autosave_root_path.mkdir(parents=True, exist_ok=True)
     
     @property
     def vars_to_save(self) -> list[str]:
-        '''Nome dos atributos para serem salvas no auto-salvamento'''
+        '''Nome dos atributos para serem salvos no auto-salvamento'''
         raise Exception("'vars_to_save' não foi implementado.")
     
     def get_vars_to_save(self):

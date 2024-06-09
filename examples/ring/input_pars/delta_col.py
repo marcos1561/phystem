@@ -88,14 +88,14 @@ class DeltaCol(collectors.Collector):
         super().__init__(solver, path, configs, autosave_cfg)
 
         # Pasta onde são salvos os dados
-        self.data_path = Path(self.path) / "data"
+        self.data_path = Path(self.root_path) / "data"
         for p in [self.data_path]:
             p.mkdir(exist_ok=True)
 
 
         self.to_debug = to_debug    
         if to_debug:    
-            self.debug = Debug(self.path, self)
+            self.debug = Debug(self.root_path, self)
 
         self.ring_diameter = utils.get_ring_radius(
             configs["dynamic_cfg"].diameter, configs["creator_cfg"].num_p) * 2
@@ -245,7 +245,7 @@ class DeltaColOld(collectors.Collector):
         super().__init__(solver, path, configs, autosave_cfg)
 
         # Pasta onde são salvos os dados
-        self.data_path = Path(self.path) / "data"
+        self.data_path = Path(self.root_path) / "data"
         for p in [self.data_path]:
             p.mkdir(exist_ok=True)
 
@@ -262,7 +262,7 @@ class DeltaColOld(collectors.Collector):
 
         self.to_debug = to_debug    
         if to_debug:    
-            self.debug = Debug(self.path, self)
+            self.debug = Debug(self.root_path, self)
 
         self.ring_diameter = utils.get_ring_radius(
             configs["dynamic_cfg"].diameter, configs["creator_cfg"].num_p) * 2

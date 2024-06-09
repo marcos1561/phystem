@@ -1,24 +1,33 @@
 import pickle
 import numpy as np
 from pathlib import Path
-
-from phystem.systems.ring import utils
-from phystem.core.autosave import AutoSavable
-from .datas import DeltaData, BaseData
 from abc import ABC, abstractmethod
+
+from phystem.core import settings
+from phystem.core.autosave import AutoSavable
+from phystem.systems.ring import utils
+from .datas import BaseData, DeltaData, DenVelData
 
 class CalcAutoSaveCfg:
     def __init__(self, freq: int) -> None:
         self.freq = freq
 
-class Calculator(AutoSavable):
-    def __init__(self, data: str | DeltaData, root_dir: Path, autosave_cfg: CalcAutoSaveCfg=None) -> None:
-        super().__init__(root_dir)
-        self.autosave_cfg = autosave_cfg
-        self.root_dir = Path(root_dir).absolute().resolve()
+class Calculator(AutoSavable, ABC):
+    DataT: BaseData
 
-        if type(data) != DeltaData:
-            self.data = DeltaData(data)
+    def __init__(self, data: str | BaseData, root_path: Path, autosave_cfg: CalcAutoSaveCfg=None, exist_ok=False) -> None:
+        self.root_path = Path(root_path)
+        if settings.IS_TESTING:
+            self.root_path.mkdir(parents=True, exist_ok=True)
+        else:
+            self.root_path.mkdir(parents=True, exist_ok=exist_ok)
+
+        super().__init__(root_path)
+        self.autosave_cfg = autosave_cfg
+        self.root_path = self.root_path.absolute().resolve()
+
+        if type(data) != self.DataT:
+            self.data = self.DataT(data)
         else:
             self.data = data
 
@@ -34,7 +43,14 @@ class Calculator(AutoSavable):
         return value
         ```
         '''
-        return {"data": self.data.path, "root_dir": self.root_dir}
+        return {"data": self.data.data_path, "root_dir": self.root_path}
+
+    @abstractmethod
+    def crunch_numbers(self):
+        '''Calcula as quantidades relativas a esse calculador.
+        Esse método deve ser capaz de continuar de um ponto salvo.
+        '''
+        pass
 
     def autosave(self):
         super().autosave()
@@ -65,8 +81,10 @@ class Calculator(AutoSavable):
         return obj
 
 class DeltaCalculator(Calculator):
+    DataT = DenVelData
+
     def __init__(self, data: str | Path | DeltaData, edge_k: float, 
-        root_dir: Path, autosave_cfg:CalcAutoSaveCfg=None) -> None:
+        root_path: Path, autosave_cfg:CalcAutoSaveCfg=None, exist_ok=False) -> None:
         '''Calcula o delta nos dados salvos em `path`.
         
         Parâmetros:
@@ -75,7 +93,7 @@ class DeltaCalculator(Calculator):
 
                 'valor máximo do link' := 'Diâmetro do anel' * 'edge_k'
         '''
-        super().__init__(data, root_dir, autosave_cfg)
+        super().__init__(data, root_path, autosave_cfg, exist_ok=exist_ok)
         configs = self.data.configs
         ring_d = utils.get_ring_radius(
             configs["dynamic_cfg"].diameter, configs["creator_cfg"].num_p) * 2
@@ -101,7 +119,7 @@ class DeltaCalculator(Calculator):
         value["edge_k"] = self.edge_k
         return value
 
-    def calc(self, id_stop=None):
+    def crunch_numbers(self, id_stop=None):
         for pid in range(self.current_id, self.data.num_points):
             if id_stop is not None and id_stop == pid:
                 break
@@ -142,12 +160,55 @@ class DeltaCalculator(Calculator):
                 self.deltas.append(sum(deltas)/len(deltas))
                 self.times.append(self.data.init_times[pid])
 
-    # @staticmethod
-    # def from_checkpoint(path: Path, autosave_cfg: CalcAutoSaveCfg=None):
-    #     path = Path(path)
-    #     with open(path / "kwargs.pickle", "rb") as f:
-    #         kwargs = pickle.load(f)
+class DenVelCalculator(Calculator):
+    DataT = DenVelData
 
-    #     obj = DeltaCalculator(**kwargs, autosave_cfg=autosave_cfg)
-    #     obj.load_autosave()
-    #     return obj
+    def __init__(self, data: str | DenVelData, root_path: Path, autosave_cfg: CalcAutoSaveCfg=None, exist_ok=False) -> None:
+        super().__init__(data, root_path, autosave_cfg, exist_ok=exist_ok)
+        self.data: DenVelData
+
+    def crunch_numbers(self, to_save=False):
+        self.vel_order_par = self.calc_velocity_order_par()
+        self.den_eq = self.calc_density_eq()
+
+        if to_save:
+            np.save(self.root_path / "vel_order_par.npy", self.vel_order_par)
+            np.save(self.root_path / "den_eq.npy", self.den_eq)
+
+    def calc_velocity_order_par(self):
+        data = self.data
+
+        vel_par_order = np.zeros(data.num_vel_points, dtype=float)
+        for fid in range(0, data.vel_num_files):
+            vels_cms = data.vel_data.get_file(fid)
+
+            vels = (vels_cms.data[:,:,2:] - vels_cms.data[:,:,:2])/data.vel_frame_dt
+            speeds = np.sqrt((vels**2).sum(axis=2))
+
+            is_zero_speed = speeds == 0
+            speeds[is_zero_speed] = 1
+
+            vels_norm = vels / speeds.reshape(vels.shape[0], -1, 1)
+            vels_norm_mean = (vels_norm).sum(axis=1) / vels_cms.point_num_elements.reshape(-1, 1)
+            vel_par_order_i = ((vels_norm_mean**2).sum(axis=1))**.5
+
+            init_id = fid * data.num_data_points_per_file
+            final_id = init_id + vels_cms.num_points
+            vel_par_order[init_id: final_id] = vel_par_order_i
+
+        return vel_par_order
+    
+    def calc_density_eq(self):
+        data = self.data
+        density_eq = np.zeros(data.num_den_points, dtype=float)
+        for fid in range(0, data.den_num_files):
+            den_cms = data.den_data.get_file(fid)
+            
+            density_eq_i = den_cms.point_num_elements / data.density_eq
+
+            init_id = fid * data.num_data_points_per_file
+            final_id = init_id + den_cms.num_points
+            
+            density_eq[init_id: final_id] = density_eq_i
+
+        return density_eq

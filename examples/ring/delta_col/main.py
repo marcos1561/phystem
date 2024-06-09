@@ -56,8 +56,8 @@ space_cfg = SpaceCfg(
 
 num_ring_in_rect = utils.num_rings_in_rect(2*radius, space_cfg)
 stokes_cfg = StokesCfg(
-    obstacle_r  = 1/5 * space_cfg.height,
-    obstacle_x  = 1000 * 2*radius,
+    obstacle_r  = 0.5 * space_cfg.height/2,
+    obstacle_x  = 1*1000,
     obstacle_y  = 0,
     create_length = 2.01 * radius,
     remove_length = 2.01 * radius,
@@ -76,6 +76,7 @@ num_cols_cm, num_rows_cm = utils.rings_grid_shape(space_cfg, radius)
 
 center_region = -4 * 2*radius
 wait_dist = 4 * 2*radius
+tf = 120
 xlims = [center_region - radius, center_region + radius]
 print(center_region, center_region + wait_dist)
 collect_data_cfg = CollectDataCfg(
@@ -88,17 +89,32 @@ collect_data_cfg = CollectDataCfg(
         update_type=UpdateType.STOKES,
         in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
     ), 
-    tf=120,
-    folder_path="datas/test1",
+    tf=tf,
+    folder_path="datas/den_vel",
     func=pipeline.collect_pipeline,
     func_cfg={
-        "wait_dist": wait_dist,  
-        "xlims": [center_region - radius, center_region + radius],
-        "start_dt": (xlims[1] - xlims[0]) * dynamic_cfg.vo,
-        "check_dt": 1/4 * (xlims[1] - xlims[0]) * dynamic_cfg.vo,
-        "autosave_cfg": ColAutoSaveCfg(freq_dt=10),
+        "delta": {
+            "wait_dist": wait_dist,  
+            "xlims": [center_region - radius, center_region + radius],
+            "start_dt": (xlims[1] - xlims[0]) * dynamic_cfg.vo,
+            "check_dt": 1/4 * (xlims[1] - xlims[0]) * dynamic_cfg.vo,
+            "autosave_cfg": ColAutoSaveCfg(freq_dt=10),
+        },
+        "den_vel": {
+            "xlims": [center_region - radius, center_region + radius],
+            "vel_dt": 2,
+            "density_dt": 2,
+            "vel_frame_dt": 0.5,
+            "autosave_cfg": ColAutoSaveCfg(freq_dt=10),
+        },
+        "cr": {
+            "wait_time": 0,
+            "collect_time": tf, 
+            "collect_dt": 1,
+            "autosave_cfg": ColAutoSaveCfg(freq_dt=10),
+        },
     },
-    checkpoint=CheckpointCfg("datas/test1/autosave"),
+    checkpoint=CheckpointCfg("datas/den_vel/autosave"),
 )
 
 real_time_cfg = RealTimeCfg(

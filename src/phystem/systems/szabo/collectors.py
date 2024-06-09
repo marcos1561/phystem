@@ -106,9 +106,9 @@ class State(Collector):
     def save(self):
         super().save()
         for var_name, var_data in self.data_vars.items():
-            np.save(os.path.join(self.path, var_name + ".npy"), var_data)
+            np.save(os.path.join(self.root_path, var_name + ".npy"), var_data)
 
-        with open(os.path.join(self.path, "metadata.yaml"), "w") as f:
+        with open(os.path.join(self.root_path, "metadata.yaml"), "w") as f:
             yaml.dump({"num_points": self.data_count}, f)        
 
     @staticmethod

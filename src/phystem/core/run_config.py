@@ -197,7 +197,7 @@ class CollectDataCfg(RunCfg):
 
     @property
     def is_autosave(self):
-        return self.checkpoint and self.checkpoint.is_autosave
+        return self.checkpoint is not None  and self.checkpoint.is_autosave
 
 class RealTimeCfg(RunCfg):
     '''Renderização em tempo real da simulação.'''

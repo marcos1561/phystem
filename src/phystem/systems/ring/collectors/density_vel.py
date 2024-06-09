@@ -1,0 +1,311 @@
+import numpy as np
+import yaml, pickle
+from pathlib import Path
+from enum import Enum, auto
+
+from phystem.core.collectors import ColAutoSaveCfg
+from phystem.systems.ring import utils 
+from phystem.systems.ring.collectors import RingCol
+from phystem.systems.ring.collectors.data_types import ArraySizeAware
+from phystem.systems.ring.solvers import CppSolver
+
+import numpy as np
+
+class DensityVelCol(RingCol):
+    class DataName(Enum):
+        velocity = auto()
+        density = auto()
+    
+    def __init__(self, xlims, vel_dt, density_dt, vel_frame_dt, 
+        solver: CppSolver, root_path: str | Path, configs: dict, 
+        memory_per_file=10*1e6,
+        autosave_cfg: ColAutoSaveCfg = None, load_autosave=False, exist_ok=False) -> None:
+        '''Coleta a densidade de equilíbrio e o parâmetro de alinhamento da velocidade (V),
+        na região definida pelos limites no eixo x em `xlims`.
+
+        Parâmetros:
+        ----------
+            xlims:
+                Limites no eixo x que define a região onde a coleta
+                é realizada.    
+        
+            vel_dt:
+                Período de tempo entre duas coletas de dados para V.
+        
+            density_dt:
+                Período de tempo entre duas coletas de dados para a densidade.
+        '''
+        super().__init__(solver, root_path, configs, autosave_cfg, exist_ok=exist_ok)
+        # Configuration
+        self.xlims = xlims
+        self.vel_dt = vel_dt
+        self.den_dt = density_dt
+        self.vel_frame_dt = vel_frame_dt
+        
+        l = xlims[1] - xlims[0]
+        h = configs["space_cfg"].height
+        ring_r = utils.get_ring_radius(
+            configs["dynamic_cfg"].diameter, configs["creator_cfg"].num_p)
+        
+        num_max_rings = int(l * h / (np.pi * ring_r**2) * 1.2)
+        self.density_eq = l * h / (np.pi * ring_r**2)
+        self.num_data_points_per_file = int(memory_per_file / (num_max_rings * 2 * 32))
+
+        # State
+        self.last_time_den = self.solver.time
+        self.last_time_vel = self.solver.time
+        self.vel_frame = 0
+        self.vel_point_data: np.array = None
+        self.vel_point_ids: np.array = None 
+        self.den_id = 0
+        self.vel_id = 0
+
+        # Data
+        self.den_data = ArraySizeAware(self.num_data_points_per_file, num_max_rings, 2)
+        self.vel_data = ArraySizeAware(self.num_data_points_per_file, num_max_rings, 4)
+        self.time_den_arr = []
+        self.time_vel_arr = []
+        
+        if load_autosave:
+            self.load_autosave()
+
+    @property
+    def vars_to_save(self):
+        return [
+            "last_time_den",
+            "last_time_vel",
+            "vel_frame",
+            "den_id",
+            "vel_id",
+            "vel_point_data",
+            "vel_point_ids",
+            "den_data",
+            "vel_data",
+            "time_den_arr",
+            "time_vel_arr",
+        ]
+    
+    def collect(self) -> None:
+        time = self.solver.time
+
+        collect_vel = self.to_collect_vel(time)
+        collect_den = time - self.last_time_den > self.den_dt
+        
+        if not collect_den and not collect_vel:
+            return
+
+        num_active = self.solver.num_active_rings
+        ids_active = np.array(self.solver.rings_ids[:num_active])
+        cms = np.array(self.solver.center_mass)
+        
+        ids_in_region = None
+        cms_in_region = None
+        if collect_den or (collect_vel and self.vel_frame == 0):
+            cms_active = cms[ids_active]
+        
+            mask_in_region = (cms_active[:, 0] > self.xlims[0]) & (cms_active[:, 0] < self.xlims[1])
+            if mask_in_region.sum() == 0:
+                return
+        
+            ids_in_region = ids_active[mask_in_region]
+            cms_in_region = cms_active[mask_in_region]
+
+        if collect_den:
+            self.last_time_den = time
+            self.col_density(time, cms_in_region)
+
+            if self.den_data.is_full:
+                self.save_data(self.den_data, self.DataName.density)
+                self.den_id += 1
+                self.den_data.reset()
+                
+        if collect_vel:
+            if self.vel_frame == 0:
+                self.last_time_vel = time
+            
+            self.col_vel(time, ids_in_region, cms_in_region, cms)
+
+            if self.vel_frame == 0:
+                self.vel_frame = 1
+            else:
+                self.vel_frame = 0
+            
+            if self.vel_data.is_full:
+                self.save_data(self.vel_data, self.DataName.velocity)
+                self.vel_id += 1
+                self.vel_data.reset()
+
+    def to_collect_vel(self, time):
+        if self.vel_frame == 0:
+            return time - self.last_time_vel >= self.vel_dt
+
+        return time - self.last_time_vel >= self.vel_frame_dt
+
+    def col_density(self, time, cms):
+        self.time_den_arr.append(time)
+        self.den_data.add(cms)
+
+    def col_vel(self, time, ids_in_region, cms_in_region, cms):
+        if self.vel_frame == 0:
+            self.time_vel_arr.append(time)
+            self.vel_point_ids = ids_in_region
+            self.vel_point_data = np.empty((cms_in_region.shape[0], 4), dtype=self.vel_data.data.dtype)
+            self.vel_point_data[:,:2] = cms_in_region
+        else:
+            self.vel_point_data[:,2:] = cms[self.vel_point_ids]
+            self.vel_data.add(self.vel_point_data)
+
+    def save_data(self, data: ArraySizeAware, name: DataName):
+        if name is self.DataName.velocity:
+            filename = f"vel_cms_{self.vel_id}"
+        elif name is self.DataName.density:
+            filename = f"den_cms_{self.den_id}"
+        
+        file_path = self.data_path / (filename + ".pickle")
+        with open(file_path, "wb") as f:
+            pickle.dump(data, f)
+
+    def save(self):
+        vel_time_path = self.data_path / "vel_time.npy"
+        den_time_path = self.data_path / "den_time.npy"
+        np.save(vel_time_path, np.array(self.time_vel_arr))
+        np.save(den_time_path, np.array(self.time_den_arr))
+        
+        self.vel_data.strip()
+        self.den_data.strip()
+        self.save_data(self.vel_data, self.DataName.velocity)
+        self.save_data(self.den_data, self.DataName.density)
+
+        with open(self.data_path / "den_vel_metadata.yaml", "w") as f:
+            yaml.dump({
+                "density_eq": self.density_eq,
+                "den_num_files": self.den_id+1,
+                "vel_num_files": self.vel_id+1,
+                "num_data_points_per_file": self.num_data_points_per_file,
+                "vel_frame_dt": self.vel_frame_dt,
+            }, f)
+
+
+
+# class DensityVelCol(RingCol):
+#     def __init__(self, xlims, vel_dt, density_dt, solver: CppSolver, path: str | Path, configs: dict, 
+#         autosave_cfg: ColAutoSaveCfg = None, load_autosave=False) -> None:
+#         '''Coleta a densidade de equilíbrio e o parâmetro de alinhamento da velocidade (V),
+#         na região definida pelos limites no eixo x em `xlims`.
+
+#         Parâmetros:
+#         ----------
+#             xlims:
+#                 Limites no eixo x que definem a região onde a coleta
+#                 é realizada.    
+        
+#             vel_dt:
+#                 Período de tempo entre duas coletas de dados para V.
+        
+#             density_dt:
+#                 Período de tempo entre duas coletas de dados para a densidade.
+#         '''
+#         super().__init__(solver, path, configs, autosave_cfg)
+#         ##
+#         # Configuration
+#         ##
+#         self.xlims = xlims
+#         self.vel_dt = vel_dt
+#         self.den_dt = density_dt
+        
+#         l = xlims[1] - xlims[0]
+#         h = configs["space_cfg"].height
+#         ring_r = utils.get_ring_radius(
+#             configs["dynamic_cfg"].diameter, configs["creator_cfg"].num_p)
+
+#         self.density_eq = l * h / (np.pi * ring_r**2)
+
+#         ##
+#         # State
+#         ##
+#         self.last_time_den = self.solver.time
+#         self.last_time_vel = self.solver.time
+
+#         ##
+#         # Data
+#         ##
+#         self.density_arr = []
+#         self.time_den_arr = []
+#         self.vel_arr = []
+#         self.time_vel_arr = []
+
+#         if load_autosave:
+#             self.load_autosave()
+
+#     @property
+#     def vars_to_save(self):
+#         return [
+#             "last_time_den",
+#             "last_time_vel",
+#             "density_arr",
+#             "time_den_arr",
+#             "vel_arr",
+#             "time_vel_arr",
+#         ]
+    
+#     def collect(self) -> None:
+#         time = self.solver.time
+
+#         exec_vel = time - self.last_time_vel > self.vel_dt
+#         exec_den = time - self.last_time_den > self.den_dt
+        
+#         if not exec_den and not exec_vel:
+#             return
+
+#         num_active = self.solver.num_active_rings
+#         ids = self.solver.rings_ids[:num_active]
+#         cm = np.array(self.solver.center_mass)[ids]
+#         mask = (cm[:, 0] > self.xlims[0]) & (cm[:, 0] < self.xlims[1])
+
+#         mask_sum = mask.sum()
+#         if mask.sum() == 0:
+#             return
+
+#         if exec_den:
+#             self.col_density(time, mask_sum)
+#         if exec_vel:
+#             self.col_vel(time, ids, mask)
+
+#     def col_density(self, time, mask_sum):
+#         self.last_time_den = time
+
+#         self.density_arr.append(mask_sum/self.density_eq)
+#         self.time_den_arr.append(time)
+
+#     def get_vel(self):
+#         return np.array(self.solver.vel)
+
+#     def col_vel(self, time, ids, mask):
+#         self.last_time_vel = time
+        
+#         vel = self.get_vel()[ids][mask]
+#         vel = vel.reshape(vel.shape[0] * vel.shape[1], vel.shape[2])
+#         speed = np.sqrt(np.square(vel).sum(axis=1))
+
+#         speed[speed == 0] = 1
+#         # print(speed)
+
+#         vel_mean = (vel/speed.reshape(-1, 1)).sum(axis=0) / vel.shape[0]
+#         self.vel_arr.append((vel_mean[0]**2 + vel_mean[1]**2)**.5)
+#         self.time_vel_arr.append(time)
+
+#     def save(self):
+#         vel_data_path = self.data_path / "vel.npy"
+#         vel_time_path = self.data_path / "vel_time.npy"
+#         den_data_path = self.data_path / "den.npy"
+#         den_time_path = self.data_path / "den_time.npy"
+
+#         np.save(vel_data_path, np.array(self.vel_arr))
+#         np.save(vel_time_path, np.array(self.time_vel_arr))
+#         np.save(den_data_path, np.array(self.density_arr))
+#         np.save(den_time_path, np.array(self.time_den_arr))
+
+#         with open(self.data_path / "den_vel_metadata.yaml", "w") as f:
+#             yaml.dump({
+#                 "density_eq": self.density_eq
+#             }, f)

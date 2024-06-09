@@ -1,12 +1,10 @@
-import yaml, os, pickle
 from pathlib import Path
 import numpy as np
 
-from phystem.core import collectors
 from phystem.core.run_config import CollectDataCfg
-from phystem.systems.ring.collectors import LastState
+from phystem.systems.ring.collectors import RingCol
 
-class CreationRateCol(collectors.Collector):
+class CreationRateCol(RingCol):
     save_name = "col_state.pickle"
 
     def __init__(self, wait_time, collect_time, collect_dt, id, solver: collectors.SolverCore, path: str, configs: dict, autosave_cfg: collectors.ColAutoSaveCfg = None) -> None:

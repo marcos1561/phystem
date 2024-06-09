@@ -1,10 +1,9 @@
-import os, pickle
+import pickle
 import numpy as np
 from enum import Flag, auto
-from pathlib import Path
 
-from phystem.systems.ring import collectors
-from phystem.systems.ring import utils
+from phystem.core.collectors import ColAutoSaveCfg
+from phystem.systems.ring import collectors, utils
 
 class State(Flag):
     starting = auto()
@@ -42,9 +41,9 @@ class TrackingList:
 
 class DeltaCol(collectors.RingCol):
     def __init__(self, wait_dist, xlims, start_dt, check_dt,
-        solver, path: str, configs: dict,
-        autosave_cfg: collectors.ColAutoSaveCfg=None,  
-        xtol=1, save_final_close=False, load_autosave=False) -> None:
+        solver, root_path: str, configs: dict,
+        autosave_cfg: ColAutoSaveCfg=None,  
+        xtol=1, save_final_close=False, load_autosave=False, exist_ok=False) -> None:
         '''Coletor da quantidade delta.
         
         Parâmetros:
@@ -66,7 +65,7 @@ class DeltaCol(collectors.RingCol):
                 Intervalo de tempo para tentar começar a coleta de um novo ponto experimental. 
 
         '''
-        super().__init__(solver, path, configs, autosave_cfg)
+        super().__init__(solver, root_path, configs, autosave_cfg, exist_ok=exist_ok)
 
         ##
         # Configuration
@@ -95,9 +94,6 @@ class DeltaCol(collectors.RingCol):
 
         if load_autosave:
             self.load_autosave()
-        else:
-            for item in self.data_path.iterdir():
-                item.unlink()
 
     @property
     def vars_to_save(self):
