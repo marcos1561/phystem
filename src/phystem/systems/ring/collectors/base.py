@@ -1,5 +1,6 @@
 import numpy as np
 import yaml
+from abc import ABC, abstractmethod
 
 from phystem.systems.ring.solvers import CppSolver
 from phystem.core import collectors, settings
@@ -156,10 +157,11 @@ class StateSaver:
         init_data = StateData(pos, angle, ids, uids)
         return init_data, metadata
 
-class RingCol(collectors.Collector):
+class RingCol(collectors.Collector, ABC):
     '''Base para os coletores dos anéis.'''
-    def __init__(self, solver: CppSolver, root_path: str | Path, configs: dict, autosave_cfg: ColAutoSaveCfg = None, exist_ok=False) -> None:
-        super().__init__(solver, root_path, configs, autosave_cfg, exist_ok=exist_ok)
+    def __init__(self, solver: CppSolver, root_path: str | Path, configs: dict, 
+        autosave_cfg: ColAutoSaveCfg = None, exist_ok=False, **kwargs) -> None:
+        super().__init__(solver, root_path, configs, autosave_cfg, exist_ok=exist_ok, **kwargs)
 
         if autosave_cfg is not None:
             self.state_col = StateSaver(self.solver, self.autosave_root_path, self.configs)
@@ -167,5 +169,9 @@ class RingCol(collectors.Collector):
     def autosave(self):
         super().autosave()
 
-        if self.autosave_cfg.to_save_state:
+        if self.autosave_cfg and self.autosave_cfg.to_save_state:
             self.state_col.save(metadata={settings.autosave_flag_name: True})
+
+    @abstractmethod
+    def save(self):
+        pass

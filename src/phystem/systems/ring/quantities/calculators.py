@@ -43,7 +43,7 @@ class Calculator(AutoSavable, ABC):
         return value
         ```
         '''
-        return {"data": self.data.data_path, "root_dir": self.root_path}
+        return {"data": self.data.root_path, "root_path": self.root_path}
 
     @abstractmethod
     def crunch_numbers(self):
@@ -81,7 +81,7 @@ class Calculator(AutoSavable, ABC):
         return obj
 
 class DeltaCalculator(Calculator):
-    DataT = DenVelData
+    DataT = DeltaData
 
     def __init__(self, data: str | Path | DeltaData, edge_k: float, 
         root_path: Path, autosave_cfg:CalcAutoSaveCfg=None, exist_ok=False) -> None:
@@ -119,7 +119,7 @@ class DeltaCalculator(Calculator):
         value["edge_k"] = self.edge_k
         return value
 
-    def crunch_numbers(self, id_stop=None):
+    def crunch_numbers(self, to_save=False, id_stop=None):
         for pid in range(self.current_id, self.data.num_points):
             if id_stop is not None and id_stop == pid:
                 break
@@ -159,6 +159,13 @@ class DeltaCalculator(Calculator):
             if len(deltas) > 0:
                 self.deltas.append(sum(deltas)/len(deltas))
                 self.times.append(self.data.init_times[pid])
+        
+        self.times = np.array(self.times) 
+        self.deltas = np.array(self.deltas) 
+
+        if to_save:
+            np.save(self.root_path / "times.npy", self.times)
+            np.save(self.root_path / "deltas.npy", self.deltas)
 
 class DenVelCalculator(Calculator):
     DataT = DenVelData

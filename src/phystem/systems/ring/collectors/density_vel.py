@@ -20,20 +20,52 @@ class DensityVelCol(RingCol):
         solver: CppSolver, root_path: str | Path, configs: dict, 
         memory_per_file=10*1e6,
         autosave_cfg: ColAutoSaveCfg = None, load_autosave=False, exist_ok=False) -> None:
-        '''Coleta a densidade de equilíbrio e o parâmetro de alinhamento da velocidade (V),
-        na região definida pelos limites no eixo x em `xlims`.
+        '''Faz duas formas de coleta dos centros de massa na região definida 
+        pelos limites no eixo x em `xlims`:
+
+        1: Coleta a cada `density_dt` un. de tempo.
+
+        2: Coleta a cada `vel_dt` un. de tempo. Nesse caso, após ter sido feito
+        uma coleta, outra é realizada logo após `vel_frame_dt` un. de tempo. Na segunda
+        coleta, apenas são salvos os centros de massa dos mesmos anéis presentas na primeira
+        coleta. Essas coletas consecutivas são feitas para ser possível calcular a velocidade.
+
+        Também é salvo o tempo em cada ponto coletado.
+
+        Formato dos Dados:
+        -----------------
+        Ambas formas de coleta (1 e 2) guardam seus dados em um array com dimensão (N, n_p, d) em que:
+        
+        N   : Número de pontos coletados
+        n_p : Número de anéis em um ponto coletado
+        d   : Dimensão dos elementos que constituem o ponto
+
+        Sendo `data` o array que contém os dados, um ponto para cada caso é:
+
+        - 1: Os centros de massa dos anéis na região de interesse, então d=2. Portanto
+
+            data[i] -> i-ésimo ponto. Array com dimensão (n_p, 2)
+            data[i, :, 0] -> Coordenados no eixo x do i-ésimo ponto
+            data[i, :, 1] -> Coordenados no eixo y do i-ésimo ponto
+            
+        - 2: Os centros de massa dos anéis nas duas coletas separadas por `vel_frame_dt` 
+            un. de tempo. Nesse caso d=4
+
+            data[i] -> i-ésimo ponto. Array com dimensão (n_p, 4)
+            data[i, :, :2] -> Centros de massa na primeira coleta, digamos no tempo T = t.
+            data[i, :, 2:] -> Centros de massa na segunda coleta, no tempo T = t + `vel_frame_dt`.
+
+            A velocidade de todos os pontos, então, é dado por `(data[:,:,2:] - data[:,:,:2])/vel_frame_dt`.
+
+        OBS: Se a coleta for muito longa, os dados coletados vão ser salvos em arquivos separados, mas que em
+        conjunto representam uma única lista de pontos de dados.
 
         Parâmetros:
         ----------
-            xlims:
-                Limites no eixo x que define a região onde a coleta
-                é realizada.    
-        
-            vel_dt:
-                Período de tempo entre duas coletas de dados para V.
-        
-            density_dt:
-                Período de tempo entre duas coletas de dados para a densidade.
+            memory_per_file:
+                Tamanho da memória em bytes que o array com os dados terá. Se a coleta
+                preencher esse array, o mesmo é salvo na memória e outro array é inicializado.
+                O nome utilizado nos salvamentos é
         '''
         super().__init__(solver, root_path, configs, autosave_cfg, exist_ok=exist_ok)
         # Configuration

@@ -47,8 +47,9 @@ class AutoSavable():
 
     def autosave(self):
         '''Salva o estado atual.'''
-        with open(self.autosave_state_path, "wb") as f:
-            pickle.dump(self.get_vars_to_save(), f)
+        if self.vars_to_save is not None:
+            with open(self.autosave_state_path, "wb") as f:
+                pickle.dump(self.get_vars_to_save(), f)
 
     def load_autosave(self):
         with open(self.autosave_state_path, "rb") as f:

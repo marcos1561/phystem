@@ -13,7 +13,9 @@ class ColAutoSaveCfg:
     
 class Collector(AutoSavable, ABC):
     '''Responsável pela coleta de dados gerados pelo solver.'''
-    def __init__(self, solver: SolverCore, root_path: str | Path, configs: dict, autosave_cfg: ColAutoSaveCfg=None, data_dirname="data", exist_ok=False) -> None:
+    def __init__(self, solver: SolverCore, root_path: str | Path, configs: dict, 
+        autosave_cfg: ColAutoSaveCfg=None, 
+        data_dirname="data", exist_ok=False) -> None:
         '''
         Parameters:
         -----------
@@ -48,7 +50,10 @@ class Collector(AutoSavable, ABC):
 
         # Caminho do arquivo que contém as configurações utilizadas na simulação.
         self.configs_path = self.root_path / "config.yaml"
-        self.data_path = self.root_path / data_dirname
+
+        self.data_path = None
+        if data_dirname:
+            self.data_path = self.root_path / data_dirname
 
         self.autosave_cfg = autosave_cfg
         self.autosave_last_time = self.solver.time
@@ -57,7 +62,8 @@ class Collector(AutoSavable, ABC):
         self.autosave_data_path = self.autosave_root_path / "data"
 
         for p in [self.data_path, self.autosave_data_path]:
-            p.mkdir(parents=True, exist_ok=True)
+            if p:
+                p.mkdir(parents=True, exist_ok=True)
         
         self.save_cfg(self.configs, self.configs_path)
 

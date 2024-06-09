@@ -4,7 +4,7 @@ import numpy as np
 from enum import Flag, auto
 from pathlib import Path
 
-from phystem.systems.ring.collectors.density_vel import ArraySizeAware
+from phystem.systems.ring.collectors.data_types import ArraySizeAware, MultFileList
 
 class BaseData(ABC):
     @abstractmethod
@@ -84,68 +84,11 @@ class CreationRateData(BaseData):
         self.num_created = np.load(self.data_path / "num_created.npy")[:num_points]
         self.num_active = np.load(self.data_path / "num_active.npy")[:num_points]
 
-class DenVelIterator:
-    def __init__(self, root_path: Path, name, num_files, num_data_points_per_file) -> None:
-        self.num_files = num_files
-        self.root_path = root_path
-        self.name = name
-        self.num_data_points_per_file = num_data_points_per_file
-        
-        self._id = 0
-        self._file_id = 0
-        self.data: ArraySizeAware = self.load_file(0)
-
-    def reset(self):
-        self._id = 0
-        self.file_id = 0
-
-    def load_file(self, file_id):
-        with open(self.root_path / f"{self.name}_cms_{file_id}.pickle", "rb") as f:
-            data = pickle.load(f)
-        return data
-
-    @property
-    def file_id(self):
-        return self._file_id
-    
-    @file_id.setter
-    def file_id(self, value):
-        if value != self.file_id:
-            self._file_id = value
-            self.data = self.load_file(self.file_id)
-
-    def get_file(self, file_id):
-        self.file_id = file_id
-        return self.data
-
-    def get_ids(self, id):
-        file_id = id // self.num_data_points_per_file
-        point_id = id - file_id * self.num_data_points_per_file
-        return file_id, point_id
-
-    def __getitem__(self, key):
-        fid, pid = self.get_ids(key)
-        self.file_id = fid
-        return self.data[pid]
-
-    def __iter__(self):
-        self.reset()
-        return self
-
-    def __next__(self):
-        fid, pid = self.get_ids(self._id)
-        self.file_id = fid
-
-        if self.file_id == (self.num_files - 1) and pid >= self.data.num_points:
-            self.reset()
-            raise StopIteration
-
-        item = self.data[pid]
-        self._id += 1
-        return item
-
 class DenVelData(BaseData):
     def __init__(self, root_path: str | Path) -> None:
+        '''Carrega os dados coletados pelo coletor `DensityVelCol`. Para mais informações
+        sobre o formato dos dados, leia a documentação do respectivo coletor.
+        '''
         super().__init__(root_path)
 
         self.vel_time = np.load(self.data_path / "vel_time.npy")
@@ -159,8 +102,8 @@ class DenVelData(BaseData):
             self.vel_frame_dt = metadata["vel_frame_dt"]    
             self.density_eq = metadata["density_eq"]    
 
-        self.den_data = DenVelIterator(self.data_path, "den", self.den_num_files, self.num_data_points_per_file) 
-        self.vel_data = DenVelIterator(self.data_path, "vel", self.vel_num_files, self.num_data_points_per_file)
+        self.den_data = MultFileList[ArraySizeAware, np.ndarray](self.data_path, "den_cms", self.den_num_files, self.num_data_points_per_file) 
+        self.vel_data = MultFileList[ArraySizeAware, np.ndarray](self.data_path, "vel_cms", self.vel_num_files, self.num_data_points_per_file)
 
         self.num_vel_points = self.num_data_points_per_file * (self.vel_num_files - 1) + self.vel_data.get_file(self.vel_num_files-1).num_points
         self.num_den_points = self.num_data_points_per_file * (self.den_num_files - 1) + self.den_data.get_file(self.den_num_files-1).num_points
