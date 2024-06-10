@@ -51,5 +51,5 @@ def test_autosave(data_path):
     print("deltas diff:", ((np.array(calc.deltas) - np.array(calc2.deltas))**2).sum())
     print("times diff :", ((np.array(calc.times) - np.array(calc2.times))**2).sum())
 
-# test_autosave("datas/all/delta")
-graph_results("datas/all")
+test_autosave("datas/delta")
+# graph_results("datas/all")

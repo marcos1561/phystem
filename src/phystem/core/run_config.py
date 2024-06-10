@@ -35,23 +35,29 @@ from phystem.gui_phystem import config_ui
 from . import settings
 
 
-def load_configs(root_path: Path, configs_name="config", load_checkpoint_cfgs=False):
-    root_path = Path(root_path)
-    config_path = root_path / (configs_name + ".yaml")
-    with open(config_path, "r") as f:
-            cfgs = yaml.unsafe_load(f)
+def load_configs(path: Path, load_checkpoint_cfgs=False):
+    path = Path(path)
+    
+    if path.suffix == "":
+        path = path.with_suffix(".yaml")
+
+    with open(path, "r") as f:
+        cfgs = yaml.unsafe_load(f)
         
     checkpoint: CheckpointCfg = cfgs["run_cfg"].checkpoint 
     if load_checkpoint_cfgs and checkpoint:
         try:
-            checkpoint.configs = load_configs(checkpoint.folder_path)    
+            checkpoint.configs = load_configs(Path(checkpoint.folder_path) / "config.yaml")    
         except FileNotFoundError as e:
             checkpoint.configs = "configurações não encontradas" 
     return cfgs
 
-def save_configs(configs, root_path: Path, configs_name="config"):
-    configs_path = Path(root_path) / (configs_name + ".yaml")
-    with open(configs_path, "w") as f:
+def save_configs(configs: dict, path: Path):
+    path = Path(path)
+    if path.suffix == "":
+        path = path.with_suffix(".yaml")
+    
+    with open(path, "w") as f:
         yaml.dump(configs, f)
 
 class RunType(Flag):
@@ -84,7 +90,7 @@ class CheckpointCfg:
         self.override_cfgs = override_cfgs
         self.override_func_cfg = override_func_cfg
 
-        self.configs: dict = load_configs(folder_path)
+        self.configs: dict = load_configs(self.folder_path / "config")
     
     def get_sim_configs(self, run_cfg=None):
         configs = copy.deepcopy(self.configs)
@@ -186,7 +192,7 @@ class CollectDataCfg(RunCfg):
         super().__init__(int_cfg, checkpoint)
         self.tf = tf
         self.folder_path = Path(folder_path)
-        self.folder_path.mkdir(parents=True, exist_ok=True)
+        # self.folder_path.mkdir(parents=True, exist_ok=True)
         
         self.func = func
         self.func_id = func_id
@@ -274,7 +280,7 @@ class ReplayDataCfg(RealTimeCfg):
         self.data_path = root_path / data_dirname
         
         # Carrega as configurações utilizadas nos dados salvos.
-        self.system_cfg = load_configs(root_path)
+        self.system_cfg = load_configs(self.root_path / "config")
 
         init_cfg = self.system_cfg["run_cfg"].int_cfg
         super().__init__(int_cfg=init_cfg, num_steps_frame=num_steps_frame, fps=fps, 

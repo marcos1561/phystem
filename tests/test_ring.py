@@ -91,7 +91,7 @@ class TestRing(unittest.TestCase):
             shutil.rmtree(before_checkpoint_path)
             shutil.rmtree(after_checkpoint_path)
 
-        configs = load_configs(self.root_data_path / "configs", "checkpoint_configs")
+        configs = load_configs(self.root_data_path / "configs" / "checkpoint_configs")
 
         run_cfg: CollectDataCfg = configs["run_cfg"]
         run_cfg.func = func

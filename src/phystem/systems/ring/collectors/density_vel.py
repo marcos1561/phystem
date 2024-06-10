@@ -19,7 +19,7 @@ class DensityVelCol(RingCol):
     def __init__(self, xlims, vel_dt, density_dt, vel_frame_dt, 
         solver: CppSolver, root_path: str | Path, configs: dict, 
         memory_per_file=10*1e6,
-        autosave_cfg: ColAutoSaveCfg = None, load_autosave=False, exist_ok=False) -> None:
+        autosave_cfg: ColAutoSaveCfg = None, to_load_autosave=False, exist_ok=False) -> None:
         '''Faz duas formas de coleta dos centros de massa na região definida 
         pelos limites no eixo x em `xlims`:
 
@@ -98,7 +98,7 @@ class DensityVelCol(RingCol):
         self.time_den_arr = []
         self.time_vel_arr = []
         
-        if load_autosave:
+        if to_load_autosave:
             self.load_autosave()
 
     @property
@@ -166,6 +166,9 @@ class DensityVelCol(RingCol):
                 self.save_data(self.vel_data, self.DataName.velocity)
                 self.vel_id += 1
                 self.vel_data.reset()
+        
+        if self.autosave_cfg:
+            self.check_autosave()
 
     def to_collect_vel(self, time):
         if self.vel_frame == 0:

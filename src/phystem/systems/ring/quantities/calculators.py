@@ -94,6 +94,8 @@ class DeltaCalculator(Calculator):
                 'valor máximo do link' := 'Diâmetro do anel' * 'edge_k'
         '''
         super().__init__(data, root_path, autosave_cfg, exist_ok=exist_ok)
+        self.data: DeltaData
+
         configs = self.data.configs
         ring_d = utils.get_ring_radius(
             configs["dynamic_cfg"].diameter, configs["creator_cfg"].num_p) * 2
@@ -120,7 +122,7 @@ class DeltaCalculator(Calculator):
         return value
 
     def crunch_numbers(self, to_save=False, id_stop=None):
-        for pid in range(self.current_id, self.data.num_points):
+        for pid in range(self.current_id, self.data.num_points_completed):
             if id_stop is not None and id_stop == pid:
                 break
             
@@ -141,11 +143,8 @@ class DeltaCalculator(Calculator):
                 neighs = neighbors[i]
                 if len(neighs) == 0:
                     continue
-                selc_uid = init_uids[i]
                 
-                final_cms = self.data.final_cms[pid].get(selc_uid, None)
-                if final_cms is None:
-                    continue
+                final_cms = self.data.final_cms[pid]
 
                 final_diffs = final_cms[neighs] - final_cms[i]
                 final_dists_square = np.square(final_diffs).sum(axis=1)

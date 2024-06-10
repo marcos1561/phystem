@@ -6,11 +6,11 @@ from .base import RingCol
 class ColManager(RingCol):
     def __init__(self, 
         solver: CppSolver, root_path: str | Path, configs: dict, 
-        is_autosave=False,
+        to_load_autosave=False,
         autosave_cfg: ColAutoSaveCfg = None, exist_ok=False) -> None:
         super().__init__(solver, root_path, configs, autosave_cfg, exist_ok, data_dirname=None)
 
-        self.is_autosave = is_autosave
+        self.to_load_autosave = to_load_autosave
         self.cols: dict[str, RingCol] = {}
 
     @property
@@ -24,7 +24,7 @@ class ColManager(RingCol):
         )
 
         self.cols[name] = col
-        if self.is_autosave:
+        if self.to_load_autosave:
             col.load_autosave()
 
     def collect(self) -> None:

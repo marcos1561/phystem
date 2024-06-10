@@ -340,10 +340,10 @@ def neighbors_list(links, pos_list):
     return neighs
 
 
-def load_configs(path):
-    with open(Path(path)/"config.yaml") as f:
-        cfgs = yaml.unsafe_load(f)
-    return cfgs
+# def load_configs(path):
+#     with open(Path(path)/"config.yaml") as f:
+#         cfgs = yaml.unsafe_load(f)
+#     return cfgs
 
 
 def particle_grid_shape(space_cfg: SpaceCfg, max_dist, frac=0.6):

@@ -45,7 +45,7 @@ class SimulationCore(ABC):
         self.run_cfg = run_cfg
         self.other_cfgs = other_cfgs
         self.rng_seed = rng_seed
-        
+
         if self.run_cfg.checkpoint:
             checkpoint_cfgs = self.run_cfg.checkpoint.configs
             
@@ -90,12 +90,12 @@ class SimulationCore(ABC):
 
         self.init_sim()    
 
-    def save_configs(self, root_path, configs_name="config"):
-        save_configs(self.configs, root_path, configs_name)
+    def save_configs(self, path):
+        save_configs(self.configs, path)
 
     @classmethod
-    def load_from_configs(cls, root_path: Path, config_name="config"):
-        cfgs = load_configs(root_path, config_name)
+    def load_from_configs(cls, path: Path):
+        cfgs = load_configs(path)
         return cls(**cfgs)
 
     @abstractmethod

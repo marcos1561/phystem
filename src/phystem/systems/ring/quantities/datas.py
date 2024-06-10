@@ -24,54 +24,56 @@ class DeltaData(BaseData):
             self.configs = yaml.unsafe_load(f) 
 
         with open(self.data_path / "metadata.pickle", "rb") as f:
-            self.num_points = pickle.load(f)["num_points"]
-        
-        temp_data = [0 for _ in range(self.num_points)] 
+            self.num_init_points = pickle.load(f)["num_points"]
+        self.num_points_completed: int = None
+
+        temp_data = [0 for _ in range(self.num_init_points)] 
         self.init_cms = temp_data.copy()
         self.init_uids = temp_data.copy()
         self.init_selected_uids = temp_data.copy()
 
-        self.final_cms = [{} for _ in range(self.num_points)]
-        self.final_uids = [{} for _ in range(self.num_points)]
+        self.final_cms = temp_data.copy()
+        self.final_uids = temp_data.copy()
         
         self.load_data(self.data_path)
         self.init_times  = np.load(self.data_path / "init_times.npy")
-        with open(self.data_path / "final_times.pickle", "rb") as f:
-            self.final_times  = pickle.load(f)
+        self.final_times  = np.load(self.data_path / "final_times.npy")
 
     @staticmethod
     def parse(file_path: Path):
         parts = file_path.stem.split("_") 
+        id = int(parts[-2])
         if parts[-1] == "i":
             mode = DeltaData.Mode.init
-            id = int(parts[-2])
-            return mode, id, None
         else:
             mode = DeltaData.Mode.final
-            id = int(parts[-2])
-            uid = int(parts[-1])
-            return mode, id, uid
+
+        return mode, id
 
     def load_data(self, data_path: Path):
+        finals_ids = []
         for file_path in data_path.glob('**/cms_*.npy'):
             data = np.load(file_path)
-            mode, id, uid = self.parse(file_path)
+            mode, id = self.parse(file_path)
             if mode is DeltaData.Mode.init:
                 self.init_cms[id] = data
             else:
-                self.final_cms[id][uid] = data
+                finals_ids.append(id)
+                self.final_cms[id] = data
         
         for file_path in data_path.glob('**/uids_*.npy'):
             data = np.load(file_path)
-            mode, id, uid = self.parse(file_path)
+            mode, id = self.parse(file_path)
             if mode is DeltaData.Mode.init:
                 self.init_uids[id] = data
             else:
-                self.final_uids[id][uid] = data
+                self.final_uids[id] = data
         
         for file_path in data_path.glob('**/selected-uids*.npy'):
             id = int(file_path.stem.split("_")[-2])
             self.init_selected_uids[id] = np.load(file_path)
+
+        self.num_points_completed = len(finals_ids)
 
 class CreationRateData(BaseData):
     def __init__(self, root_path: str | Path) -> None:

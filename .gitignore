@@ -7,6 +7,8 @@ random_stuff
 *egg-info*
 dist
 
+notas
+
 examples/ring/area_test/data
 examples/ring/checkpoint
 examples/ring/stress

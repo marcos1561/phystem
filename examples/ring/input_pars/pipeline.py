@@ -11,12 +11,17 @@ def collect_pipeline(sim: Simulation, cfg):
     collectors = ColManager(
         solver=solver, root_path=collect_cfg.folder_path, configs=sim.configs,
         autosave_cfg=cfg["autosave_cfg"],
-        is_autosave=collect_cfg.is_autosave,
+        to_load_autosave=collect_cfg.is_autosave,
     )
-
     collectors.add_collector(DeltaCol, cfg["delta"], "delta")
     collectors.add_collector(DensityVelCol, cfg["den_vel"], "den_vel")
     collectors.add_collector(CreationRateCol, cfg["cr"], "cr")
+
+    # collectors = DeltaCol(**cfg["delta"],
+    #     solver=solver, root_path=collect_cfg.folder_path, configs=sim.configs,
+    #     autosave_cfg=cfg["autosave_cfg"],
+    #     to_load_autosave=collect_cfg.is_autosave,
+    # )
 
     prog = progress.Continuos(collect_cfg.tf)
     while solver.time < collect_cfg.tf:

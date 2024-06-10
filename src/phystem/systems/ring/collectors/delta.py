@@ -11,11 +11,17 @@ class State(Flag):
 
 class TrackingList:
     def __init__(self) -> None:
-        self.ids = []
-        self.uids = []
-        self.end_x = []
-        self.dp_id = []
+        self.ids: list[np.ndarray] = []
+        self.uids: list[np.ndarray] = []
+        self.end_x: list[float] = []
+        self.dp_id: list[int] = []
         self.ids_region: list[np.ndarray] = []
+
+    def id_exists(self, id):
+        for ids in self.ids:
+            if id in ids:
+                return True
+        return False
 
     def add(self, id, uid, end_x, dp_id, ids_region):
         self.ids.append(id)
@@ -43,7 +49,7 @@ class DeltaCol(collectors.RingCol):
     def __init__(self, wait_dist, xlims, start_dt, check_dt,
         solver, root_path: str, configs: dict,
         autosave_cfg: ColAutoSaveCfg=None,  
-        xtol=1, save_final_close=False, load_autosave=False, exist_ok=False) -> None:
+        xtol=1, save_final_close=False, to_load_autosave=False, exist_ok=False) -> None:
         '''Coletor da quantidade delta.
         
         Parâmetros:
@@ -92,7 +98,7 @@ class DeltaCol(collectors.RingCol):
         self.init_times = []
         self.final_times = []
 
-        if load_autosave:
+        if to_load_autosave:
             self.load_autosave()
 
     @property
@@ -121,6 +127,9 @@ class DeltaCol(collectors.RingCol):
                 self.last_start_time = self.solver.time
                 self.state = State.waiting
 
+        if self.autosave_cfg:
+            self.check_autosave()
+
     def start(self):
         cms = self.get_cm()
 
@@ -142,28 +151,32 @@ class DeltaCol(collectors.RingCol):
         possible_new_ids = ids_region[in_center_mask]
         possible_new_uids = uids_region[in_center_mask]
 
-        selected_uids = []
+        new_indexes = []
         for count, id in enumerate(possible_new_ids):
-            if id not in self.tracking.ids:
-                new_uid = possible_new_uids[count]
-                
-                self.tracking.add(
-                    id=id, 
-                    uid=new_uid,
-                    end_x=cms[id, 0] + self.wait_dist,
-                    dp_id=self.data_point_id,
-                    ids_region=ids_region,
-                )
-                selected_uids.append(new_uid)
-                
+            if self.tracking.id_exists(id):
+                continue
+            new_indexes.append(count)
+
+        selected_uids = possible_new_uids[new_indexes]
         if len(selected_uids) == 0:
             return False
+
+        selected_ids = possible_new_ids[new_indexes]
+        end_x = cms[selected_ids][:, 0].mean() + self.wait_dist
+        
+        self.tracking.add(
+            id=selected_ids, 
+            uid=selected_uids,
+            end_x=end_x,
+            dp_id=self.data_point_id,
+            ids_region=ids_region,
+        )
         
         np.save(self.data_path / f"cms_{self.data_point_id}_i.npy", cms_region)
         np.save(self.data_path / f"uids_{self.data_point_id}_i.npy", uids_region)
         np.save(self.data_path / f"selected-uids_{self.data_point_id}_i.npy", np.array(selected_uids))
         self.init_times.append(self.solver.time)
-        self.final_times.append({})
+        # self.final_times.append({})
 
         self.data_point_id += 1
         
@@ -179,13 +192,14 @@ class DeltaCol(collectors.RingCol):
         for idx in range(self.tracking.size):
             t_id, end_x = self.tracking.get("ids", idx), self.tracking.get("end_x", idx)
             current_cm = cms[t_id]
-            if current_cm[0] < end_x:
+            
+            if current_cm[:, 0].mean() < end_x:
                 continue
 
             idx_to_remove.append(idx)
             uids = np.array(self.solver.unique_rings_ids)
 
-            current_uid = self.tracking.get("uids", idx)
+            current_uids = self.tracking.get("uids", idx)
             current_dp_id = self.tracking.get("dp_id", idx)
             
             if self.save_final_close:
@@ -198,24 +212,23 @@ class DeltaCol(collectors.RingCol):
                 cms_close = cms_active[close_mask]
                 uids_close = uids_active[close_mask]
 
-                np.save(self.data_path / f"final-cms-close_{current_dp_id}_{current_uid}.npy", cms_close)
-                np.save(self.data_path / f"final-uids-close_{current_dp_id}_{current_uid}.npy", uids_close)
+                np.save(self.data_path / f"final-cms-close_{current_dp_id}_{current_uids}.npy", cms_close)
+                np.save(self.data_path / f"final-uids-close_{current_dp_id}_{current_uids}.npy", uids_close)
             
             ids_region = self.tracking.get("ids_region", idx) 
             cms_region = cms[ids_region]
             udis_region = uids[ids_region]
-            np.save(self.data_path / f"cms_{current_dp_id}_{current_uid}.npy", cms_region)
-            np.save(self.data_path / f"uids_{current_dp_id}_{current_uid}.npy", udis_region)
+            np.save(self.data_path / f"cms_{current_dp_id}_f.npy", cms_region)
+            np.save(self.data_path / f"uids_{current_dp_id}_f.npy", udis_region)
 
-            self.final_times[current_dp_id][current_uid] = self.solver.time
+            self.final_times.append(self.solver.time)
 
         self.tracking.remove(idx_to_remove)
 
     def save(self):
         np.save(self.data_path / "init_times.npy", np.array(self.init_times))
-        with open(self.data_path / "final_times.pickle", "wb") as f:
-            pickle.dump(self.final_times, f)
-
+        np.save(self.data_path / "final_times.npy", np.array(self.final_times))
+        
     def get_active(self, cm, uids=None):
         active_ids = np.array(self.solver.rings_ids[:self.solver.num_active_rings])
         cms_active = cm[active_ids]

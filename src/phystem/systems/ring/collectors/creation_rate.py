@@ -9,7 +9,7 @@ from .base import RingCol
 class CreationRateCol(RingCol):
     def __init__(self, wait_time, collect_time, collect_dt, 
         solver: solvers.CppSolver, root_path: str | Path, configs: dict, 
-        autosave_cfg: ColAutoSaveCfg=None, load_autosave=False, exist_ok=False) -> None:
+        autosave_cfg: ColAutoSaveCfg=None, to_load_autosave=False, exist_ok=False) -> None:
         super().__init__(solver, root_path, configs, autosave_cfg, exist_ok=exist_ok)
         # Configuration
         self.wait_time = wait_time
@@ -27,7 +27,7 @@ class CreationRateCol(RingCol):
         self.num_created_arr = np.zeros(self.num_points, dtype=np.int32)
         self.num_active_arr = np.zeros(self.num_points, dtype=np.int32)
 
-        if load_autosave:
+        if to_load_autosave:
             self.load_autosave()
 
     def collect(self) -> None:
@@ -49,6 +49,9 @@ class CreationRateCol(RingCol):
             self.time_arr[self.point_id] = self.solver.time
             self.num_active_arr[self.point_id] = self.solver.num_active_rings   
             self.point_id += 1
+        
+        if self.autosave_cfg:
+            self.check_autosave()
         
     @property
     def vars_to_save(self):

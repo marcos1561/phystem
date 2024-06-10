@@ -1,14 +1,10 @@
 from phystem.systems.ring.simulation import Simulation
 
 from phystem.systems.ring.configs import *
-from phystem.core.run_config import RunType, CheckpointCfg, CollectDataCfg
-from phystem.core.run_config import RealTimeCfg, CollectDataCfg
+from phystem.core.run_config import RunType, CollectDataCfg
 from phystem.core.collectors import ColAutoSaveCfg
 from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType, ParticleWindows
-from phystem.systems.ring.ui.graphs_cfg import *
 from phystem.systems.ring import utils
-from phystem.gui_phystem.config_ui import UiSettings
-import pipeline
 
 dynamic_cfg = RingCfg(
     spring_k=8,
@@ -57,7 +53,7 @@ space_cfg = SpaceCfg(
 num_ring_in_rect = utils.num_rings_in_rect(2*radius, space_cfg)
 stokes_cfg = StokesCfg(
     obstacle_r  = 0.5 * space_cfg.height/2,
-    obstacle_x  = 1*1000,
+    obstacle_x  = 0,
     obstacle_y  = 0,
     create_length = 2.01 * radius,
     remove_length = 2.01 * radius,
@@ -91,7 +87,7 @@ collect_data_cfg = CollectDataCfg(
     ), 
     tf=tf,
     folder_path="datas/delta",
-    func=pipeline.collect_pipeline,
+    func="função de coleta de dados aqui",
     func_cfg={
         "delta": {
             "wait_dist": wait_dist,  
@@ -112,44 +108,14 @@ collect_data_cfg = CollectDataCfg(
         },
         "autosave_cfg": ColAutoSaveCfg(freq_dt=10),
     },
-    # checkpoint=CheckpointCfg("datas/delta/autosave"),
 )
-
-real_time_cfg = RealTimeCfg(
-    int_cfg=collect_data_cfg.int_cfg,
-    num_steps_frame=100,
-    fps=30,
-    graph_cfg = SimpleGraphCfg(
-        begin_paused=False,
-        show_density=False,
-        show_rings=True,
-        rings_kwargs={"s": 1},
-        density_kwargs={"vmin": -1, "vmax":1},
-        cbar_kwargs={"orientation": "horizontal", "label": "Densidade relativa"},
-        ax_kwargs={"title": "t=8000"},
-        cell_shape=[3, 3],
-    ),
-    # graph_cfg=MainGraphCfg(
-    #     begin_paused=True,
-    # ),
-    ui_settings=UiSettings(
-        always_update=False,
-        # dpi=200,
-    ),
-    # checkpoint=CheckpointCfg("data/test1")
-)
-
-run_type_to_cfg = {
-    RunType.REAL_TIME: real_time_cfg,
-    RunType.COLLECT_DATA: collect_data_cfg,
-}
 
 configs = {
     "creator_cfg": creator_cfg, "dynamic_cfg": dynamic_cfg, 
-    "space_cfg": space_cfg, "run_cfg": run_type_to_cfg[run_type],
+    "space_cfg": space_cfg, "run_cfg": collect_data_cfg,
     "other_cfgs": {"stokes": stokes_cfg},
     "rng_seed": 238531723,
 }
 
-sim = Simulation(**configs)
-sim.run()
+from phystem.core import run_config
+run_config.save_configs(configs, "config")
