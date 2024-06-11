@@ -8,7 +8,8 @@ from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InP
 from phystem.systems.ring.ui.graphs_cfg import *
 from phystem.systems.ring import utils
 from phystem.gui_phystem.config_ui import UiSettings
-import pipeline
+
+from phystem.systems.ring.collectors import SnapshotsColCfg, SnapshotsCol, CheckpointCol
 
 dynamic_cfg = RingCfg(
     spring_k=8,
@@ -57,7 +58,7 @@ space_cfg = SpaceCfg(
 num_ring_in_rect = utils.num_rings_in_rect(2*radius, space_cfg)
 stokes_cfg = StokesCfg(
     obstacle_r  = 0.5 * space_cfg.height/2,
-    obstacle_x  = 1*1000,
+    obstacle_x  = 0,
     obstacle_y  = 0,
     create_length = 2.01 * radius,
     remove_length = 2.01 * radius,
@@ -74,11 +75,6 @@ run_type = RunType.REAL_TIME
 num_cols, num_rows = utils.particle_grid_shape(space_cfg, dynamic_cfg.max_dist)
 num_cols_cm, num_rows_cm = utils.rings_grid_shape(space_cfg, radius)
 
-center_region = -4 * 2*radius
-wait_dist = 4 * 2*radius
-tf = 120
-xlims = [center_region - radius, center_region + radius]
-print(center_region, center_region + wait_dist)
 collect_data_cfg = CollectDataCfg(
     int_cfg=IntegrationCfg(
         dt = 0.01,
@@ -89,30 +85,20 @@ collect_data_cfg = CollectDataCfg(
         update_type=UpdateType.STOKES,
         in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
     ), 
-    tf=tf,
-    folder_path="datas/delta",
-    func=pipeline.collect_pipeline,
-    func_cfg={
-        "delta": {
-            "wait_dist": wait_dist,  
-            "xlims": [center_region - radius, center_region + radius],
-            "start_dt": (xlims[1] - xlims[0]) * dynamic_cfg.vo,
-            "check_dt": 1/4 * (xlims[1] - xlims[0]) * dynamic_cfg.vo,
-        },
-        "den_vel": {
-            "xlims": [center_region - radius, center_region + radius],
-            "vel_dt": 2,
-            "density_dt": 2,
-            "vel_frame_dt": 0.5,
-        },
-        "cr": {
-            "wait_time": 0,
-            "collect_time": tf, 
-            "collect_dt": 1,
-        },
-        "autosave_cfg": ColAutoSaveCfg(freq_dt=10),
-    },
-    # checkpoint=CheckpointCfg("datas/delta/autosave"),
+    tf=120,
+    
+    # folder_path="datas/snaps",
+    # func_cfg=SnapshotsColCfg(
+    #     snaps_dt=1,
+    #     autosave_cfg=ColAutoSaveCfg(freq_dt=10),
+    # ),
+    # func=SnapshotsCol.pipeline,
+    
+    folder_path="datas/cp1",
+    func=CheckpointCol.pipeline,
+    func_cfg={"autosave_cfg": ColAutoSaveCfg(freq_dt=4)},
+    
+    # checkpoint=CheckpointCfg("datas/cp1/autosave"),
 )
 
 real_time_cfg = RealTimeCfg(
@@ -137,7 +123,7 @@ real_time_cfg = RealTimeCfg(
         # dpi=200,
     ),
     # checkpoint=CheckpointCfg("data/test1")
-    checkpoint=CheckpointCfg("../flux_creation_rate/data/init_state_low_flux_force/checkpoint")
+    # checkpoint=CheckpointCfg("../flux_creation_rate/data/init_state_low_flux_force/checkpoint")
 )
 
 run_type_to_cfg = {

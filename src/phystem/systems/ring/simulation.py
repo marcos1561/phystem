@@ -54,7 +54,7 @@ class Simulation(SimulationCore):
 
         if self.run_cfg.checkpoint:
             from phystem.systems.ring.collectors import StateSaver
-            state_data, metadata = StateSaver.load(self.run_cfg.checkpoint.folder_path)
+            state_data, metadata = StateSaver.load(self.run_cfg.checkpoint.root_path)
             init_data = state_data.get_init_date()
         else:
             init_data = self.creator.create()
@@ -145,7 +145,7 @@ class Simulation(SimulationCore):
                     self.time_it.decorator("solver", self.solver.update)
                     i += 1
 
-                ax.set_title(f"t = {self.solver.time}")
+                ax.set_title(f"t = {self.solver.time:.3f}")
                 self.time_it.decorator("graph", particles_graph.update)
 
             self.save_video(fig, update_video)

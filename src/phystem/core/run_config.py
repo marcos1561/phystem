@@ -47,7 +47,7 @@ def load_configs(path: Path, load_checkpoint_cfgs=False):
     checkpoint: CheckpointCfg = cfgs["run_cfg"].checkpoint 
     if load_checkpoint_cfgs and checkpoint:
         try:
-            checkpoint.configs = load_configs(Path(checkpoint.folder_path) / "config.yaml")    
+            checkpoint.configs = load_configs(Path(checkpoint.root_path) / "config.yaml")    
         except FileNotFoundError as e:
             checkpoint.configs = "configurações não encontradas" 
     return cfgs
@@ -72,11 +72,11 @@ class SolverType(Enum):
     CPP = auto()
 
 class CheckpointCfg:
-    def __init__(self, folder_path: str, override_cfgs: bool = False,
-                 override_func_cfg=True) -> None:
+    def __init__(self, root_path: str, override_cfgs: bool = False,
+                 override_func_cfg=True, ignore_autosave=False) -> None:
         '''
         Parameters:
-            folder_path:
+            root_path:
                 Caminho da pasta que contém o checkpoint.
             
             override_cfgs:
@@ -85,12 +85,16 @@ class CheckpointCfg:
             override_func_cfg:
                 Apenas se aplica se o modo de execução for `CollectDataCfg`.
                 Se for 'True', as configurações da pipeline salvas no checkpoint (`func_cfg`) serão ignoradas.
+
+            ignore_autosave:
+                Se for `True`, o checkpoint não é interpretado como auto-salvamento mesmo se ele for.    
         '''
-        self.folder_path = folder_path
+        self.root_path = Path(root_path)
         self.override_cfgs = override_cfgs
         self.override_func_cfg = override_func_cfg
+        self.ignore_autosave = ignore_autosave
 
-        self.configs: dict = load_configs(self.folder_path / "config")
+        self.configs: dict = load_configs(self.root_path / "config")
     
     def get_sim_configs(self, run_cfg=None):
         configs = copy.deepcopy(self.configs)
@@ -99,13 +103,16 @@ class CheckpointCfg:
         return configs
     
     def get_metadata(self):
-        with open(os.path.join(self.folder_path, "metadata.yaml")) as f:
+        with open(os.path.join(self.root_path, "metadata.yaml")) as f:
             metadata = yaml.unsafe_load(f)
         return metadata
     
     @property
     def is_autosave(self):
-        return self.get_metadata().get(settings.autosave_flag_name, False)
+        if self.ignore_autosave:
+            return False
+        else:
+            return self.get_metadata().get(settings.autosave_flag_name, False)
 
 class IntegrationCfg:
     def __init__(self, dt: float, solver_type=SolverType.CPP) -> None:
@@ -230,7 +237,6 @@ class RealTimeCfg(RunCfg):
                 não é carregado.
         '''
         super().__init__(int_cfg, checkpoint)
-        
         if ui_settings is None:
             ui_settings = config_ui.UiSettings()
 
@@ -277,7 +283,8 @@ class ReplayDataCfg(RealTimeCfg):
         '''
         self.root_path = Path(root_path)
         self.solver_cfg = solver_cfg
-        self.data_path = root_path / data_dirname
+
+        self.data_path = self.root_path / data_dirname
         
         # Carrega as configurações utilizadas nos dados salvos.
         self.system_cfg = load_configs(self.root_path / "config")
@@ -354,8 +361,11 @@ class SaveCfg(RunCfg):
 
         self.ui_settings = ui_settings
         self.replay = replay
-        self.path = path
+        self.path = Path(path)
         self.graph_cfg = graph_cfg
+
+        if self.replay and graph_cfg is None:
+            self.graph_cfg = self.replay.graph_cfg
 
         if dt is None:
             self.dt = self.int_cfg.dt

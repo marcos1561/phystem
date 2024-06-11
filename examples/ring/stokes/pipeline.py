@@ -136,7 +136,7 @@ def collect_pipeline(sim: Simulation, cfg: PipelineCfg):
     solver = sim.solver
     
     if collect_cfg.checkpoint:
-        path = os.path.join(collect_cfg.checkpoint.folder_path, "metadata.yaml")
+        path = os.path.join(collect_cfg.checkpoint.root_path, "metadata.yaml")
         with open(path, "r") as f:
             metadata = yaml.unsafe_load(f)
         solver.cpp_solver.sim_time = metadata["time"] 

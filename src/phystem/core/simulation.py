@@ -93,10 +93,17 @@ class SimulationCore(ABC):
     def save_configs(self, path):
         save_configs(self.configs, path)
 
+
     @classmethod
     def load_from_configs(cls, path: Path):
         cfgs = load_configs(path)
         return cls(**cfgs)
+
+    @staticmethod
+    def configs_from_checkpoint(run_cfg: RunCfg):
+        cfgs = deepcopy(run_cfg.checkpoint.configs) 
+        cfgs["run_cfg"] = run_cfg
+        return cfgs
 
     @abstractmethod
     def get_creator(self) -> CreatorCore:
@@ -183,18 +190,20 @@ class SimulationCore(ABC):
 
         save_video_cfg: SaveCfg = self.run_cfg
         
+        save_video_cfg.path.parent.mkdir(parents=True, exist_ok=True)
+        
         # folder_path = save_video_cfg.path.split("/")[0]
         # video_name = save_video_cfg.path.split("/")[-1].split(".")[0]
-        folder_path = os.path.dirname(save_video_cfg.path)
-        video_name = os.path.splitext(os.path.basename(save_video_cfg.path))[0]
-        if not os.path.exists(folder_path):
-            raise Exception(f"O caminho {folder_path} não existe.")
+        # folder_path = os.path.dirname(save_video_cfg.path)
+        # video_name = os.path.splitext(os.path.basename(save_video_cfg.path))[0]
+        # if not os.path.exists(folder_path):
+        #     raise Exception(f"O caminho {folder_path} não existe.")
 
         frames = save_video_cfg.num_frames
         progress = Progress(frames, 10)
         ani = animation.FuncAnimation(fig, update, frames=frames)
 
-        self.save_configs(folder_path, video_name + "_config")
+        self.save_configs(save_video_cfg.path.parent / (save_video_cfg.path.stem + "_config"))
         ani.save(save_video_cfg.path, fps=save_video_cfg.fps, progress_callback=progress.update)
 
         t2 = time.time()

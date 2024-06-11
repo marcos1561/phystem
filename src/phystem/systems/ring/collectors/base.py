@@ -45,7 +45,7 @@ class StateSaver:
                 "metadata": self.metadata,
             }
     
-    def __init__(self, solver: CppSolver, root_path: Path, configs: dict, file_names: FileNames=None) -> None:
+    def __init__(self, solver: CppSolver, root_path: Path, configs: dict, filenames: FileNames=None) -> None:
         '''Coletor para salvar o estado do sistema. O seu método `collect` não está implementado, para 
         salver o estado do sistema utilize `self.save`.
         
@@ -65,15 +65,15 @@ class StateSaver:
         self.solver = solver 
         self.root_path = Path(root_path)
         self.configs = configs
-        self.file_names = file_names
+        self.filenames = filenames
 
         self.root_path.mkdir(exist_ok=True, parents=True)
         
-        if file_names is None:
-            self.file_names = StateSaver.FileNames()
+        if filenames is None:
+            self.filenames = StateSaver.FileNames()
 
         self.file_paths = {}
-        for name, file_name in self.file_names.values.items():
+        for name, file_name in self.filenames.values.items():
             if file_name is None:
                 self.file_paths[name] = None
             else:
@@ -89,23 +89,24 @@ class StateSaver:
             directory = Path(directory)
 
         if filenames is None:
-            filenames = self.file_names
+            filenames = self.filenames
 
         ##
         # Salvando metadados
         ##
-        metadata_path = directory / filenames.metadata
+        if filenames.metadata is not None:
+            metadata_path = directory / filenames.metadata
 
-        _metadata = {
-            "time": self.solver.time,
-            "num_time_steps": self.solver.num_time_steps,
-        }
-        if metadata is not None:
-            for key, value in metadata.items():
-                _metadata[key] = value 
+            _metadata = {
+                "time": self.solver.time,
+                "num_time_steps": self.solver.num_time_steps,
+            }
+            if metadata is not None:
+                for key, value in metadata.items():
+                    _metadata[key] = value 
 
-        with open(metadata_path, "w") as f:
-            yaml.dump(_metadata, f)
+            with open(metadata_path, "w") as f:
+                yaml.dump(_metadata, f)
 
         ##
         # Salvando estado do sistema
@@ -157,7 +158,7 @@ class StateSaver:
         init_data = StateData(pos, angle, ids, uids)
         return init_data, metadata
 
-class RingCol(collectors.Collector, ABC):
+class RingCol(collectors.Collector):
     '''Base para os coletores dos anéis.'''
     def __init__(self, solver: CppSolver, root_path: str | Path, configs: dict, 
         autosave_cfg: ColAutoSaveCfg = None, exist_ok=False, **kwargs) -> None:
@@ -172,6 +173,5 @@ class RingCol(collectors.Collector, ABC):
         if self.autosave_cfg and self.autosave_cfg.to_save_state:
             self.state_col.save(metadata={settings.autosave_flag_name: True})
 
-    @abstractmethod
     def save(self):
         pass

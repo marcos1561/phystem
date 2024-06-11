@@ -218,16 +218,16 @@ class CppSolver:
     
 class SolverReplay:
     def __init__(self, run_cfg: ReplayDataCfg, dynamic_cfg: RingCfg, space_cfg: SpaceCfg) -> None:
-        self.main_dir = run_cfg.directory
-        self.data_dir = run_cfg.data_path
+        self.root_path = run_cfg.data_path
+        # self.data_dir = run_cfg.data_path
         self.dt = run_cfg.int_cfg.dt
 
         self.solver_cfg: ReplaySolverCfg
         self.set_solver_cfg(run_cfg)
 
-        with open(os.path.join(self.main_dir, "metadata.yaml")) as f:
+        with open(self.root_path / "metadata.yaml", "r") as f:
             metadata = yaml.unsafe_load(f)
-            self.max_snap_id = metadata["count"]
+            self.num_frames = metadata["num_frames"]
 
         mode = self.solver_cfg.mode
 
@@ -247,7 +247,7 @@ class SolverReplay:
 
         self.count = 0
         self.time_sign = 1
-        self.times = np.load(os.path.join(self.main_dir, "times.npy")) 
+        self.times = np.load(self.root_path / "times.npy") 
         self.time = self.times[self.count]
         
         self.init_func()
@@ -286,7 +286,7 @@ class SolverReplay:
         self.update_same_ids(0)
 
     def init_same_ids_pre_calc(self):
-        ids_dir = os.path.join(self.main_dir, "same_ids")
+        ids_dir = os.path.join(self.root_path, "same_ids")
         self.all_ids = np.load(os.path.join(ids_dir, "ids.npy"))
         self.all_ids_size = np.load(os.path.join(ids_dir, "ids_size.npy"))
         
@@ -295,9 +295,12 @@ class SolverReplay:
         self.calc_vel_cm(0)
     
     def update_pos_normal(self, frame):
-        self.pos = np.load(os.path.join(self.data_dir, f"pos_{frame}.npy"))
+        self.pos = np.load(self.root_path / f"pos_{frame}.npy")
     
     def update_pos_same_ids(self, frame):
+        if frame >= self.num_frames-1:
+            return
+
         if self.solver_cfg.vel_from_solver:
             self.pos, self.ids = self.load(frame)
         else:
@@ -307,7 +310,7 @@ class SolverReplay:
     
     def update_pos_same_ids_pre_calc(self, frame):
         self.pos = self.pos2_original
-        self.pos2_original = np.load(os.path.join(self.data_dir, f"pos_{frame+1}.npy"))
+        self.pos2_original = np.load(self.root_path / f"pos_{frame+1}.npy")
 
         self.pos = self.pos[self.all_ids[frame, 0, :self.all_ids_size[frame]]]
         self.pos2 = self.pos2_original[self.all_ids[frame, 1, :self.all_ids_size[frame]]]
@@ -338,8 +341,8 @@ class SolverReplay:
         return pos1[argsort1[id_mask1]], pos2[argsort2[id_mask2]]
 
     def load(self, frame):
-        pos = np.load(os.path.join(self.data_dir, f"pos_{frame}.npy"))
-        ids = np.load(os.path.join(self.data_dir, f"ids_{frame}.npy"))
+        pos = np.load(self.root_path / f"pos_{frame}.npy")
+        ids = np.load(self.root_path / f"uids_{frame}.npy")
         return pos, ids
 
     def calc_vel_cm(self, frame):
@@ -370,8 +373,8 @@ class SolverReplay:
     def update(self):
         self.count += self.time_sign
         
-        if self.count >= self.max_snap_id: 
-            self.count = self.max_snap_id-1
+        if self.count >= self.num_frames: 
+            self.count = self.num_frames-1
             return
         elif self.count < 0:
             self.count = 0

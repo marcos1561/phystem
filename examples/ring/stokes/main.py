@@ -107,7 +107,7 @@ collect_data_cfg = CollectDataCfg(
         snapshot_period=0.5,
         save_type=pipeline.SaveType.snapshot),
     checkpoint=CheckpointCfg(
-        folder_path="data/init_state_low_flux_force/checkpoint"
+        root_path="data/init_state_low_flux_force/checkpoint"
     )
 )
 
@@ -143,7 +143,7 @@ real_time_cfg = RealTimeCfg(
     #     pause_on_high_vel = True,
     # ),
     checkpoint=CheckpointCfg(
-        folder_path="../flux_creation_rate/data/low_adh_align_flux/autosave"
+        root_path="../flux_creation_rate/data/low_adh_align_flux/autosave"
         # folder_path="../flux_creation_rate/data/init_state_low_flux_force/checkpoint"
         # folder_path="data/init_state_low_flux_force/checkpoint",
     )
