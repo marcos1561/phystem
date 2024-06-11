@@ -1,23 +1,18 @@
 *pycache*
 *cpp_lib.cpython*
+*egg-info*
 data
 datas
+videos
 results
-random_stuff
-*egg-info*
 dist
 
+random_stuff
+lovelace
 notas
 
-examples/ring/area_test/data
-examples/ring/checkpoint
-examples/ring/stress
-examples/ring/ring_intersect
-examples/ring/stokes/videos
 examples/ring/stokes/big_test
 examples/ring/stokes/data_test
-
-examples/ring/invagination/videos
 
 tests/data_test/ring/test/*
 

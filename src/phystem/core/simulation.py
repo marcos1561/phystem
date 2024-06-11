@@ -64,6 +64,8 @@ class SimulationCore(ABC):
                 # que foi gerado com as configurações do checkpoint.
                 self.creator_cfg = checkpoint_cfgs["creator_cfg"]
 
+        self.adjust_configs()
+
         self.configs = {
             "creator_cfg": self.creator_cfg,
             "dynamic_cfg": self.dynamic_cfg,
@@ -90,6 +92,10 @@ class SimulationCore(ABC):
 
         self.init_sim()    
 
+    def adjust_configs(self):
+        '''Função para ajustar os valores das configurações caso necessário.'''
+        pass
+
     def save_configs(self, path):
         save_configs(self.configs, path)
 
@@ -102,6 +108,8 @@ class SimulationCore(ABC):
     @staticmethod
     def configs_from_checkpoint(run_cfg: RunCfg):
         cfgs = deepcopy(run_cfg.checkpoint.configs) 
+        if run_cfg.int_cfg is None:
+            run_cfg.int_cfg = cfgs["run_cfg"].int_cfg
         cfgs["run_cfg"] = run_cfg
         return cfgs
 

@@ -26,12 +26,22 @@ class Simulation(SimulationCore):
         if int_cfg.update_type is UpdateType.INVAGINATION and type(creator_cfg) != InvaginationCreatorCfg:
             raise ValueError(f"No mode 'INVAGINATION', a configuração de criação deve ser 'InvaginationCreatorCfg', mas é {type(creator_cfg)}.")
 
-        pos = creator_cfg.CreatorType(**creator_cfg.get_pars(), rng_seed=rng_seed).create().pos
+        # pos = creator_cfg.CreatorType(**creator_cfg.get_pars(), rng_seed=rng_seed).create().pos
+        # if pos.shape[0] > 0:
+        #     creator_cfg.num_p = pos.shape[1]
+
+        # dynamic_cfg.adjust_area_pars(creator_cfg.num_p)
+        super().__init__(creator_cfg, dynamic_cfg, space_cfg, run_cfg, other_cfgs, rng_seed)
+
+    def adjust_configs(self):
+        creator_cfg = self.creator_cfg
+        dynamic_cfg = self.dynamic_cfg
+
+        pos = creator_cfg.CreatorType(**creator_cfg.get_pars(), rng_seed=self.rng_seed).create().pos
         if pos.shape[0] > 0:
             creator_cfg.num_p = pos.shape[1]
 
         dynamic_cfg.adjust_area_pars(creator_cfg.num_p)
-        super().__init__(creator_cfg, dynamic_cfg, space_cfg, run_cfg, other_cfgs, rng_seed)
 
     def get_creator(self) -> Creator:
         if self.run_cfg.id is RunType.REPLAY_DATA:
