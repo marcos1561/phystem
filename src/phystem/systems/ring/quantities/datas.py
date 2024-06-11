@@ -25,7 +25,7 @@ class DeltaData(BaseData):
 
         with open(self.data_path / "metadata.pickle", "rb") as f:
             self.num_init_points = pickle.load(f)["num_points"]
-        self.num_points_completed: int = None
+        self.ids_completed: list[int] = []
 
         temp_data = [0 for _ in range(self.num_init_points)] 
         self.init_cms = temp_data.copy()
@@ -51,19 +51,24 @@ class DeltaData(BaseData):
         return mode, id
 
     def load_data(self, data_path: Path):
-        finals_ids = []
         for file_path in data_path.glob('**/cms_*.npy'):
             data = np.load(file_path)
             mode, id = self.parse(file_path)
+            if id >= self.num_init_points-1:
+                continue
+            
             if mode is DeltaData.Mode.init:
                 self.init_cms[id] = data
             else:
-                finals_ids.append(id)
+                self.ids_completed.append(id)
                 self.final_cms[id] = data
         
         for file_path in data_path.glob('**/uids_*.npy'):
             data = np.load(file_path)
             mode, id = self.parse(file_path)
+            if id >= self.num_init_points-1:
+                continue
+
             if mode is DeltaData.Mode.init:
                 self.init_uids[id] = data
             else:
@@ -71,9 +76,13 @@ class DeltaData(BaseData):
         
         for file_path in data_path.glob('**/selected-uids*.npy'):
             id = int(file_path.stem.split("_")[-2])
+            if id >= self.num_init_points-1:
+                continue
+
             self.init_selected_uids[id] = np.load(file_path)
 
-        self.num_points_completed = len(finals_ids)
+        self.ids_completed.sort()
+        self.num_points_completed = len(self.ids_completed)
 
 class CreationRateData(BaseData):
     def __init__(self, root_path: str | Path) -> None:

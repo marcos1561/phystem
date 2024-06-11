@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 from phystem.systems.ring.quantities.calculators import DenVelCalculator,  DeltaCalculator, CalcAutoSaveCfg
 from phystem.systems.ring.quantities.datas import CreationRateData
@@ -9,13 +10,11 @@ from pathlib import Path
 def graph_results(root_path):
     root_path = Path(root_path)
     cr_data = CreationRateData(root_path / "cr")
-    delta = DeltaCalculator(root_path / "delta", edge_k=1.7, root_path="results/delta")
+    delta = DeltaCalculator(root_path / "delta", edge_k=1.4, root_path="results/delta")
     den_vel = DenVelCalculator(root_path / "den_vel", root_path="results/den_vel")
 
     delta.crunch_numbers(to_save=True)
     den_vel.crunch_numbers(to_save=True)
-
-    import matplotlib.pyplot as plt
 
     plt.subplot(231)
     plt.title("Num Created")
@@ -43,7 +42,7 @@ def test_autosave(data_path):
 
     calc2 = DeltaCalculator(data_path, edge_k=1.7, root_path="results/test_autosave2",
         autosave_cfg=CalcAutoSaveCfg(freq=3))
-    calc2.crunch_numbers(id_stop=7)
+    calc2.crunch_numbers(id_stop=3)
 
     calc2 = DeltaCalculator.from_checkpoint("results/test_autosave2/autosave")
     calc2.crunch_numbers()
@@ -51,5 +50,5 @@ def test_autosave(data_path):
     print("deltas diff:", ((np.array(calc.deltas) - np.array(calc2.deltas))**2).sum())
     print("times diff :", ((np.array(calc.times) - np.array(calc2.times))**2).sum())
 
-test_autosave("datas/delta")
-# graph_results("datas/all")
+# test_autosave("../../../lovelace/datas/test2/delta")
+graph_results("../../../lovelace/datas/test2")

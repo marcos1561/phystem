@@ -122,13 +122,14 @@ class DeltaCalculator(Calculator):
         return value
 
     def crunch_numbers(self, to_save=False, id_stop=None):
-        for pid in range(self.current_id, self.data.num_points_completed):
-            if id_stop is not None and id_stop == pid:
+        for i in range(self.current_id, self.data.num_points_completed):
+            if id_stop is not None and id_stop == i:
                 break
             
-            self.current_id = pid
+            self.current_id = i
+            pid = self.data.ids_completed[i]
             if self.autosave_cfg:
-                self.check_autosave(pid)
+                self.check_autosave(i)
 
             init_cms = self.data.init_cms[pid]
 
@@ -159,9 +160,8 @@ class DeltaCalculator(Calculator):
                 self.deltas.append(sum(deltas)/len(deltas))
                 self.times.append(self.data.init_times[pid])
         
-        self.times = np.array(self.times) 
-        self.deltas = np.array(self.deltas) 
-
+        self.times = np.array(self.times)
+        self.deltas = np.array(self.deltas)
         if to_save:
             np.save(self.root_path / "times.npy", self.times)
             np.save(self.root_path / "deltas.npy", self.deltas)

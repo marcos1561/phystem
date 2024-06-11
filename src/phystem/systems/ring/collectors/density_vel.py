@@ -79,7 +79,7 @@ class DensityVelCol(RingCol):
         ring_r = utils.get_ring_radius(
             configs["dynamic_cfg"].diameter, configs["creator_cfg"].num_p)
         
-        num_max_rings = int(l * h / (np.pi * ring_r**2) * 1.2)
+        num_max_rings = int(l * h / (np.pi * ring_r**2) * 2)
         self.density_eq = l * h / (np.pi * ring_r**2)
         self.num_data_points_per_file = int(memory_per_file / (num_max_rings * 2 * 32))
 
