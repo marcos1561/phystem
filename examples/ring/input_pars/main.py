@@ -137,7 +137,7 @@ real_time_cfg = RealTimeCfg(
         # dpi=200,
     ),
     # checkpoint=CheckpointCfg("data/test1")
-    checkpoint=CheckpointCfg("../flux_creation_rate/data/init_state_low_flux_force/checkpoint")
+    # checkpoint=CheckpointCfg("../flux_creation_rate/data/init_state_low_flux_force/checkpoint")
 )
 
 run_type_to_cfg = {

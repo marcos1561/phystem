@@ -25,6 +25,10 @@ class SnapshotsCol(RingCol):
         self.init_time = self.solver.time
         self.times = []
 
+        self.snaps_saver = StateSaver(
+            solver=solver, root_path=self.data_path, configs=configs,
+        )
+
         if to_load_autosave:
             self.load_autosave()
 
@@ -41,8 +45,7 @@ class SnapshotsCol(RingCol):
         
         self.snaps_last_time = self.solver.time
 
-        self.state_col.save(
-            directory=self.data_path,
+        self.snaps_saver.save(
             filenames=StateSaver.FileNames(
                 pos=f"pos_{self.snaps_count}",
                 angle=f"angle_{self.snaps_count}",

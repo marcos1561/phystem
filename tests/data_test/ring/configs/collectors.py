@@ -1,9 +1,6 @@
-from pathlib import Path
-
-from phystem.systems.ring.configs import *
 from phystem.core.run_config import CollectDataCfg, save_configs
 from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType, ParticleWindows
-from phystem.systems.ring.ui.graphs_cfg import *
+from phystem.systems.ring.configs import *
 from phystem.systems.ring import utils
 
 dynamic_cfg = RingCfg(
@@ -13,14 +10,10 @@ dynamic_cfg = RingCfg(
     area_potencial="target_area_and_format",
     
     k_format=0.03,
-    p0_format=3.5449077018*1.0, # Círculo
+    p0_format=3.5449077018, # Círculo
     
     k_area=2,
-    # p0=4.828427, # Triângulo retângulo
-    # p0=4.55901, # Triângulo equilátero
-    # p0=4, # quadrado
-    p0=3.5449077018*1.0, # Círculo
-    # area0=53,
+    p0=3.5449077018, # Círculo
 
     k_invasion = 8,
     
@@ -52,8 +45,8 @@ space_cfg = SpaceCfg(
 
 num_ring_in_rect = utils.num_rings_in_rect(2*radius, space_cfg)
 stokes_cfg = StokesCfg(
-    obstacle_r  = 1/5 * space_cfg.height,
-    obstacle_x  = 1000 * 2*radius,
+    obstacle_r  = 0.5 * space_cfg.height/2,
+    obstacle_x  = 0,
     obstacle_y  = 0,
     create_length = 2.01 * radius,
     remove_length = 2.01 * radius,
@@ -65,9 +58,6 @@ stokes_cfg = StokesCfg(
 num_cols, num_rows = utils.particle_grid_shape(space_cfg, dynamic_cfg.max_dist)
 num_cols_cm, num_rows_cm = utils.rings_grid_shape(space_cfg, radius)
 
-center_region = -4 * 2*radius
-wait_dist = 4 * 2*radius
-xlims = [center_region - radius, center_region + radius]
 collect_data_cfg = CollectDataCfg(
     int_cfg=IntegrationCfg(
         dt = 0.01,
@@ -79,8 +69,9 @@ collect_data_cfg = CollectDataCfg(
         in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
     ), 
     tf=120,
-    folder_path="default_dir",
-    func="setado no teste",
+    folder_path="Setar no teste",
+    func="Setar no teste",
+    func_cfg="Setar no teste",
 )
 
 configs = {
@@ -90,4 +81,5 @@ configs = {
     "rng_seed": 238531723,
 }
 
+from pathlib import Path
 save_configs(configs, f"{Path(__file__).stem}_configs")

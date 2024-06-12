@@ -98,7 +98,6 @@ class TestRing(unittest.TestCase):
         
         Simulation(**configs).run()
 
-
 class TestWindows(unittest.TestCase):
     def test_neighbor_ids(self):
         import phystem.cpp_lib as cpp_lib
