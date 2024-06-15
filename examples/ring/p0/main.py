@@ -73,7 +73,7 @@ stokes_cfg = StokesCfg(
 ##
 ## Select Run Type
 ##
-run_type = RunType.COLLECT_DATA
+run_type = RunType.REAL_TIME
 
 num_cols, num_rows = utils.particle_grid_shape(space_cfg, dynamic_cfg.max_dist)
 num_cols_cm, num_rows_cm = utils.rings_grid_shape(space_cfg, radius)
@@ -132,23 +132,23 @@ real_time_cfg = RealTimeCfg(
     int_cfg=collect_data_cfg.int_cfg,
     num_steps_frame=100*4,
     fps=30,
-    graph_cfg = SimpleGraphCfg(
-        begin_paused=False,
-        show_density=False,
-        show_rings=True,
-        rings_kwargs={"s": 1},
-        density_kwargs={"vmin": -1, "vmax":1},
-        cbar_kwargs={"orientation": "horizontal", "label": "Densidade relativa"},
-        cell_shape=[3, 3],
-    ),
-    # graph_cfg=MainGraphCfg(
-    #     begin_paused=True,
+    # graph_cfg = SimpleGraphCfg(
+    #     begin_paused=False,
+    #     show_density=False,
+    #     show_rings=True,
+    #     rings_kwargs={"s": 1},
+    #     density_kwargs={"vmin": -1, "vmax":1},
+    #     cbar_kwargs={"orientation": "horizontal", "label": "Densidade relativa"},
+    #     cell_shape=[3, 3],
     # ),
+    graph_cfg=MainGraphCfg(
+        begin_paused=True,
+    ),
     ui_settings=UiSettings(
         always_update=False,
         # dpi=200,
     ),
-    # checkpoint=CheckpointCfg("datas/low_align/autosave")
+    checkpoint=CheckpointCfg("datas/explore_p0/14/autosave")
     # checkpoint=CheckpointCfg("../flux_creation_rate/data/init_state_low_flux_force/checkpoint")
 )
 # real_time_cfg.checkpoint.configs["run_cfg"].int_cfg.dt = 0.01/2

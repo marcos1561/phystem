@@ -4,11 +4,11 @@ from phystem.systems.ring import Simulation
 from phystem.systems.ring.solver_config import ReplaySolverCfg
 
 replay_cfg = ReplayDataCfg(
-    root_path="datas/explore_p0/4/snaps",
+    root_path="datas/explore_p0/14/snaps",
     graph_cfg=ReplayGraphCfg(
         # show_density=True,
-        vel_colors=True,
-        scatter_kwargs={"s": 1},
+        # vel_colors=True,
+        scatter_kwargs={"s": 2},
         colorbar_kwargs={"location": "bottom"},
     ),
     solver_cfg=ReplaySolverCfg(
