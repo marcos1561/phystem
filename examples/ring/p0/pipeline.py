@@ -2,7 +2,7 @@ from phystem.systems.ring.simulation import Simulation
 from phystem.core.run_config import CollectDataCfg
 from phystem.utils import progress
 
-from phystem.systems.ring.collectors import DenVelCol, CreationRateCol, DeltaCol, ColManager
+from phystem.systems.ring.collectors import DenVelCol, CreationRateCol, DeltaCol, ColManager, SnapshotsCol
 
 def collect_pipeline(sim: Simulation, cfg):
     solver = sim.solver
@@ -17,17 +17,17 @@ def collect_pipeline(sim: Simulation, cfg):
     collectors.add_collector(DenVelCol, cfg["den_vel"], "den_vel")
     collectors.add_collector(CreationRateCol, cfg["cr"], "cr")
 
-    # collectors = DeltaCol(**cfg["delta"],
-    #     solver=solver, root_path=collect_cfg.folder_path, configs=sim.configs,
-    #     autosave_cfg=cfg["autosave_cfg"],
-    #     to_load_autosave=collect_cfg.is_autosave,
-    # )
+    snaps = SnapshotsCol(cfg["snaps"],
+        solver=solver, root_path=collect_cfg.folder_path / "snaps", configs=sim.configs,
+    )
 
     prog = progress.Continuos(collect_cfg.tf)
     while solver.time < collect_cfg.tf:
         prog.update(solver.time)
         solver.update()
         collectors.collect()
+        snaps.collect()
 
     collectors.save()
+    snaps.save()
     prog.update(solver.time)

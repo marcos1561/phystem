@@ -2,8 +2,7 @@ import numpy as np
 
 class RetangularGrid:
     def __init__(self, edges: tuple[np.ndarray]) -> None:
-        '''
-        Grade retangular dado as posições das bordas das células.
+        '''Grade retangular dado as posições das bordas das células.
 
         Parâmetros:
             edges:
@@ -46,19 +45,18 @@ class RetangularGrid:
         self.meshgrid = np.meshgrid(*self.dim_cell_center)
 
     def filter_coords(self, coords: np.ndarray):
-        ''' Remove as coordenadas fora da grade'''
+        '''Remove as coordenadas fora da grade'''
 
         mask = np.full(coords.shape[0], False)
         for i in range(2):
-            mask_i = np.logical_or(coords[:, i] == -1, coords[:, i] == self.shape[i])
+            mask_i = np.logical_or(coords[:, i] < 0, coords[:, i] >= self.shape[i])
             mask = np.logical_or(mask, mask_i)
 
         return coords[np.logical_not(mask)]
 
     def count(self, coords: np.ndarray):
-        '''
-        Contagem da quantidade de pontos em cada célula da grade, dado as coordenadas dos pontos
-        na grade (grid_coords).
+        '''Contagem da quantidade de pontos em cada célula da grade, dado as coordenadas dos pontos
+        na grade (coords).
 
         Retorno:
             count_grid: ndarray
@@ -71,42 +69,40 @@ class RetangularGrid:
         return count_grid.T
 
     def sum_by_cell(self, values: np.array, coords: np.array):
-        '''
-        Soma dos valores dos pontos que estão na mesma célula da grade. Cada componente
-        do ponto possui um valor associando em `values` e sua coordenada na grade está 
+        '''Soma dos valores dos pontos que estão na mesma célula da grade. Cada
+        ponto possui um valor associando em `values` e sua coordenada na grade está 
         em `coords`.
 
         Parâmetros:
             values:
-                Array com os valores dos pontos a serem somados. Seu shape é (N, 2), em que
-                N é o número de pontos.
+                Array com os valores dos pontos a serem somados. 
 
-                values[i, d] -> valor na dimensão d, do i-ésimo ponto.
-
-                d = 0 -> eixo x
-                d = 1 -> eixo y
+                values[i] -> valor do i-ésimo ponto.
 
             grid_coords:
-                Coordenadas na grade dos pontos ao qual `values` se refere.
+                Coordenadas dos pontos na grade ao qual `values` se refere.
             
         Retorno:
             values_sum: ndarray
                 Array com a soma dos valores dos pontos que estão na mesma célula. 
-                Seu shape é (2, N_l, N_c), em que N_l é o número de linhas da grade
+                Seu shape é (N_l, N_c, *values.shape[1:]), em que N_l é o número de linhas da grade
                 e N_c o número de colunas.
 
-                vel_grid[d, i, j] -> Soma dos valores na dimensão d, da célula localiza
+                vel_grid[i, j] -> Soma dos valores da célula localiza
                     na linha i e coluna j da grade.
         '''
-        values_sum = np.zeros((values.shape[1], *reversed(self.shape[:2]), *self.shape[2:]), dtype=float)
+        values_sum = np.zeros((*reversed(self.shape[:2]), *self.shape[2:], *values.shape[1:]),  dtype=float)
         for idx, coord in enumerate(coords):
-            values_sum[:, coord[1], coord[0]] += values[idx]
+            values_sum[coord[1], coord[0]] += values[idx]
+
+        # values_sum = np.zeros((values.shape[1], *reversed(self.shape[:2]), *self.shape[2:]), dtype=float)
+        # for idx, coord in enumerate(coords):
+        #     values_sum[:, coord[1], coord[0]] += values[idx]
         
         return values_sum
 
     def mean_by_cell(self, values: np.array, coords: np.array, count: np.array=None):
-        '''
-        Mesma função de `self.sum_by_cell`, mas divide o resultado pela
+        '''Mesma função de `self.sum_by_cell`, mas divide o resultado pela
         contagem de pontos em cada célula, assim realizando a média por célula.
         '''
         values_mean = self.sum_by_cell(values, coords)
@@ -115,12 +111,16 @@ class RetangularGrid:
             count = self.count(coords)
 
         non_zero_mask = count > 0
-        values_mean[:, non_zero_mask] /= count[non_zero_mask]
+        extend_shape = np.ones(len(values[0].shape), dtype=int)
+
+        print(values_mean[non_zero_mask])
+
+        values_mean[non_zero_mask] /= count.reshape(*count.shape, *extend_shape)[non_zero_mask]
+        # values_mean[non_zero_mask] /= count[non_zero_mask]
         return values_mean
 
     def intersect_circle_mask(self, radius, center=(0, 0)):
-        '''
-        Máscara das células que não intersectam o círculo de
+        '''Máscara das células que não intersectam o círculo de
         centro `center` e raio `radius`;
         '''
         x_max = self.meshgrid[0] + self.dim_cell_size[0]/2
@@ -144,9 +144,7 @@ class RetangularGrid:
 
 class RegularGrid(RetangularGrid):
     def __init__(self, length: float, height: float, num_cols: int, num_rows: int, center=(0, 0)) -> None:
-        '''
-        Grade retangular para uma retângulo centrado em `center`, com lados `length`x`height`. 
-        '''
+        '''Grade retangular para uma retângulo centrado em `center`, com lados `length`x`height`.'''
         self.center = center
         self.length = length
         self.height = height
@@ -164,8 +162,7 @@ class RegularGrid(RetangularGrid):
         )
 
     def coords(self, points: np.ndarray, skip_out_of_bounds=False, remove_out_of_bounds=False):
-        '''
-        Calcula as coordenadas dos pontos em `points` na grade.
+        '''Calcula as coordenadas dos pontos em `points` na grade.
 
         Parâmetros:
             points:
@@ -202,3 +199,40 @@ class RegularGrid(RetangularGrid):
             coords = self.filter_coords(coords)
         
         return coords
+
+if __name__ == "__main__":
+    l, h = 10, 5
+    grid = RegularGrid(l, h, 7, 5)
+
+    n = 10
+    xs = (np.random.random(n) - 0.5) * l
+    ys = (np.random.random(n) - 0.5) * h
+    ps = np.array([xs, ys]).T
+
+    coords = grid.coords(ps)
+
+    coords = np.array([
+        [0, 0],
+        [0, 0],
+        [1, 2],
+        [1, 2],
+        [1, 2],
+    ])
+
+    values = np.array([
+        [1 , 1 ],
+        [-3, 4 ],
+        [3 , -3],
+        [6 , 2 ],
+        [-1, 11],
+    ])
+
+    r_all = grid.mean_by_cell(values, coords) 
+
+    check_x = grid.mean_by_cell(values[:, 0], coords) == r_all[:, :, 0]
+    check_y = grid.mean_by_cell(values[:, 1], coords) == r_all[:, :, 1]
+    print("Mean by cell Test:", check_x.all(), check_y.all())
+
+    # import matplotlib.pyplot as plt
+    # plt.scatter(xs, ys, c="black")
+    # plt.show()

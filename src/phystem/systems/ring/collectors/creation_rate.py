@@ -20,21 +20,27 @@ class CreationRateCol(RingCol):
         self.wait_time_done = False
         self.last_time = self.solver.time
         self.point_id = 0
-        self.num_points = int(self.collect_time/self.collect_dt)
 
         # Data        
+        self.num_points = int(self.collect_time/self.collect_dt)
+        self.init_data_arrays()
+
+        if to_load_autosave:
+            self.load_autosave()
+
+    def init_data_arrays(self):
         self.time_arr = np.zeros(self.num_points, dtype=np.float32)
         self.num_created_arr = np.zeros(self.num_points, dtype=np.int32)
         self.num_active_arr = np.zeros(self.num_points, dtype=np.int32)
 
-        if to_load_autosave:
-            self.load_autosave()
 
     def collect(self) -> None:
         time = self.solver.time
 
         if time < self.wait_time:
             return
+
+        self.wait_time_done = True
 
         if time > self.collect_time + self.wait_time:
             return
@@ -59,11 +65,22 @@ class CreationRateCol(RingCol):
             "wait_time_done",
             "last_time",
             "point_id",
-            "num_points",
             "time_arr",
             "num_created_arr",
             "num_active_arr",
         ]
+
+    def load_autosave(self):
+        super().load_autosave()
+        
+        time_arr = self.time_arr
+        num_created_arr = self.num_created_arr
+        num_active_arr = self.num_active_arr
+
+        self.init_data_arrays()
+        self.time_arr[:time_arr.size] = time_arr
+        self.num_created_arr[:num_created_arr.size] = num_created_arr
+        self.num_active_arr[:num_active_arr.size] = num_active_arr
 
     def save(self, data_path: Path=None):
         if data_path is None:

@@ -2,6 +2,7 @@ import pickle
 import numpy as np
 from pathlib import Path
 from abc import ABC, abstractmethod
+from collections import namedtuple
 
 from phystem.core import settings
 from phystem.core.autosave import AutoSavable
@@ -84,7 +85,8 @@ class DeltaCalculator(Calculator):
     DataT = DeltaData
 
     def __init__(self, data: str | Path | DeltaData, edge_k: float, 
-        root_path: Path, autosave_cfg:CalcAutoSaveCfg=None, exist_ok=False) -> None:
+        root_path: Path, autosave_cfg:CalcAutoSaveCfg=None, exist_ok=False,
+        debug=False) -> None:
         '''Calcula o delta nos dados salvos em `path`.
         
         Parâmetros:
@@ -101,11 +103,16 @@ class DeltaCalculator(Calculator):
             configs["dynamic_cfg"].diameter, configs["creator_cfg"].num_p) * 2
         
         self.edge_k = edge_k
+        self.debug = debug
         self.edge_tol = ring_d * self.edge_k
 
         self.current_id = 0
         self.deltas = []
         self.times = []
+
+        if self.debug:
+            self.debug_path = self.root_path / "debug"
+            self.debug_path.mkdir(exist_ok=True)
 
     @property
     def vars_to_save(self):
@@ -133,9 +140,20 @@ class DeltaCalculator(Calculator):
 
             init_cms = self.data.init_cms[pid]
 
+            if init_cms.shape[0] < 3:
+                continue
+
             links, dists = utils.calc_edges(init_cms, self.edge_tol, return_dist=True)
             rings_links = utils.links_ids(links, init_cms.shape[0])
             neighbors = utils.neighbors_all(links, init_cms.shape[0])
+
+            if self.debug:
+                items = {
+                    "links": links, "rings_links": rings_links, "neighbors": neighbors,
+                }
+                for name, value in items.items():
+                    with open(self.debug_path / (name + f"_{i}" + ".pickle"), "wb") as f:
+                        pickle.dump(value, f)
 
             init_uids = self.data.init_uids[pid]
             selected_ids = np.where(np.in1d(init_uids, self.data.init_selected_uids[pid]))[0]
@@ -152,7 +170,8 @@ class DeltaCalculator(Calculator):
 
                 init_dists = dists[rings_links[i]]
                 r_sum = (np.square(init_dists) / final_dists_square).sum()
-                delta = 1 - r_sum / len(neighs) 
+                # delta = 1 - r_sum / len(neighs) 
+                delta = r_sum / len(neighs) 
                 
                 deltas.append(delta)
             
@@ -165,6 +184,27 @@ class DeltaCalculator(Calculator):
         if to_save:
             np.save(self.root_path / "times.npy", self.times)
             np.save(self.root_path / "deltas.npy", self.deltas)
+
+    @staticmethod
+    def load_data(path: Path):
+        DeltaResults = namedtuple('DeltaResults', ['times', 'deltas'])
+
+        times = np.load(path / "times.npy")
+        deltas = np.load(path / "deltas.npy")
+        return DeltaResults(times, deltas)
+    
+    @staticmethod
+    def load_debug_data(path, id):
+        names = ["links", "rings_links", "neighbors"]
+        DebugDeltaData = namedtuple("DebugDeltaData", names)
+
+        debug_path = Path(path) / "debug"
+        items = {}
+        for name in names:
+            with open(debug_path / (name + f"_{id}.pickle"), "rb") as f:
+                items[name] = pickle.load(f)
+
+        return DebugDeltaData(**items)
 
 class DenVelCalculator(Calculator):
     DataT = DenVelData
@@ -179,7 +219,9 @@ class DenVelCalculator(Calculator):
 
         if to_save:
             np.save(self.root_path / "vel_order_par.npy", self.vel_order_par)
+            np.save(self.root_path / "vel_time.npy", self.data.vel_time)
             np.save(self.root_path / "den_eq.npy", self.den_eq)
+            np.save(self.root_path / "den_time.npy", self.data.den_time)
 
     def calc_velocity_order_par(self):
         data = self.data
@@ -218,3 +260,15 @@ class DenVelCalculator(Calculator):
             density_eq[init_id: final_id] = density_eq_i
 
         return density_eq
+
+    @staticmethod
+    def load_data(path: Path):
+        DenResults = namedtuple('DenResults', ['times', 'den_eq'])
+        VelResults = namedtuple('VelResults', ['times', 'vel_par'])
+
+        vel_order_par = np.load(path / "vel_order_par.npy")
+        vel_time = np.load(path / "vel_time.npy")
+        den_eq = np.load(path / "den_eq.npy")
+        den_time = np.load(path / "den_time.npy")
+
+        return DenResults(den_time, den_eq), VelResults(vel_time, vel_order_par)

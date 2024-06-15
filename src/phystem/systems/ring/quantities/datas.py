@@ -3,8 +3,9 @@ import pickle, yaml
 import numpy as np
 from enum import Flag, auto
 from pathlib import Path
+from collections import namedtuple
 
-from phystem.systems.ring.collectors.data_types import ArraySizeAware, MultFileList
+from phystem.data_utils.data_types import ArraySizeAware, MultFileList
 
 class BaseData(ABC):
     @abstractmethod
@@ -17,7 +18,7 @@ class DeltaData(BaseData):
         init = auto()
         final = auto()
 
-    def __init__(self, root_path: str | Path) -> None:
+    def __init__(self, root_path: str | Path, debug=False) -> None:
         super().__init__(root_path)
 
         with open(self.root_path / "config.yaml") as f:
@@ -38,6 +39,8 @@ class DeltaData(BaseData):
         self.load_data(self.data_path)
         self.init_times  = np.load(self.data_path / "init_times.npy")
         self.final_times  = np.load(self.data_path / "final_times.npy")
+
+
 
     @staticmethod
     def parse(file_path: Path):

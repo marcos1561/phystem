@@ -1,11 +1,11 @@
 import unittest
 import numpy as np
 
-from phystem.systems.ring import quantities
+from phystem.data_utils import grids
 
 class TestGrids(unittest.TestCase):
     def test_regular_coords(self):
-        grid = quantities.grids.RegularGrid(
+        grid = grids.RegularGrid(
             length=20,
             height=10,
             num_cols=5,

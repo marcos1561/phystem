@@ -3,7 +3,7 @@ from pathlib import Path
 
 from phystem.systems.ring import Simulation, utils
 from phystem.core.run_config import load_configs, CollectDataCfg, CheckpointCfg
-from phystem.systems.ring.collectors import DeltaCol, ColAutoSaveCfg, DensityVelCol, CreationRateCol, CheckpointCol, SnapshotsCol, SnapshotsColCfg
+from phystem.systems.ring.collectors import DeltaCol, ColAutoSaveCfg, DenVelCol, CreationRateCol, CheckpointCol, SnapshotsCol, SnapshotsColCfg
 
 current_folder = Path(os.path.dirname(__file__))
 configs_path = current_folder / "data_test/ring/configs/collectors_configs"
@@ -96,7 +96,7 @@ class TestRingCols(unittest.TestCase):
 
             col.add_collector(DeltaCol, cfg["delta"], "delta")
             col.add_collector(CreationRateCol, cfg["cr"], "cr")
-            col.add_collector(DensityVelCol, cfg["den_vel"], "den_vel")
+            col.add_collector(DenVelCol, cfg["den_vel"], "den_vel")
             col.add_collector(CheckpointCol, {}, "checkpoint")
             col.add_collector(SnapshotsCol, cfg["snaps"], "snaps")
 

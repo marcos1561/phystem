@@ -148,15 +148,6 @@ class SimulationCore(ABC):
                 "(Atributo 'func' da configuração 'CollectDataCfg')",
             ))
         
-        is_autosave = False
-        if run_cfg.checkpoint is not None:
-            metadata = run_cfg.checkpoint.get_metadata()
-            
-            if metadata.get("is_autosave", False):
-                is_autosave = True
-                self.solver.cpp_solver.sim_time = metadata["time"] 
-                self.solver.cpp_solver.num_time_steps = metadata["num_time_steps"] 
-
         run_cfg.func(self, run_cfg.func_cfg)
 
     def run_app(self, fig: Figure, update, title=None, ui_settings: config_ui.UiSettings=None):

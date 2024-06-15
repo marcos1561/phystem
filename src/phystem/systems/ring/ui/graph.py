@@ -374,6 +374,8 @@ class SimpleGraph(BaseGraph):
 
         self.ax.set_aspect(1)
 
+        ax.set(**self.graph_cfg.ax_kwargs)
+
         # Borders
         self.ax.plot([-l, -l], [ h, -h], color="black")
         self.ax.plot([ l,  l], [ h, -h], color="black")
@@ -413,7 +415,6 @@ class SimpleGraph(BaseGraph):
                     zorder=1, cmap="coolwarm" ,**self.graph_cfg.density_kwargs)
             
             fig.colorbar(self.density, **self.graph_cfg.cbar_kwargs)
-            ax.set(**self.graph_cfg.ax_kwargs)
 
         # self.points = self.ax.scatter(*self.get_pos().T, s=points_s, cmap=cm.hsv, 
         #     c=self.get_colors(), vmin=-np.pi, vmax=np.pi)
@@ -496,7 +497,7 @@ class ReplayGraph(BaseGraph):
                 self.points = self.ax.scatter(*self.get_pos().T, zorder=2, **self.graph_cfg.scatter_kwargs, cmap=cm.hsv, 
                     c=self.get_colors(), vmin=-np.pi, vmax=np.pi)
                 
-                fig.colorbar(self.points, location="right", label="(rad)")
+                fig.colorbar(self.points, label="(rad)", **self.graph_cfg.colorbar_kwargs)
             else:
                 self.points = self.ax.scatter(*self.get_pos().T, zorder=2, **self.graph_cfg.scatter_kwargs)
 

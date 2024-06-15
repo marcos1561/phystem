@@ -6,12 +6,12 @@ from enum import Enum, auto
 from phystem.core.collectors import ColAutoSaveCfg
 from phystem.systems.ring import utils 
 from phystem.systems.ring.collectors import RingCol
-from phystem.systems.ring.collectors.data_types import ArraySizeAware
+from phystem.data_utils.data_types import ArraySizeAware
 from phystem.systems.ring.solvers import CppSolver
 
 import numpy as np
 
-class DensityVelCol(RingCol):
+class DenVelCol(RingCol):
     class DataName(Enum):
         velocity = auto()
         density = auto()
@@ -182,12 +182,12 @@ class DensityVelCol(RingCol):
 
     def col_vel(self, time, ids_in_region, cms_in_region, cms):
         if self.vel_frame == 0:
-            self.time_vel_arr.append(time)
             self.vel_point_ids = ids_in_region
             self.vel_point_data = np.empty((cms_in_region.shape[0], 4), dtype=self.vel_data.data.dtype)
             self.vel_point_data[:,:2] = cms_in_region
         else:
             self.vel_point_data[:,2:] = cms[self.vel_point_ids]
+            self.time_vel_arr.append(time)
             self.vel_data.add(self.vel_point_data)
 
     def save_data(self, data: ArraySizeAware, name: DataName):
