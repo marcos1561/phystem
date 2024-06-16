@@ -20,8 +20,8 @@ O item 4 pode estar em dois locais:
 
 > ⚠️
 >
-> 1. Caso você utilize um sistema que utiliza o módulo feito em c++ (ring e szabo), é necessário compilar o código que gera tal módulo. Para tal, apenas execute o script 
-`build.sh` que está localizado na pasta `/src/phystem/cpp/pybind`. (Me Desculpem usuários do Windows, mas esse método não vai funcionar para vocês)
+> 1. Caso você utilize um sistema que utiliza o módulo feito em c++ (ring e szabo), é necessário compilar o código que gera tal módulo. 
+Para tal, consulte [Compilando o módulo em C++]({{ "docs/installation.html#installation_compilation" | relative_url }}).
 
 No momento atual, existem os seguintes sistemas implementados:
 
@@ -32,7 +32,7 @@ Implementação de múltiplos anéis ativos, com algumas pequenas modificações
 <img src="{{ 'assets/images/rings.gif' | relative_url }}" alt width="700"/>
 
 ### Szabo
-Implementação do modelo proposto para partículas ativas em Szabó [[2]](#2)
+Implementação do modelo de partículas ativas proposto em Szabó [[2]](#2)
 
 <!-- ![]({{ "assets/images/szabo.gif" | relative_url }}) -->
 <img src="{{ 'assets/images/szabo.gif' | relative_url }}" alt width="700"/>

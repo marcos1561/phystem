@@ -40,7 +40,7 @@ Após sua execução, será possível executar `import phystem` em qualquer luga
 - `<venv path>/src/`: Utilizando ambiente virtual.
 - `<current dir>/src/`: Utilizando instalação global.
 
-Se desejável, é possível configurar a pasta da instalação com a flag `--src`.
+Se desejável, é possível configurar o local da instalação com a flag `--src`.
 
 A flag `-e` é para a instalação ser editável, dessa forma, mudanças nos arquivos do phystem são aplicadas automaticamente, caso contrário, é necessário reinstalar a cada alteração feita.
 
@@ -67,6 +67,11 @@ Para testar a instalação, abra um REPL do python e execute
 Uma janela deve abrir contendo uma animação do sistema implementado no tutorial [Como utilizar o phystem?]({{ 'docs/tutorial_step_by_step.html' | relative_url }}).
 
 ## Compilando o módulo em C++
+{: #installation_compilation}
 Para explorar sistemas que utilizam o módulo feito em C++, é necessário compilar esse código.
 Para isso, apenas execute o script `build.sh` que está localizado na pasta `/src/phystem/cpp/pybind`.
 A compilação pode demorar um pouco. 
+
+```bash
+source <caminho para o build.sh>/build.sh
+```
