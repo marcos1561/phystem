@@ -33,6 +33,7 @@ class AppCore:
         self.run_cfg: RealTimeCfg = cfgs["run_cfg"]
         self.always_update = ui_settings.always_update
 
+        self.root.title("Phystem")
         self.fig.set_dpi(ui_settings.dpi)
 
         screen_width = self.root.winfo_screenwidth()

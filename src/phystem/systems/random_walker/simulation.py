@@ -32,7 +32,8 @@ class Simulation(SimulationCore):
         )
 
     def run_real_time(self):
-        fig, ax = plt.subplots() 
+        fig = plt.Figure()
+        ax = fig.add_subplot()
         
         particle_graph = graph.ParticlesGraph(
             ax=ax, 
