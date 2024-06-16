@@ -1,5 +1,4 @@
 ---
-layout: docs
 ---
 
 ## Como utilizar os sistemas físicos já implementados com o phystem?
@@ -21,9 +20,8 @@ O item 4 pode estar em dois locais:
 
 > ⚠️
 >
-> 1. Caso você utilize um sistema que utiliza o módulo feito em c++ (ring e szabo), é necessaŕio compilar o código que gera tal módulo. Para tal, apenas é necessaŕio executar o script 
-`build.sh` que está localiza na pasta `lib/phystem/cpp/pybind`. (Me Desculpem usuários do Windows, mas esse método não vai funcionar para vocês)
-> 2. Alguns recursos utilizados do `matplotlib` requerem a versão 3.8 ou superior, então se você obtiver algum erro relacionado ao `matplotlib`, garanta que esse pré-requisito esteja satisfeito (Isso só poderá ser um problem no modo de execução em tempo real).  
+> 1. Caso você utilize um sistema que utiliza o módulo feito em c++ (ring e szabo), é necessário compilar o código que gera tal módulo. Para tal, apenas execute o script 
+`build.sh` que está localizado na pasta `/src/phystem/cpp/pybind`. (Me Desculpem usuários do Windows, mas esse método não vai funcionar para vocês)
 
 No momento atual, existem os seguintes sistemas implementados:
 

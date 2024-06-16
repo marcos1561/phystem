@@ -1,5 +1,4 @@
 ---
-layout: docs
 ---
 
 ## Como utilizar o Phystem?
@@ -12,17 +11,14 @@ Para demonstrar sua utilização, vamos implementar um único caminhante aleató
 Cada sistema do phystem possui uma classe base, que contém seu esqueleto. Para realizar sua implementação precisamos herdar de tal base. 
 > ⚠️ 
 >
-> 1. Daqui em diante vou assumir que você clonou o phystem e tem o caminho da pasta "lib" adicionado ao PYTHONPATH.
-> 2. Em blocos de código, o primeiro comentário contém o nome do arquivo onde o código deveria estar.
+> 1. Caso ainda não tenha instalado o phystem, consulte as [instruções de instalação]({{ "docs/installation.html" | relative_url }}).
+> 2. Em blocos de código, o primeiro comentário contém o nome do arquivo onde o código deve estar.
 
 ### 0. Organização dos arquivos
 
 Para fins de organização, cada sistema será coloca em arquivos separados. Ao fim desse tutorial, a estrutura dos arquivos deve ser a seguinte
 
 ```
-lib
-└── phystem
-
 random_walker
 ├── creator.py
 ├── solver.py
@@ -74,7 +70,8 @@ from math import pi, cos, sin
 from phystem.core.solvers import SolverCore
 
 class Solver(SolverCore):
-    def __init__(self, pos0: list[float], vel0: list[float], noise_strength: float, size: int, dt: float) -> None:
+    def __init__(self, pos0: list[float], vel0: list[float], 
+        noise_strength: float, size: int, dt: float) -> None:
         super().__init__()
         self.size = size
 
@@ -219,31 +216,37 @@ class Simulation(SimulationCore):
         )
 ```
 
-Como queremos renderização em tempo real, também devemos implementar o método `run_real_time`, cuja função é configurar como o sistema físico é renderizado.
+Como queremos renderização em tempo real, também devemos implementar o método `run_real_time`, cuja função é configurar como o sistema físico é visualizado.
 
-O sistema físico é renderizado utilizando o `matplotlib`, então a primeira tarefa a se fazer é criar uma figura do `matplotlib` e os devidos `Axes`. Vamos simplesmente mostrar a partícula andando, dessa forma apenas um `Axe` dará conta do trabalho. A criação desses objetos pode ser feita da seguinte forma:
+A renderização do sistema é feita utilizando o `matplotlib`, então a primeira tarefa a se fazer é criar uma figura do `matplotlib` e os devidos `Axes`. Vamos simplesmente mostrar a partícula andando, dessa forma apenas um `Axe` dará conta do trabalho. A criação desses objetos deve ser feita da seguinte forma:
 
 ``` python
 # simulation.py
 
-fig, ax_walker = plt.subplots()      
+fig = plt.Figure()
+ax = fig.add_subplot()
 ```
+
+> ⚠️ 
+>
+> **Não** utilize `fig, ax = plt.subplots()`, pois isso entra em conflito com
+o tkinter (ferramenta utilizada para fazer a UI).
 
 O phystem já possui um gráfico que renderiza partículas em um plano, que pode ser utilizado da seguinte forma:
 
 ``` python
 # simulation.py
 
-from phystem.gui_phystem import graph
+from phystem.gui_phystem.mpl import graph
 
 particles_graph = graph.ParticlesGraph(
-    ax=ax_walker, 
+    ax=ax, 
     pos=self.solver.pos, 
     space_size=self.space_cfg.size,
 )
 ```
 
-Ainda precisamos criar a função que avança o sistema no tempo (essa função é chamada em cada quadro da animação que será gerada). Nessa função, o `Solver` precisa executar um passo temporal e o gráfico precisa ser atualizado.
+Ainda, precisamos criar a função que gera os frames. Nessa função, o `Solver` precisa executar passos temporais e o gráfico precisa ser atualizado.
 
 ``` python
 # simulation.py
@@ -256,7 +259,7 @@ def update(frame):
 >
 > Frequentemente é desejável realizar mais de um passo temporal por quadro, isso pode ser simplesmente feito chamando `solver.update` em um loop. A classe padrão da configuração de execução em tempo real possui o membro `num_steps_frame` que deve ser utilizado justamente para isso.
 
-Por fim, precisamos rodar a aplicação que conterá a animação e mais algumas informações e controles que podem ser modificados ao gosto do usuário. Isso simplesmente é feito chamando o método `run_app` passando a figura criada e a função que avança o sistema no tempo.
+Por fim, precisamos rodar a aplicação que conterá a animação, informações e controles, que podem ser modificados ao gosto do usuário. Isso simplesmente é feito chamando o método `run_app` passando a figura criada e a função que gera os frames.
 
 ``` python
 # simulation.py
@@ -273,8 +276,7 @@ import matplotlib.pyplot as plt
 
 from phystem.core.simulation import SimulationCore
 from phystem.core.run_config import RealTimeCfg
-
-from phystem.gui_phystem import graph
+from phystem.gui_phystem.mpl import graph
 
 from creator import Creator 
 from solver import Solver 
@@ -303,7 +305,8 @@ class Simulation(SimulationCore):
         )
 
     def run_real_time(self):
-        fig, ax = plt.subplots() 
+        fig = plt.Figure()
+        ax = fig.add_subplot()
         
         particle_graph = graph.ParticlesGraph(
             ax=ax, 
@@ -368,4 +371,4 @@ Poderíamos continuar com a nossa implementação adicionando muitas outras func
 5. Colocar múltiplos caminhantes (Talvez adicionar uma dinâmica de interação entre os caminhantes?)
 
 Enfim, as possibilidades são infinitas! Mas esse tutorial termina por aqui. Espero que ele tenha sido esclarecedor e te auxilia na sua jornada
-construindo os mais diversos sistemas físicos!. 
+construindo os mais diversos sistemas físicos!

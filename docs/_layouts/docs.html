@@ -2,11 +2,11 @@
 layout: base
 ---
 <div class="docs_container">
-  <div class="docs_sidebar">
+  <div class="docs_sidebar" id="docs_sidebar">
     <ul>
       {% for item in site.data.docs_nav %}
-      <li>
-        <a href="{{ item.link | relative_url }}" {% if page.url == item.link %}class="docs_current"{% endif %}>
+      <li {% if page.url == item.link %}class="current"{% endif %}>
+        <a href="{{ item.link | relative_url }}">
           {{ item.name }}
         </a>
       </li>

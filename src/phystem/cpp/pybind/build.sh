@@ -1,1 +1,2 @@
-c++ -fopenmp -O3 -Wall -shared -std=c++11 -fPIC $(python3 -m pybind11 --includes) pywrap.cpp -o ../../cpp_lib$(python3-config --extension-suffix)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+c++ -fopenmp -O3 -Wall -shared -std=c++11 -fPIC $(python3 -m pybind11 --includes) "$SCRIPT_DIR/pywrap.cpp" -o "$SCRIPT_DIR/../../cpp_lib$(python3-config --extension-suffix)"

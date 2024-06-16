@@ -1,6 +1,8 @@
 - name: Introdução
-  link: docs/introduction.html
+  link: /docs/introduction.html
+- name: Instalação
+  link: /docs/installation.html
 - name: Como utilizar o Phystem?
-  link: docs/tutorial_step_by_step.html
+  link: /docs/tutorial_step_by_step.html
 - name: Sistemas já implementados
-  link: docs/implemented_systems.html
+  link: /docs/implemented_systems.html
