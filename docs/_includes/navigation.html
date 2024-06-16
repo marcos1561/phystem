@@ -1,0 +1,17 @@
+<div id="header">
+<nav>
+  <ul>
+    {% for item in site.data.navigation %}
+    <li>
+      <a href="{{ item.link | relative_url }}" {% if page.url == item.link %}class="current"{% endif %}>
+        {{ item.name }}
+      </a>
+    </li>
+    {% endfor %}
+    <li class="fork"><a href="{{ site.github.repository_url }}">View On GitHub</a></li>
+  </ul>
+</nav> 
+</div>
+<!-- 
+<nav>
+</nav> -->
