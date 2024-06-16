@@ -8,7 +8,7 @@ from .base import RingCol
 
 class CreationRateCol(RingCol):
     def __init__(self, wait_time, collect_time, collect_dt, 
-        solver: solvers.CppSolver, root_path: str | Path, configs: dict, 
+        solver: solvers.CppSolver, root_path: Path, configs: dict, 
         autosave_cfg: ColAutoSaveCfg=None, to_load_autosave=False, exist_ok=False) -> None:
         super().__init__(solver, root_path, configs, autosave_cfg, exist_ok=exist_ok)
         # Configuration

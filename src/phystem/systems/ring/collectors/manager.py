@@ -5,7 +5,7 @@ from .base import RingCol
 
 class ColManager(RingCol):
     def __init__(self, 
-        solver: CppSolver, root_path: str | Path, configs: dict, 
+        solver: CppSolver, root_path: Path, configs: dict, 
         to_load_autosave=False,
         autosave_cfg: ColAutoSaveCfg = None, exist_ok=False) -> None:
         super().__init__(solver, root_path, configs, autosave_cfg, exist_ok, data_dirname=None)

@@ -13,7 +13,7 @@ class ColAutoSaveCfg:
     
 class Collector(AutoSavable, ABC):
     '''Responsável pela coleta de dados gerados pelo solver.'''
-    def __init__(self, solver: SolverCore, root_path: str | Path, configs: dict, 
+    def __init__(self, solver: SolverCore, root_path: Path, configs: dict, 
         autosave_cfg: ColAutoSaveCfg=None, 
         data_dirname="data", exist_ok=False) -> None:
         '''
@@ -79,7 +79,7 @@ class Collector(AutoSavable, ABC):
             self.autosave()
 
     @staticmethod
-    def save_cfg(configs: dict[str], configs_path: str | Path) -> None:
+    def save_cfg(configs: dict[str], configs_path: Path) -> None:
         '''Salva as configurações da simulação.'''
         configs = copy.deepcopy(configs)
         configs["run_cfg"].func = "nao salvo"

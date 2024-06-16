@@ -17,7 +17,7 @@ class DenVelCol(RingCol):
         density = auto()
     
     def __init__(self, xlims, vel_dt, density_dt, vel_frame_dt, 
-        solver: CppSolver, root_path: str | Path, configs: dict, 
+        solver: CppSolver, root_path: Path, configs: dict, 
         memory_per_file=10*1e6,
         autosave_cfg: ColAutoSaveCfg = None, to_load_autosave=False, exist_ok=False) -> None:
         '''Faz duas formas de coleta dos centros de massa na região definida 
@@ -223,7 +223,7 @@ class DenVelCol(RingCol):
 
 
 # class DensityVelCol(RingCol):
-#     def __init__(self, xlims, vel_dt, density_dt, solver: CppSolver, path: str | Path, configs: dict, 
+#     def __init__(self, xlims, vel_dt, density_dt, solver: CppSolver, path: Path, configs: dict, 
 #         autosave_cfg: ColAutoSaveCfg = None, load_autosave=False) -> None:
 #         '''Coleta a densidade de equilíbrio e o parâmetro de alinhamento da velocidade (V),
 #         na região definida pelos limites no eixo x em `xlims`.

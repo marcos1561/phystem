@@ -13,7 +13,7 @@ class SnapshotsColCfg:
 
 class SnapshotsCol(RingCol):
     def __init__(self, col_cfg: SnapshotsColCfg,
-        solver: CppSolver, root_path: str | Path, configs: dict, 
+        solver: CppSolver, root_path: Path, configs: dict, 
         exist_ok=False, to_load_autosave=False, **kwargs) -> None:
         super().__init__(solver, root_path, configs, col_cfg.autosave_cfg, exist_ok, **kwargs)
 

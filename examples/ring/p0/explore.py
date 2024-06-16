@@ -1,7 +1,7 @@
 import numpy as np
 import copy
 from phystem.systems.ring import Simulation
-from phystem.core.run_config import CollectDataCfg
+from phystem.core.run_config import CollectDataCfg, CheckpointCfg
 from phystem.systems.ring.configs import RingCfg
 from pathlib import Path
 
@@ -17,7 +17,10 @@ def main(configs: dict[str]):
     dynamic_cfg: RingCfg = configs["dynamic_cfg"]
     run_cfg: CollectDataCfg = configs["run_cfg"]
     for idx, p0 in enumerate(p0_range):
-        run_cfg.folder_path = root_path / str(idx)
+        folder_path = root_path / str(idx)
+        run_cfg.folder_path = folder_path
+        run_cfg.checkpoint = CheckpointCfg(folder_path / "autosave")
+        
         dynamic_cfg.p0 = float(p0)
 
         sim = Simulation(**copy.deepcopy(configs))

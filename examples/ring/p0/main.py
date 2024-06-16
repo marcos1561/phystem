@@ -73,12 +73,12 @@ stokes_cfg = StokesCfg(
 ##
 ## Select Run Type
 ##
-run_type = RunType.REAL_TIME
+run_type = RunType.COLLECT_DATA
 
 num_cols, num_rows = utils.particle_grid_shape(space_cfg, dynamic_cfg.max_dist)
 num_cols_cm, num_rows_cm = utils.rings_grid_shape(space_cfg, radius)
 
-tf = 1000
+tf = 2000
 start_x = scale_factor * (-75/2 - 1) * 2*radius
 xlims = [start_x, start_x + 2*radius]
 

@@ -16,7 +16,7 @@ class AutoSavePaths:
         self.state_path = Path(root_dirname, state_filename + ".pickle")
 
 class AutoSavable():
-    def __init__(self, root_path: str | Path, autosave_root_name="autosave", 
+    def __init__(self, root_path: Path, autosave_root_name="autosave", 
         state_name="state") -> None:
         '''
         Parâmetros:

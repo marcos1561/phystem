@@ -84,7 +84,7 @@ class Calculator(AutoSavable, ABC):
 class DeltaCalculator(Calculator):
     DataT = DeltaData
 
-    def __init__(self, data: str | Path | DeltaData, edge_k: float, 
+    def __init__(self, data: Path | DeltaData, edge_k: float, 
         root_path: Path, autosave_cfg:CalcAutoSaveCfg=None, exist_ok=False,
         debug=False) -> None:
         '''Calcula o delta nos dados salvos em `path`.

@@ -160,7 +160,7 @@ class StateSaver:
 
 class RingCol(collectors.Collector):
     '''Base para os coletores dos anéis.'''
-    def __init__(self, solver: CppSolver, root_path: str | Path, configs: dict, 
+    def __init__(self, solver: CppSolver, root_path: Path, configs: dict, 
         autosave_cfg: ColAutoSaveCfg = None, exist_ok=False, **kwargs) -> None:
         super().__init__(solver, root_path, configs, autosave_cfg, exist_ok=exist_ok, **kwargs)
 

@@ -7,7 +7,7 @@ from .base import RingCol, StateSaver
 
 class CheckpointCol(RingCol):
     def __init__(self, 
-        solver: CppSolver, root_path: str | Path, configs: dict, autosave_cfg: ColAutoSaveCfg=None, 
+        solver: CppSolver, root_path: Path, configs: dict, autosave_cfg: ColAutoSaveCfg=None, 
         exist_ok=False, to_load_autosave=False, **kwargs) -> None:
         super().__init__(solver, root_path, configs, autosave_cfg, exist_ok, 
             data_dirname=None, **kwargs)

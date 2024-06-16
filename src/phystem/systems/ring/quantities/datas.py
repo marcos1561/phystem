@@ -9,7 +9,7 @@ from phystem.data_utils.data_types import ArraySizeAware, MultFileList
 
 class BaseData(ABC):
     @abstractmethod
-    def __init__(self, root_path: str | Path, data_dirname="data") -> None:
+    def __init__(self, root_path: Path, data_dirname="data") -> None:
         self.root_path = Path(root_path).absolute().resolve()
         self.data_path = self.root_path / data_dirname
 
@@ -18,7 +18,7 @@ class DeltaData(BaseData):
         init = auto()
         final = auto()
 
-    def __init__(self, root_path: str | Path, debug=False) -> None:
+    def __init__(self, root_path: Path, debug=False) -> None:
         super().__init__(root_path)
 
         with open(self.root_path / "config.yaml") as f:
@@ -88,7 +88,7 @@ class DeltaData(BaseData):
         self.num_points_completed = len(self.ids_completed)
 
 class CreationRateData(BaseData):
-    def __init__(self, root_path: str | Path) -> None:
+    def __init__(self, root_path: Path) -> None:
         super().__init__(root_path)
 
         with open(self.data_path / "cr_metadata.yaml") as f:
@@ -99,7 +99,7 @@ class CreationRateData(BaseData):
         self.num_active = np.load(self.data_path / "num_active.npy")[:num_points]
 
 class DenVelData(BaseData):
-    def __init__(self, root_path: str | Path) -> None:
+    def __init__(self, root_path: Path) -> None:
         '''Carrega os dados coletados pelo coletor `DensityVelCol`. Para mais informações
         sobre o formato dos dados, leia a documentação do respectivo coletor.
         '''
