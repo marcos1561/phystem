@@ -28,6 +28,9 @@ twitter_username: jekyllrb
 github_username:  jekyll
 
 # Build settings
+
+baseurl: /phystem
+
 # theme:  minima
 # theme: jekyll-theme-midnight
 remote_theme: pages-themes/midnight@v0.2.0
