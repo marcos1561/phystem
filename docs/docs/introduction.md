@@ -11,6 +11,6 @@ Phystem é um framework para auxiliar na construção e exploração de sistemas
 - Simulation: Aplicação que engloba todos os outros componentes.
 
 Cada componente deve ser implementado pelo usuário. Um tutorial passo a passo, implementando todos
-os componentes do zero está disponível [aqui]({{ "phystem/docs/tutorial_step_by_step.html" | relative_url }}).
+os componentes do zero está disponível [aqui]({{ "docs/tutorial_step_by_step.html" | relative_url }}).
 
-Caso você esteja interessado em utilizar os sistemas físicos já implementados, [clique aqui]({{ "phystem/docs/implemented_systems.html" | relative_url }}).
+Caso você esteja interessado em utilizar os sistemas físicos já implementados, [clique aqui]({{ "docs/implemented_systems.html" | relative_url }}).

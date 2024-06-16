@@ -31,13 +31,13 @@ No momento atual, existem os seguintes sistemas implementados:
 Implementação de múltiplos anéis ativos, com algumas pequenas modificações, apresentado em Teixeira [[1]](#1).
 
 <!-- ![]({{ "assets/images/rings.gif" | relative_url }}) -->
-<img src="{{ 'phystem/assets/images/rings.gif' | relative_url }}" alt width="700"/>
+<img src="{{ 'assets/images/rings.gif' | relative_url }}" alt width="700"/>
 
 ### Szabo
 Implementação do modelo proposto para partículas ativas em Szabó [[2]](#2)
 
 <!-- ![]({{ "assets/images/szabo.gif" | relative_url }}) -->
-<img src="{{ 'phystem/assets/images/szabo.gif' | relative_url }}" alt width="700"/>
+<img src="{{ 'assets/images/szabo.gif' | relative_url }}" alt width="700"/>
 
 ### Vicsek
 Implementação do modelo proposto em Vicsek [[3]](#3). 
@@ -46,7 +46,7 @@ Implementação do modelo proposto em Vicsek [[3]](#3).
 > A implementação não está completa, apenas tem uma versão do seu solver extremamente desorganizada.
 
 ### Random Walker
-Sistema implementado no tutorial [Como utilizar o phystem?]({{ 'phystem/docs/tutorial_step_by_step.html' | relative_url }}).
+Sistema implementado no tutorial [Como utilizar o phystem?]({{ 'docs/tutorial_step_by_step.html' | relative_url }}).
 
 ## Referências
 <a id="1">[1]</a> 

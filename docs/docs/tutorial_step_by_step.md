@@ -357,7 +357,7 @@ sim.run()
 
 Se esse arquivo for executado, aparecerá uma janela com uma animação semelhante a essa
 
-![]({{ "phystem/assets/images/random_walk.gif" | relative_url}})
+![]({{ "assets/images/random_walk.gif" | relative_url}})
 
 Poderíamos continuar com a nossa implementação adicionando muitas outras funcionalidades, algumas opções são
 
