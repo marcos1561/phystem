@@ -3,7 +3,7 @@ from pathlib import Path
 
 from phystem.systems.ring import Simulation, utils
 from phystem.core.run_config import load_configs, CollectDataCfg, CheckpointCfg
-from phystem.systems.ring.collectors import DeltaCol, ColAutoSaveCfg, DenVelCol, CreationRateCol, CheckpointCol, SnapshotsCol, SnapshotsColCfg
+from phystem.systems.ring.collectors import DeltaCol, ColAutoSaveCfg, DenVelCol, CreationRateCol, CheckpointCol, SnapshotsCol, SnapshotsColCfg, RingCol
 
 current_folder = Path(os.path.dirname(__file__))
 configs_path = current_folder / "data_test/ring/configs/collectors_configs"
@@ -14,6 +14,64 @@ class AsteroidError(Exception):
 
 class TestRingCols(unittest.TestCase):
     def test_autosave(self):
+        stop_time = 50
+        ColsT = {
+            "delta": DeltaCol,
+            "cr": CreationRateCol,
+            "den_vel": DenVelCol,
+            "checkpoint": CheckpointCol,
+            "snaps": SnapshotsCol,
+        }
+
+        run_cfg, configs = self.exec_collect(stop_time, ColsT)
+
+        run_cfg.checkpoint = CheckpointCfg(run_cfg.folder_path / "autosave")
+        sim = Simulation(**configs)
+        
+        if sim.solver.time < 39:
+            raise Exception("Tempo do solver está errado após o carregamento do auto-save.")
+        
+        sim.run()
+        shutil.rmtree(run_cfg.folder_path)
+
+        
+    def test_autosave_backup(self):
+        num_autosaves = 5
+        class DeltaInfected(DeltaCol):
+            count = 0
+            def autosave(self):
+                super().autosave()        
+                DeltaInfected.count += 1
+
+                if DeltaInfected.count == num_autosaves:
+                    raise AsteroidError()
+
+        stop_time = 50000000
+        ColsT = {
+            "cr": CreationRateCol,
+            "den_vel": DenVelCol,
+            "delta": DeltaInfected,
+            "checkpoint": CheckpointCol,
+            "snaps": SnapshotsCol,
+        }
+
+        run_cfg, configs = self.exec_collect(stop_time, ColsT)
+
+        run_cfg.checkpoint = CheckpointCfg(run_cfg.folder_path / "autosave")
+        sim = Simulation(**configs)
+
+
+        autosave_dt = 5
+        expected_time = autosave_dt * (num_autosaves - 1) 
+        if sim.solver.time < expected_time - 1 or sim.solver.time > expected_time + 1:
+            print("Solver time:", sim.solver.time)
+            raise Exception("Tempo do solver incorreto após o carregamento.")    
+        
+        sim.run()
+        shutil.rmtree(run_cfg.folder_path)
+
+    @staticmethod
+    def exec_collect(stop_time: float, ColsT: dict[str, RingCol]):
         configs = load_configs(configs_path)
         run_cfg: CollectDataCfg = configs["run_cfg"]
         dynamic_cfg = configs["dynamic_cfg"]
@@ -33,7 +91,6 @@ class TestRingCols(unittest.TestCase):
             "xlims": [center_region - radius, center_region + radius],
             "start_dt": (xlims[1] - xlims[0]) * dynamic_cfg.vo,
             "check_dt": 1/4 * (xlims[1] - xlims[0]) * dynamic_cfg.vo,
-            "autosave_cfg": ColAutoSaveCfg(freq_dt=5),
         }
 
         func_cfg["den_vel"] = {
@@ -53,33 +110,39 @@ class TestRingCols(unittest.TestCase):
             "col_cfg": SnapshotsColCfg(
                 snaps_dt=2,
                 wait_time=1,
-            )
+            ),
         }
 
         func_cfg["autosave_cfg"] = ColAutoSaveCfg(freq_dt=5)
+
+        class DeltaInfected(DeltaCol):
+            count = 0
+            def autosave(self):
+                super().autosave()        
+                DeltaInfected.count += 1
+
+                if DeltaInfected.count > 2:
+                    raise AsteroidError()
 
         # Rodando a simulação
         run_cfg: CollectDataCfg = configs["run_cfg"]
         run_cfg.folder_path = current_folder / "tmp"
         run_cfg.func_cfg = func_cfg
-        run_cfg.func = TestRingCols.get_pipeline(stop_time=50)
+        run_cfg.func = TestRingCols.get_pipeline(
+            stop_time=stop_time,
+            ColsT=ColsT,
+        )
 
         try:
             Simulation(**configs).run()
         except AsteroidError as e:
+            print("ASTEORIDE")
             pass
 
-        run_cfg.checkpoint = CheckpointCfg(run_cfg.folder_path / "autosave")
-        sim = Simulation(**configs)
-        
-        if sim.solver.time < 39:
-            raise Exception("Tempo do solver está errado após o carregamento do auto-save.")
-        
-        sim.run()
-        shutil.rmtree(run_cfg.folder_path)
-
+        return run_cfg, configs
+    
     @staticmethod
-    def get_pipeline(stop_time):
+    def get_pipeline(stop_time, ColsT: dict[str, RingCol]):
         def pipeline(sim: Simulation, cfg: dict=None):
             from phystem.core.run_config import CollectDataCfg
             from phystem.systems.ring.collectors import ColManager
@@ -94,11 +157,8 @@ class TestRingCols(unittest.TestCase):
                 autosave_cfg=cfg["autosave_cfg"],
             )
 
-            col.add_collector(DeltaCol, cfg["delta"], "delta")
-            col.add_collector(CreationRateCol, cfg["cr"], "cr")
-            col.add_collector(DenVelCol, cfg["den_vel"], "den_vel")
-            col.add_collector(CheckpointCol, {}, "checkpoint")
-            col.add_collector(SnapshotsCol, cfg["snaps"], "snaps")
+            for name, ColT in ColsT.items():
+                col.add_collector(ColT, cfg.get(name, {}), name)
 
             is_autosave = collect_cfg.is_autosave
 

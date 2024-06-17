@@ -1,9 +1,89 @@
 ---
 layout: base
 ---
+<!-- <script src={{ "assets/js/toc.js" | relative_url }}></script> -->
 <div class="docs_container">
   <div class="docs_sidebar" id="docs_sidebar">
-    <ul>
+    <div class="toc">
+      <ul>
+      {% for item in site.data.docs_nav %}
+      {% assign is_selected = false %}
+      {% if item.link == page.url %}
+        {% assign is_selected = true %}
+      {% endif %}
+      {% for sub_item in item.itens %}
+        {% if sub_item.link == page.url %}
+          {% assign is_selected = true %}
+        {% endif %}
+      {% endfor %}
+
+        {% if item.link != none and item.itens != none %}
+          <li class="toc-item">
+            <div {% if item.link == page.url %}class="current"{% endif %}>
+        {% else %}
+          <li class="toc-item {% if item.link == page.url %}current{% endif %}">
+        {% endif %}
+          <a 
+            href="{{ item.link | relative_url }}"
+            {% if item.link != none %}class="has_page"{% endif %}
+          >
+            {{ item.name }}
+          </a>
+          {% if item.link != none and item.itens != none %}
+          </div>
+          {% endif%}          
+          <!-- <div>{{ item.itens }}</div> -->
+          
+          {% if item.itens != none %}
+          <ul class="sub-items"
+            {% if is_selected %}
+              style="display: block;"
+            {% else %}
+              style="display: none;"
+            {% endif %}
+          >
+            {% for sub_item in item.itens %}
+              <li {% if page.url == sub_item.link %}class="current"{% endif %}>
+                <a href="{{ sub_item.link | relative_url }}">
+                {{ sub_item.name }}
+                </a>
+              </li>
+            {% endfor %}
+            </ul>
+          {% endif %}
+        {% if item.itens != none %}
+          </li>
+        </dir>
+        {% else %}
+        </li>
+        {% endif%}
+      
+      {% endfor %}
+      </ul>
+
+      <!-- <ul>
+          <li class="toc-item"><a href="#section1">Section 1</a>
+              <ul class="sub-items">
+                  <li><a href="#subsection1-1">Subsection 1.1</a></li>
+                  <li><a href="#subsection1-2">Subsection 1.2</a></li>
+              </ul>
+          </li>
+          <li class="toc-item"><a href="#section2">Section 2</a>
+              <ul class="sub-items">
+                  <li><a href="#subsection2-1">Subsection 2.1</a></li>
+                  <li><a href="#subsection2-2">Subsection 2.2</a></li>
+              </ul>
+          </li>
+          <li class="toc-item"><a href="#section3">Section 3</a>
+              <ul class="sub-items">
+                  <li><a href="#subsection3-1">Subsection 3.1</a></li>
+                  <li><a href="#subsection3-2">Subsection 3.2</a></li>
+              </ul>
+          </li>
+      </ul> -->
+    </div>
+
+    <!-- <ul>
       {% for item in site.data.docs_nav %}
       <li {% if page.url == item.link %}class="current"{% endif %}>
         <a href="{{ item.link | relative_url }}">
@@ -11,7 +91,7 @@ layout: base
         </a>
       </li>
       {% endfor %}
-    </ul>
+    </ul> -->
   </div>
   <div class="docs_content">
     <div class="docs_content_inner">

@@ -103,7 +103,8 @@ class DenVelCol(RingCol):
 
     @property
     def vars_to_save(self):
-        return [
+        v = super().vars_to_save
+        v.extend([ 
             "last_time_den",
             "last_time_vel",
             "vel_frame",
@@ -115,8 +116,9 @@ class DenVelCol(RingCol):
             "vel_data",
             "time_den_arr",
             "time_vel_arr",
-        ]
-    
+        ])
+        return v
+
     def collect(self) -> None:
         time = self.solver.time
 

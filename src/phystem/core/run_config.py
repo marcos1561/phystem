@@ -32,7 +32,7 @@ from pathlib import Path
 from enum import Flag, Enum, auto
 import yaml, os, copy
 from phystem.gui_phystem import config_ui
-from . import settings
+from . import settings, autosave
 
 
 def load_configs(path: Path, load_checkpoint_cfgs=False):
@@ -72,7 +72,7 @@ class SolverType(Enum):
     CPP = auto()
 
 class CheckpointCfg:
-    def __init__(self, root_path: str, override_cfgs: bool = False,
+    def __init__(self, root_path: Path, override_cfgs: bool = False,
                  override_func_cfg=True, ignore_autosave=False) -> None:
         '''
         Parameters:
@@ -90,6 +90,9 @@ class CheckpointCfg:
                 Se for `True`, o checkpoint não é interpretado como auto-salvamento mesmo se ele for.    
         '''
         self.root_path = Path(root_path)
+        if self.root_path.stem == settings.autosave_container_name:
+            self.root_path = autosave.AutoSavable.get_autosave_path(self.root_path)
+
         self.override_cfgs = override_cfgs
         self.override_func_cfg = override_func_cfg
         self.ignore_autosave = ignore_autosave

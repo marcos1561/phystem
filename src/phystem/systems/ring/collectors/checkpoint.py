@@ -22,10 +22,6 @@ class CheckpointCol(RingCol):
         if to_load_autosave:
             self.load_autosave()
 
-    @property
-    def vars_to_save(self):
-        return []
-
     def collect(self) -> None:
         if self.autosave_cfg:
             self.check_autosave()

@@ -99,7 +99,6 @@ class SimulationCore(ABC):
     def save_configs(self, path):
         save_configs(self.configs, path)
 
-
     @classmethod
     def load_from_configs(cls, path: Path):
         cfgs = load_configs(path)

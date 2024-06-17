@@ -16,7 +16,7 @@ class CalcAutoSaveCfg:
 class Calculator(AutoSavable, ABC):
     DataT: BaseData
 
-    def __init__(self, data: str | BaseData, root_path: Path, autosave_cfg: CalcAutoSaveCfg=None, exist_ok=False) -> None:
+    def __init__(self, data: BaseData, root_path: Path, autosave_cfg: CalcAutoSaveCfg=None, exist_ok=False) -> None:
         self.root_path = Path(root_path)
         if settings.IS_TESTING:
             self.root_path.mkdir(parents=True, exist_ok=True)
@@ -59,7 +59,7 @@ class Calculator(AutoSavable, ABC):
 
     def check_autosave(self, id):
         if id % self.autosave_cfg.freq == 0:
-            self.autosave()
+            self.exec_autosave()
 
     def save_init_kwargs(self):
         with open(self.autosave_root_path / "init_kwargs.pickle", "wb") as f:
@@ -84,7 +84,7 @@ class Calculator(AutoSavable, ABC):
 class DeltaCalculator(Calculator):
     DataT = DeltaData
 
-    def __init__(self, data: Path | DeltaData, edge_k: float, 
+    def __init__(self, data: DeltaData, edge_k: float, 
         root_path: Path, autosave_cfg:CalcAutoSaveCfg=None, exist_ok=False,
         debug=False) -> None:
         '''Calcula o delta nos dados salvos em `path`.
@@ -209,7 +209,7 @@ class DeltaCalculator(Calculator):
 class DenVelCalculator(Calculator):
     DataT = DenVelData
 
-    def __init__(self, data: str | DenVelData, root_path: Path, autosave_cfg: CalcAutoSaveCfg=None, exist_ok=False) -> None:
+    def __init__(self, data: DenVelData, root_path: Path, autosave_cfg: CalcAutoSaveCfg=None, exist_ok=False) -> None:
         super().__init__(data, root_path, autosave_cfg, exist_ok=exist_ok)
         self.data: DenVelData
 

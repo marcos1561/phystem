@@ -5,4 +5,7 @@
 - name: Como utilizar o Phystem?
   link: /docs/tutorial_step_by_step.html
 - name: Sistemas já implementados
-  link: /docs/implemented_systems.html
+  link: /docs/systems.html
+  itens:
+    - name: Ring
+      link: /docs/systems/ring.html

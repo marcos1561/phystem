@@ -27,7 +27,43 @@ def calc_den(results_path, init_time):
     
     return mean, std
 
-def graph(data_path: Path, results_path):
+def den_dist(results_path, data_path, init_time, num_cols=5):
+    data_path = Path(data_path)
+    results_path = Path(results_path)
+
+    p0_range = np.load(data_path / "p0_range.npy")
+    
+    from math import ceil
+    num_rows =  ceil(p0_range.size / num_cols)
+    
+    fig, ax = plt.subplots(num_rows, num_cols) 
+    
+    den_results, _ = calculators.DenVelCalculator.load_data(results_path / '0/den_vel')
+
+    ti = init_time
+    tf = den_results.times[-1]
+
+    fig.suptitle(f"$t \in [{round(ti, 2)}, {round(tf, 2)}]$")
+
+    for idx, p_0 in enumerate(p0_range):
+        den_results, _ = calculators.DenVelCalculator.load_data(results_path / str(idx) / 'den_vel')
+
+        mask = den_results.times > init_time
+        den = den_results.den_eq[mask]
+
+        row_id = idx // num_cols
+        col_id = idx % num_cols
+        ax_i = ax[row_id, col_id]
+        
+        if row_id == num_rows - 1:
+            ax_i.set_xlabel(r"$\delta_{eq}$")
+
+        ax_i.hist(den, label=f"$p_0$ = {round(p_0, 3)}")
+        ax_i.legend()
+    plt.show()
+
+
+def graph(i, data_path: Path, results_path):
     results_path = Path(results_path)
     data_path = Path(data_path)
     delta = calculators.DeltaCalculator.load_data(results_path / "delta")
@@ -35,6 +71,7 @@ def graph(data_path: Path, results_path):
     cr = datas.CreationRateData(data_path / "cr")
     
     fig, axs = plt.subplots(2, 3)
+    fig.suptitle(i)
 
     def delta_graph(ax: Axes):
         ax.set_title("Delta")
@@ -111,16 +148,31 @@ def p0_den(data_path, results_path, init_time):
     plt.errorbar(p0_range, den_measures["mean"], den_measures["std"], ecolor="black", capsize=2, fmt="o")
 
 
-data_name = "explore_p0"
-p0_den("datas/" + data_name, "results/" + data_name, 
-    init_time=650)
-plt.show()
+
+# graph(
+#     data_path="../input_pars/datas/adh_1",
+#     results_path="../input_pars/results/adh_1",
+# )
+# plt.show()
+
+# data_name = "explore_p0_2000"
+# p0_den("datas/" + data_name, "results/" + data_name, 
+#     init_time=1000)
+# plt.show()
+
+
+data_name = "explore_p0_2000"
+den_dist(
+    results_path = "results/" + data_name,
+    data_path = "datas/" + data_name,
+    init_time=1000,
+)
 
 # for i in range(15):
-#     data_name = "explore_p0/" + str(i)
+#     data_name = "explore_p0_2000/" + str(i)
 
-#     crunch_numbers("datas/" + data_name, "results/" + data_name)
-#     graph("datas/" + data_name, "results/" + data_name)
+#     # crunch_numbers("datas/" + data_name, "results/" + data_name)
+#     graph(i, "datas/" + data_name, "results/" + data_name)
 #     # calc_den("results/" + data_name)
 
 #     plt.show()

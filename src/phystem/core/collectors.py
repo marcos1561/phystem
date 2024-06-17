@@ -67,6 +67,12 @@ class Collector(AutoSavable, ABC):
         
         self.save_cfg(self.configs, self.configs_path)
 
+    @property
+    def vars_to_save(self):
+        return [
+            "autosave_last_time",
+        ]
+
     @abstractmethod
     def collect(self) -> None:
         '''Realiza a coleta dos dados no instante atual.'''
@@ -76,7 +82,7 @@ class Collector(AutoSavable, ABC):
         '''Realiza o auto-salvamento de acordo com a frequência definida.'''
         if self.solver.time - self.autosave_last_time > self.autosave_cfg.freq_dt:
             self.autosave_last_time = self.solver.time
-            self.autosave()
+            self.exec_autosave()
 
     @staticmethod
     def save_cfg(configs: dict[str], configs_path: Path) -> None:

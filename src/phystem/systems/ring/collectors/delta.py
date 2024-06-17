@@ -103,7 +103,8 @@ class DeltaCol(collectors.RingCol):
 
     @property
     def vars_to_save(self):
-        return [
+        v =  super().vars_to_save
+        v.extend([
             "data_point_id",
             "last_start_time",
             "last_check_time",
@@ -111,7 +112,8 @@ class DeltaCol(collectors.RingCol):
             "tracking",
             "init_times",
             "final_times",
-        ]
+        ])
+        return v
 
     def collect(self):
         if self.state is State.waiting:

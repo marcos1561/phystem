@@ -61,16 +61,6 @@ section {
     text-align: justify;
 }
 
-#docs_sidebar ul li {
-    padding: 0.15em;
-    transition: 0.3s;
-}
-
-#docs_sidebar ul li.current {
-    background: #444444;
-    border-radius: 4px;
-}
-
 .docs_container {
     display: flex;
 }
@@ -79,6 +69,41 @@ section {
     width: 15em;
     border-right: 1px solid #423f3f;
     padding: 20px;
+}
+
+#docs_sidebar ul {
+    padding-left: 2em;
+}
+
+#docs_sidebar ul li {
+    transition: 0.3s;
+    padding: 0.15em;
+}
+
+.toc ul li.current {
+    background: #444444;
+    border-radius: 4px;
+}
+
+.toc li div {
+    padding: 0.15em;
+    margin-bottom: 0.3em;
+}
+
+.toc li div.current {
+    background: #444444;
+    border-radius: 4px;
+}
+
+
+#docs_sidebar a:hover {
+    text-decoration: underline;
+}
+
+/* Styling for sub-items */
+#docs_sidebar ul.sub-items {
+    display: none;
+    margin: 0;
 }
 
 .docs_content {
@@ -112,4 +137,3 @@ blockquote {
     padding: 5px 10px 1px 20px;
     margin-bottom: 20px;
 }
-

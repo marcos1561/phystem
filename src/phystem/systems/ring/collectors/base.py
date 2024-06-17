@@ -7,6 +7,7 @@ from phystem.core import collectors, settings
 from phystem.core.collectors import ColAutoSaveCfg
 
 from pathlib import Path
+from phystem.core import settings
 
 class StateData:
     def __init__(self, pos, angle, ids, uids) -> None:
@@ -79,7 +80,7 @@ class StateSaver:
             else:
                 self.file_paths[name] = self.root_path / file_name
 
-        collectors.Collector.save_cfg(configs, self.root_path / "config.yaml")
+        collectors.Collector.save_cfg(configs, self.root_path / settings.system_config_name)
 
     def save(self, directory=None, filenames: FileNames=None, continuos_ring=False, metadata: dict[str]=None) -> None:
         '''Salva o estado do sistema.'''
@@ -165,6 +166,8 @@ class RingCol(collectors.Collector):
         super().__init__(solver, root_path, configs, autosave_cfg, exist_ok=exist_ok, **kwargs)
 
         if autosave_cfg is not None:
+            for path in self.autosave_paths:
+                collectors.Collector.save_cfg(configs, path / settings.system_config_name)
             self.state_col = StateSaver(self.solver, self.autosave_root_path, self.configs)
 
     def autosave(self):

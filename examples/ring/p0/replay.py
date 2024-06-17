@@ -4,7 +4,7 @@ from phystem.systems.ring import Simulation
 from phystem.systems.ring.solver_config import ReplaySolverCfg
 
 replay_cfg = ReplayDataCfg(
-    root_path="datas/explore_p0/14/snaps",
+    root_path="datas/explore_p0_2000/11/snaps",
     graph_cfg=ReplayGraphCfg(
         # show_density=True,
         # vel_colors=True,
@@ -15,7 +15,7 @@ replay_cfg = ReplayDataCfg(
         mode=ReplaySolverCfg.Mode.same_ids,
         ring_per_grid=3,
     ),
-    fps=10,
+    fps=15,
 )
 
 save_cfg = SaveCfg(

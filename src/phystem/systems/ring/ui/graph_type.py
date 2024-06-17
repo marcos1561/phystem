@@ -1,6 +1,6 @@
 from . import graph, graphs_cfg
 
-def get_graph_type(cfg: graphs_cfg.BaseGraphCfg | type[graphs_cfg.BaseGraphCfg]) -> type[graph.BaseGraph]:
+def get_graph_type(cfg: type[graphs_cfg.BaseGraphCfg]) -> type[graph.BaseGraph]:
     '''Retorna a classe do gráfico da simulação, dado a sua configuração.'''
     cfg_to_cls = {
         graphs_cfg.MainGraphCfg: graph.MainGraph,

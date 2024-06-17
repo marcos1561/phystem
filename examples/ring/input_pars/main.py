@@ -136,7 +136,8 @@ real_time_cfg = RealTimeCfg(
         always_update=False,
         # dpi=200,
     ),
-    # checkpoint=CheckpointCfg("data/test1")
+    checkpoint=CheckpointCfg("datas/init_state_flux-0_5/checkpoint"),
+    # checkpoint=CheckpointCfg("datas/adh_1/autosave")
     # checkpoint=CheckpointCfg("../flux_creation_rate/data/init_state_low_flux_force/checkpoint")
 )
 

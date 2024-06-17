@@ -61,17 +61,19 @@ class CreationRateCol(RingCol):
         
     @property
     def vars_to_save(self):
-        return [
+        v = super().vars_to_save
+        v.extend([
             "wait_time_done",
             "last_time",
             "point_id",
             "time_arr",
             "num_created_arr",
             "num_active_arr",
-        ]
+        ]) 
+        return v
 
-    def load_autosave(self):
-        super().load_autosave()
+    def load_autosave(self, use_backup=False):
+        super().load_autosave(use_backup)
         
         time_arr = self.time_arr
         num_created_arr = self.num_created_arr

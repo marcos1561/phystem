@@ -34,7 +34,11 @@ class SnapshotsCol(RingCol):
 
     @property
     def vars_to_save(self):
-        return ["snaps_count", "snaps_last_time", "init_time", "times"]            
+        v = super().vars_to_save
+        v.extend(
+            ["snaps_count", "snaps_last_time", "init_time", "times"]            
+        )
+        return v
     
     def collect(self) -> None:
         if self.solver.time < self.cfgs.wait_time:

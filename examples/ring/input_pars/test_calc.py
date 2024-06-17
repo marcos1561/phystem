@@ -9,6 +9,7 @@ from pathlib import Path
 
 def graph_results(root_path):
     root_path = Path(root_path)
+    
     cr_data = CreationRateData(root_path / "cr")
     delta = DeltaCalculator(root_path / "delta", edge_k=1.4, root_path="results/delta")
     den_vel = DenVelCalculator(root_path / "den_vel", root_path="results/den_vel")
