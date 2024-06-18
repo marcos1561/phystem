@@ -3,6 +3,10 @@
 
 @import "{{ site.theme }}";
 
+li {
+    padding: 0.15em;
+}
+
 #header {
     position: static;
     height: auto;
@@ -124,6 +128,12 @@ section {
     max-width: 60em;
     text-align: justify;
 }
+
+
+#markdown-toc ul {
+    margin: 0;
+}
+
 
 code {
     border-radius: 5px;

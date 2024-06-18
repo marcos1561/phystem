@@ -1,9 +1,11 @@
 from phystem.systems.ring.simulation import Simulation
 
 from phystem.systems.ring.configs import *
-from phystem.core.run_config import RunType, CheckpointCfg
-from phystem.core.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, ReplayDataCfg
+
 from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType, ParticleWindows
+from phystem.systems.ring.run_config import RunType, CheckpointCfg
+from phystem.systems.ring.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, ReplayDataCfg
+
 from phystem.systems.ring.ui.graphs_cfg import *
 from phystem.systems.ring.solver_config import ReplaySolverCfg
 import phystem.systems.ring.utils as ring_utils
@@ -11,7 +13,6 @@ import phystem.systems.ring.utils as ring_utils
 from phystem.gui_phystem.config_ui import UiSettings
 
 import pipeline
-
 
 dynamic_cfg = RingCfg(
     spring_k=8,

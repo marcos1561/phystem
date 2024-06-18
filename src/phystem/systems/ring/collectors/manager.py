@@ -70,7 +70,7 @@ class ColManager(RingCol):
 
             collectors = ColManager(
                 solver=solver, root_path=collect_cfg.folder_path, configs=sim.configs,
-                autosave_cfg=cfg["autosave_cfg"],
+                autosave_cfg=cfg.get("autosave_cfg", None),
                 to_load_autosave=collect_cfg.is_autosave,
             )
             for name, ColT in cols.items():

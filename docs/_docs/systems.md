@@ -25,7 +25,7 @@ Para tal, consulte [Compilando o módulo em C++]({{ "docs/installation.html#inst
 
 No momento atual, existem os seguintes sistemas implementados:
 
-### Ring
+### [Ring]({{ "docs/systems/ring.html" | relative_url }})
 Implementação de múltiplos anéis ativos, com algumas pequenas modificações, apresentado em Teixeira [[1]](#1).
 
 <!-- ![]({{ "assets/images/rings.gif" | relative_url }}) -->

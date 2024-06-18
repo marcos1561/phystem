@@ -13,7 +13,7 @@ autosave_root_backup_name = "backup"
 autosave_state_name = "state"
 
 '''Systems'''
-system_config_name = "config.yaml"
+system_config_fname = "config.yaml"
 
 '''Outros'''
 IS_TESTING = True

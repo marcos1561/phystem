@@ -16,4 +16,4 @@ Cada componente deve ser implementado pelo usuário.
 - Para um tutorial passo a passo, implementando todos
 os componentes do zero, [clique aqui]({{ "docs/tutorial_step_by_step.html" | relative_url }}).
 
-- Caso você esteja interessado em utilizar os sistemas físicos já implementados, [clique aqui]({{ "docs/implemented_systems.html" | relative_url }}).
+- Caso você esteja interessado em utilizar os sistemas físicos já implementados, [clique aqui]({{ "docs/systems.html" | relative_url }}).

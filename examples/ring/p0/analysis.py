@@ -161,18 +161,18 @@ def p0_den(data_path, results_path, init_time):
 # plt.show()
 
 
-data_name = "explore_p0_2000"
-den_dist(
-    results_path = "results/" + data_name,
-    data_path = "datas/" + data_name,
-    init_time=1000,
-)
+# data_name = "explore_p0_2000"
+# den_dist(
+#     results_path = "results/" + data_name,
+#     data_path = "datas/" + data_name,
+#     init_time=1000,
+# )
 
-# for i in range(15):
-#     data_name = "explore_p0_2000/" + str(i)
+for i in range(15):
+    data_name = "explore_p0_2000/" + str(i)
 
-#     # crunch_numbers("datas/" + data_name, "results/" + data_name)
-#     graph(i, "datas/" + data_name, "results/" + data_name)
-#     # calc_den("results/" + data_name)
+    # crunch_numbers("datas/" + data_name, "results/" + data_name)
+    graph(i, "datas/" + data_name, "results/" + data_name)
+    # calc_den("results/" + data_name)
 
-#     plt.show()
+    plt.show()

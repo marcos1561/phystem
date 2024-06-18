@@ -49,3 +49,6 @@ class CheckpointCol(RingCol):
             prog.update(solver.time)
         col.save()
         prog.update(solver.time)
+
+def pipeline(sim: Simulation, cfg: dict):
+    CheckpointCol.pipeline(sim, cfg)

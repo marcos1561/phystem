@@ -98,3 +98,6 @@ class SnapshotsCol(RingCol):
             prog.update(solver.time)
         col.save()
         prog.update(solver.time)
+
+def pipeline(sim: Simulation, cfg: SnapshotsColCfg):
+    SnapshotsCol.pipeline(sim, cfg)

@@ -212,8 +212,10 @@ class CollectDataCfg(RunCfg):
             self.func = get_func(func_id) 
 
         if self.is_autosave:
-            self.folder_path = self.checkpoint.root_path.parent
-            print(f"CollectCfg Warning: Alterando 'folder_path' para '{self.folder_path}'")
+            correct_folder_path = self.checkpoint.root_path.parents[1]
+            if correct_folder_path != self.folder_path:
+                self.folder_path = correct_folder_path
+                print(f"CollectCfg Warning: Alterando 'folder_path' para '{self.folder_path}'")
 
     @property
     def is_autosave(self):

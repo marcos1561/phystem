@@ -5,7 +5,7 @@ from enum import Enum, auto
 from phystem.core.run_config import CollectDataCfg
 
 from phystem.systems.ring.simulation import Simulation
-from phystem.systems.ring.collectors import LastState
+from phystem.systems.ring.collectors import RingCol
 from phystem.systems.ring.solvers import CppSolver
 
 from phystem.utils import progress
@@ -20,7 +20,7 @@ class PipelineCfg:
         self.snapshot_period = snapshot_period
         self.save_type = save_type
 
-class Collector(LastState):
+class Collector(RingCol):
     def __init__(self, solver: CppSolver, path: str, configs: list, checkpoint_period: float,
         snapshot_period: float, save_type: SaveType) -> None:
         super().__init__(solver, path, configs)

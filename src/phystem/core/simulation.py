@@ -8,13 +8,19 @@ from matplotlib.figure import Figure
 import os, yaml
 
 from phystem.utils.timer import TimeIt
-from phystem.core.run_config import RunType, RunCfg, CollectDataCfg, SaveCfg, RealTimeCfg, save_configs, load_configs
+from phystem.core.run_config import (
+    save_configs, load_configs,
+    RunType, RunCfg, 
+    CollectDataCfg, SaveCfg, RealTimeCfg, 
+    CheckpointCfg,
+)
 from phystem.core.creators import CreatorCore
 from phystem.core.solvers import SolverCore
+from phystem.core.autosave import AutoSavable
+from phystem.core import settings
 
 from phystem.gui_phystem.application import AppCore
 from phystem.gui_phystem import config_ui
-from phystem.gui_phystem import control_ui
 
 class SimulationCore(ABC): 
     '''
@@ -101,17 +107,36 @@ class SimulationCore(ABC):
 
     @classmethod
     def load_from_configs(cls, path: Path):
+        '''Carrega uma simulação com as configurações em `path`.'''
         cfgs = load_configs(path)
         return cls(**cfgs)
 
+    @classmethod
+    def configs_from_autosave(cls, path: Path):
+        autosave_path = AutoSavable.get_autosave_path(path)
+        configs = load_configs(autosave_path / settings.system_config_fname)
+        configs["run_cfg"].checkpoint = CheckpointCfg(path)
+        return configs
+
     @staticmethod
     def configs_from_checkpoint(run_cfg: RunCfg):
+        '''Dado uma configuração de execução `run_cfg` que possui
+        `checkpoint` setado, faz o seguinte: 
+        
+        * Carrega as configurações do checkpoint.
+        * Se `run_cfg.int_cfg` é `None`, seta `int_cfg`
+            para o que está salvo no checkpoint.
+        * Atualiza a configuração de execução das configurações
+            carregadas para `run_cfg`.
+        
+        Retornando as configurações carregadas.
+        '''
         cfgs = deepcopy(run_cfg.checkpoint.configs) 
         if run_cfg.int_cfg is None:
             run_cfg.int_cfg = cfgs["run_cfg"].int_cfg
         cfgs["run_cfg"] = run_cfg
         return cfgs
-
+    
     @abstractmethod
     def get_creator(self) -> CreatorCore:
         pass
