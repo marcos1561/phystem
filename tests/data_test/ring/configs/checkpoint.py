@@ -3,7 +3,7 @@ from pathlib import Path
 from phystem.systems.ring.configs import *
 from phystem.core.run_config import CollectDataCfg, save_configs
 from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType, ParticleWindows
-from phystem.systems.ring.ui.graphs_cfg import *
+from phystem.systems.ring.ui.graph.graphs_cfg import *
 from phystem.systems.ring import utils
 
 dynamic_cfg = RingCfg(

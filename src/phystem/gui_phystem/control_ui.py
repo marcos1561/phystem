@@ -6,22 +6,24 @@ from typing import Type, Generic, TypeVar
 from phystem.core.run_config import RealTimeCfg
 from phystem.core.solvers import SolverCore
 from phystem.utils.timer import TimeIt
+from  . import widgets
 
 from phystem.gui_phystem.control_mng import ControlManagerCore
 
 class ControlCore():
-    def __init__(self, main_frame: ttk.Frame, run_cfg: RealTimeCfg, solver: SolverCore, slider_lims=[1, 100]) -> None:
+    def __init__(self, main_frame: ttk.Frame, main_graph, run_cfg: RealTimeCfg, solver: SolverCore, slider_lims=[1, 100]) -> None:
         self.main_frame = main_frame
-        self.control_mng = self.get_control_mng(run_cfg, solver)
+        self.control_mng = self.get_control_mng(run_cfg, solver, main_graph)
 
         self.slider_lims = slider_lims
 
-    def get_control_mng(self, run_cfg: RealTimeCfg, solver: SolverCore):
-        return ControlManagerCore(run_cfg, solver)
+    def get_control_mng(self, run_cfg: RealTimeCfg, solver: SolverCore, main_graph):
+        return ControlManagerCore(run_cfg, solver, main_graph)
 
     def configure_ui(self):
-        label_frame = ttk.LabelFrame(self.main_frame, text="Control", padding=10, border=3)
-        
+        label_frame = ttk.LabelFrame(self.main_frame, text="Control", padding=0, border=3)
+        label_frame.columnconfigure(0, weight=1)
+
         base_frame = ttk.Frame(label_frame)
         self.configure_main(base_frame)
 
@@ -29,27 +31,47 @@ class ControlCore():
         self.configure_controls(controls_frame)
 
         label_frame.grid(column=0, row=0, sticky=(W, E, N, S))
-        base_frame.grid(column=0, row=0, sticky=(W, E, N, S))
-        controls_frame.grid(column=0, row=1, sticky=(W, E, N, S))
+        base_frame.grid(column=0, row=0, sticky=(W, E, N, S), pady=10, padx=10)
+        controls_frame.grid(column=0, row=1, sticky=(W, E, N, S), padx=10)
+
+        base_frame.columnconfigure(1, weight=1)
+        controls_frame.columnconfigure(0, weight=1)
+        # controls_frame.columnconfigure(1, weight=1)
 
     def configure_main(self, main_frame: ttk.Frame):
-        pause_btt = ttk.Button(main_frame, command=self.control_mng.pause_callback,
-                text="Pausar", width=20)
-        
+        # pause_btt = ttk.Button(main_frame, command=self.control_mng.pause_callback,
+        #         text="Pausar", width=20)
+        state = widgets.PlayButton.State.running
+        if self.control_mng.is_paused:
+            state = widgets.PlayButton.State.stopped
+
+        play_bttn = widgets.PlayButton(main_frame, init_state=state, width=20,
+            callback=self.control_mng.pause_callback,
+        )
+
         speed_var = self.control_mng.vars["frequency"]
         speed_frame = ttk.Frame(main_frame)
         speed_label = ttk.Label(speed_frame, text="Speed")        
         speed_slider = ttk.Scale(speed_frame, from_=self.slider_lims[0], to=self.slider_lims[1], orient=HORIZONTAL,
                         command=self.control_mng.speed_callback, variable=speed_var,
-                        length=300)
-        # speed_value = ttk.Entry(speed_frame, textvariable=speed_var, width=5)
+                        length=150)
 
-        pause_btt.grid(column=0, row=0, sticky=W)
+        advance_button = ttk.Button(main_frame, command=self.control_mng.advance_once_callback,
+            text="Próximo Frame", width=20)
 
-        speed_frame.grid(column=0, row=2, sticky=W, pady=15)
+        div = ttk.Separator(main_frame)
+
+        play_bttn.grid(column=0, row=0, sticky="WS")
+
+        speed_frame.grid(column=1, row=0, sticky="WE", padx=10)
         speed_label.grid(column=0, row=0)
-        speed_slider.grid(column=0, row=1, sticky=W)
-        # speed_value.grid(column=1, row=1, padx=10)
+        speed_slider.grid(column=0, row=1, sticky="WE")
+
+        advance_button.grid(column=0, row=1, columnspan=2, pady=10, sticky="WE")
+
+        div.grid(column=0, row=2, columnspan=2, sticky="WE")
+
+        speed_frame.columnconfigure(0, weight=1)
 
     def configure_controls(self, main_frame: ttk.Frame):
         pass

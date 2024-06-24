@@ -1,5 +1,5 @@
 from phystem.core.run_config import RealTimeCfg, CheckpointCfg
-from phystem.systems.ring.ui.graphs_cfg import SimpleGraphCfg
+from phystem.systems.ring.ui.graph.graphs_cfg import SimpleGraphCfg
 from phystem.systems.ring import Simulation
 
 run_cfg = RealTimeCfg(

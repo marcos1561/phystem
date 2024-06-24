@@ -1,5 +1,5 @@
 from phystem.core.run_config import ReplayDataCfg, SaveCfg
-from phystem.systems.ring.ui.graphs_cfg import ReplayGraphCfg
+from phystem.systems.ring.ui.graph.graphs_cfg import ReplayGraphCfg
 from phystem.systems.ring import Simulation
 from phystem.systems.ring.solver_config import ReplaySolverCfg
 

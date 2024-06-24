@@ -16,7 +16,7 @@ from phystem.gui_phystem.config_ui import UiSettings
 from phystem.gui_phystem import control_ui, info_ui
 
 class AppCore:
-    def __init__(self, fig: Figure, cfgs: dict, solver: SolverCore, timer: TimeIt,
+    def __init__(self, fig: Figure, main_graph, cfgs: dict, solver: SolverCore, timer: TimeIt,
         update_func, title: str=None, ui_settings:UiSettings=None, 
         ) -> None:
         if ui_settings is None:
@@ -34,7 +34,11 @@ class AppCore:
         self.always_update = ui_settings.always_update
 
         self.root.title("Phystem")
-        self.fig.set_dpi(ui_settings.dpi)
+        if ui_settings.dpi is not None:
+            self.fig.set_dpi(ui_settings.dpi)
+
+        fig_size = self.fig.get_size_inches()
+        self.fig.set_size_inches([ui_settings.fig_size_scale*x for x in fig_size])
 
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
@@ -56,7 +60,7 @@ class AppCore:
         control_frame = ttk.Frame(left_frame)
         info_frame = ttk.Frame(left_frame)
 
-        self.control = ui_settings.ControlT(control_frame, self.run_cfg, solver)
+        self.control = ui_settings.ControlT(control_frame, main_graph, self.run_cfg, solver)
         self.info = ui_settings.InfoT(info_frame, cfgs, solver, timer)
         
         self.control.configure_ui()

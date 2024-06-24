@@ -7,7 +7,7 @@ from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InP
 from phystem.systems.ring.run_config import RunType, CheckpointCfg
 from phystem.systems.ring.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, ReplayDataCfg
 
-from phystem.systems.ring.ui.graphs_cfg import *
+from phystem.systems.ring.ui.graph.graphs_cfg import *
 from phystem.systems.ring import utils
 
 from phystem.systems.ring import collect_pipelines

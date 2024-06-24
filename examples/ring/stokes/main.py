@@ -6,7 +6,7 @@ from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InP
 from phystem.systems.ring.run_config import RunType, CheckpointCfg
 from phystem.systems.ring.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, ReplayDataCfg
 
-from phystem.systems.ring.ui.graphs_cfg import *
+from phystem.systems.ring.ui.graph.graphs_cfg import *
 from phystem.systems.ring.solver_config import ReplaySolverCfg
 import phystem.systems.ring.utils as ring_utils
 
@@ -25,7 +25,7 @@ dynamic_cfg = RingCfg(
     # p0=4.828427, # Triângulo retângulo
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
-    p0=3.5449077018*1.0, # Círculo
+    p0=3.5449077018*1.1, # Círculo
     p0_format=3.5449077018*1.0, # Círculo
     # area0=53,
 
@@ -45,13 +45,13 @@ dynamic_cfg = RingCfg(
 )
 
 space_cfg = SpaceCfg(
-    height = 3*30,
-    length = 6*30,
+    height = 1*30,
+    length = 3*30,
 )
 
 creator_cfg = CreatorCfg(
     num_rings = 0,
-    num_p = 30,
+    num_p = 15,
     r = None, angle = [], center = [],
 )
 
@@ -123,31 +123,31 @@ real_time_cfg = RealTimeCfg(
     #         in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
     # ), 
     int_cfg=collect_data_cfg.int_cfg,
-    num_steps_frame=60,
+    num_steps_frame=20,
     fps=30,
     graph_cfg = SimpleGraphCfg(
-        begin_paused=True,
-        show_density=True,
-        show_rings=False,
-        rings_kwargs={"s": 0.5},
+        show_scatter=False,
+        show_circles=True,
+        circle_facecolor=False,
+        rings_kwargs={"s": 1},
         density_kwargs={"vmin": -1, "vmax":1},
         cbar_kwargs={"orientation": "horizontal", "label": "Densidade relativa"},
-        ax_kwargs={"title": "t=5000"},
+        # circles_color="black",
         cell_shape=[3, 3],
     ),
     ui_settings=UiSettings(
-        always_update=False,
-        dpi=200,
+        always_update=True,
+        fig_size_scale=1.6,
     ),
     # graph_cfg = MainGraphCfg(
     #     show_circles      = True,
     #     pause_on_high_vel = True,
     # ),
-    checkpoint=CheckpointCfg(
-        root_path="../flux_creation_rate/data/low_adh_align_flux/autosave"
+    # checkpoint=CheckpointCfg(
+    #     root_path="../flux_creation_rate/data/low_adh_align_flux/autosave"
         # folder_path="../flux_creation_rate/data/init_state_low_flux_force/checkpoint"
         # folder_path="data/init_state_low_flux_force/checkpoint",
-    )
+    # )
 )
 
 # replay_cfg = ReplayDataCfg(

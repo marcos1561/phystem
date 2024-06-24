@@ -206,6 +206,8 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def_readonly("total_forces", &Ring::total_forces)
         .def_readonly("vol_forces", &Ring::vol_forces)
         .def_readonly("area_forces", &Ring::area_forces)
+        .def_readonly("format_forces", &Ring::format_forces)
+        .def_readonly("invasion_forces", &Ring::invasion_forces)
         .def_readonly("obs_forces", &Ring::obs_forces)
         .def_readonly("differences", &Ring::differences)
         .def_readonly("center_mass", &Ring::center_mass)

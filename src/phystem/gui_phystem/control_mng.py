@@ -8,10 +8,11 @@ class ControlManagerCore:
     '''
     Controla a funcionalidade dos widgets.
     '''
-    def __init__(self, run_cfg: RealTimeCfg, solver: SolverCore) -> None:
+    def __init__(self, run_cfg: RealTimeCfg, solver: SolverCore, main_graph=None) -> None:
         self.run_cfg = run_cfg
         self.graph_cfg = run_cfg.graph_cfg
         self.solver = solver
+        self.main_graph = main_graph
         self.vars = {
             "frequency": IntVar(value=run_cfg.num_steps_frame),
         } 

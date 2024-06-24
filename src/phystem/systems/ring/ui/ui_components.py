@@ -5,106 +5,120 @@ from phystem.core.solvers import SolverCore
 
 from phystem.systems.ring.solvers import CppSolver, SolverReplay
 from phystem.systems.ring.configs import RingCfg, CreatorCfg
-from phystem.systems.ring.ui.graphs_cfg import *
+from phystem.systems.ring.ui.graph.graphs_cfg import *
+from phystem.systems.ring.ui.graph import SimpleGraph
 
+from phystem.gui_phystem.widgets import CbOption
 from phystem.gui_phystem.info_ui import InfoCore
 from phystem.gui_phystem.control_ui import ControlCore
 from phystem.gui_phystem.control_mng import ControlManagerCore
 from phystem.utils.timer import TimeIt
 
 class ControlMng(ControlManagerCore):
-    graph_cfg: MainGraphCfg
+    graph_cfg: SimpleGraphCfg
     solver: SolverCore
+    main_graph: SimpleGraph
 
-    def __init__(self, run_cfg: RealTimeCfg, solver: SolverCore) -> None:
-        super().__init__(run_cfg, solver)
+    def __init__(self, run_cfg: RealTimeCfg, solver: SolverCore, main_graph) -> None:
+        super().__init__(run_cfg, solver, main_graph)
         if self.graph_cfg.begin_paused:
             self.is_paused = True
 
     def add_vars(self):
-        if type(self.graph_cfg) != MainGraphCfg:
-            self.graph_cfg = MainGraphCfg(
-                begin_paused=self.graph_cfg.begin_paused)
-        
+        # Components
         self.vars["show_circles"] = BooleanVar(value=self.graph_cfg.show_circles)
-        self.vars["f_springs"] = BooleanVar(value=self.graph_cfg.show_f_spring)
-        self.vars["f_vol"] = BooleanVar(value=self.graph_cfg.show_f_vol)
-        self.vars["f_area"] = BooleanVar(value=self.graph_cfg.show_f_area)
-        self.vars["f_total"] = BooleanVar(value=self.graph_cfg.show_f_total)
-        self.vars["pos_cont"] = BooleanVar(value=self.graph_cfg.show_pos_cont)
-        self.vars["center_mass"] = BooleanVar(value=self.graph_cfg.show_center_mass)
-        self.vars["inside_points"] = BooleanVar(value=self.graph_cfg.show_inside)
+        self.vars["show_density"] = BooleanVar(value=self.graph_cfg.show_density)
+        self.vars["show_scatter"] = BooleanVar(value=self.graph_cfg.show_scatter)
+        self.vars["show_scatter_cont"] = BooleanVar(value=self.graph_cfg.show_scatter_cont)
+        self.vars["show_springs"] = BooleanVar(value=self.graph_cfg.show_springs)
+        self.vars["show_cms"] = BooleanVar(value=self.graph_cfg.show_cms)
+        self.vars["show_invasion"] = BooleanVar(value=self.graph_cfg.show_invasion)
+        self.vars["show_ith_points"] = BooleanVar(value=self.graph_cfg.show_ith_points)
+        
+        # Forces
+        self.vars["show_f_springs"] = BooleanVar(value=self.graph_cfg.show_f_springs)
+        self.vars["show_f_vol"] = BooleanVar(value=self.graph_cfg.show_f_vol)
+        self.vars["show_f_area"] = BooleanVar(value=self.graph_cfg.show_f_area)
+        self.vars["show_f_format"] = BooleanVar(value=self.graph_cfg.show_f_format)
+        self.vars["show_f_obs"] = BooleanVar(value=self.graph_cfg.show_f_obs)
+        self.vars["show_f_total"] = BooleanVar(value=self.graph_cfg.show_f_total)
+        self.vars["show_f_invasion"] = BooleanVar(value=self.graph_cfg.show_f_invasion)
 
-    def show_circles(self):
-        self.graph_cfg.show_circles = self.vars["show_circles"].get()
+        # Other
+        self.vars["circles_color"] = BooleanVar(value=self.graph_cfg.circles_cfg.color is None)
+        self.vars["circles_facecolor"] = BooleanVar(value=self.graph_cfg.circles_cfg.facecolor)
+
+    def show_component(self, name):
+        setattr(self.graph_cfg, name, self.vars[name].get())
 
     def show_forces(self):
-        self.graph_cfg.show_f_spring = self.vars["f_springs"].get()
-        self.graph_cfg.show_f_vol = self.vars["f_vol"].get()
-        self.graph_cfg.show_f_area = self.vars["f_area"].get()
-        self.graph_cfg.show_f_total = self.vars["f_total"].get()
-    
-    def show_pos_cont(self):
-        self.graph_cfg.show_pos_cont = self.vars["pos_cont"].get()
-    
-    def show_center_mass(self):
-        self.graph_cfg.show_center_mass = self.vars["center_mass"].get()
-    
-    def show_inside_points(self):
-        self.graph_cfg.show_inside = self.vars["inside_points"].get()
+        self.graph_cfg.show_f_springs = self.vars["show_f_springs"].get()
+        self.graph_cfg.show_f_vol = self.vars["show_f_vol"].get()
+        self.graph_cfg.show_f_area = self.vars["show_f_area"].get()
+        self.graph_cfg.show_f_total = self.vars["show_f_total"].get()
+        self.graph_cfg.show_f_format = self.vars["show_f_format"].get()
+        self.graph_cfg.show_f_obs = self.vars["show_f_obs"].get()
+        self.graph_cfg.show_f_invasion = self.vars["show_f_invasion"].get()
+
+    def circles_color(self):
+        if self.vars["circles_color"].get():
+            self.graph_cfg.circles_cfg.color = None
+        else:
+            self.graph_cfg.circles_cfg.color = "black"
+
+    def circles_facecolor(self):
+        self.graph_cfg.circles_cfg.facecolor = self.vars["circles_facecolor"].get()
 
 class Control(ControlCore):
     control_mng: ControlMng
 
-    def get_control_mng(self, run_cfg: RealTimeCfg, solver: SolverCore):
-        return ControlMng(run_cfg, solver)
+    def get_control_mng(self, run_cfg: RealTimeCfg, solver: SolverCore, main_graph):
+        return ControlMng(run_cfg, solver, main_graph)
     
     def configure_controls(self, main_frame: ttk.Frame):
         self.slider_lims = [1, 1000]
-    
-        show_circles = ttk.Checkbutton(main_frame, command=self.control_mng.show_circles,
-            text="Show circles", variable=self.control_mng.vars["show_circles"])
 
-        forces_frame = ttk.Frame(main_frame)
-        f_springs = ttk.Checkbutton(forces_frame, text="Springs", 
-            variable=self.control_mng.vars["f_springs"], command=self.control_mng.show_forces)
-        f_vol = ttk.Checkbutton(forces_frame, text="Vol", 
-            variable=self.control_mng.vars["f_vol"], command=self.control_mng.show_forces)
-        f_area = ttk.Checkbutton(forces_frame, text="Area", 
-            variable=self.control_mng.vars["f_area"], command=self.control_mng.show_forces)
-        f_total = ttk.Checkbutton(forces_frame, text="Total", 
-            variable=self.control_mng.vars["f_total"], command=self.control_mng.show_forces)
-        forces_cb = [f_springs, f_vol, f_area, f_total]
-    
-        pos_cont = ttk.Checkbutton(main_frame, text="Pos Cont", 
-            variable=self.control_mng.vars["pos_cont"], command=self.control_mng.show_pos_cont)
-        
-        
-        cb_frame = ttk.Frame(main_frame)
+        show_frame = ttk.LabelFrame(main_frame, text="Components")
+        show_widget = CbOption(show_frame, 5)
+        for external_name, cfg_name in [
+            ("Scatter", "show_scatter"),
+            ("Circles", "show_circles"),
+            ("Density", "show_density"),
+            ("Springs", "show_springs"),
+            ("Cms", "show_cms"),
+            ("Invasion", "show_invasion"),
+            ("Ith Points", "show_ith_points"),
+        ]:
+            show_widget.add(external_name, self.control_mng.vars[cfg_name],  lambda x=cfg_name: self.control_mng.show_component(x))
+            
+        forces_frame = ttk.LabelFrame(main_frame, text="Forces")
+        forces_widget = CbOption(forces_frame, 4)
+        for external_name, cfg_name in [
+            ("Springs", "show_f_springs"),
+            ("Vol", "show_f_vol"),
+            ("Area", "show_f_area"),
+            ("Format", "show_f_format"),
+            ("Obs", "show_f_obs"),
+            ("Invasion", "show_f_invasion"),
+            ("Total", "show_f_total"),
+        ]:
+            forces_widget.add(external_name, self.control_mng.vars[cfg_name],  lambda x=cfg_name: self.control_mng.show_component(x))
 
-        center_mass = ttk.Checkbutton(cb_frame, text="Center Mass", 
-            variable=self.control_mng.vars["center_mass"], command=self.control_mng.show_center_mass)
-        
-        inside_points = ttk.Checkbutton(cb_frame, text="Inside Points", 
-            variable=self.control_mng.vars["inside_points"], command=self.control_mng.show_inside_points)
-        
-        advance_button = ttk.Button(main_frame, command=self.control_mng.advance_once_callback,
-            text="Próximo Frame", width=20)
+        others_frame = ttk.LabelFrame(main_frame, text="Others")
+        others_widget = CbOption(others_frame, 4)
+        others_widget.add("Circles Color", self.control_mng.vars["circles_color"], self.control_mng.circles_color)
+        others_widget.add("Circles Fc", self.control_mng.vars["circles_facecolor"], self.control_mng.circles_facecolor)
 
-        show_circles.grid(column=0, row=2, sticky=W)
+        # Control widgets grid
+        show_widget.grid()
+        forces_widget.grid()
+        others_widget.grid()
         
-        forces_frame.grid(column=0, row=3, pady=15, sticky=W)
-        for id, f_cb in enumerate(forces_cb):
-            f_cb.grid(column=id, row=0, padx=10)
+        # Control widgets placement
+        show_frame.grid(column=0, row=0, sticky="WE")
+        forces_frame.grid(column=0, row=1, sticky="WE", pady=2)
+        others_frame.grid(column=0, row=2, sticky="WE", pady=2)
 
-        pos_cont.grid(column=0, row=4, pady=15, sticky=W)
-        
-        cb_frame.grid(column=0, row=5, sticky=W, pady=15)
-        center_mass.grid(column=0, row=0)
-        inside_points.grid(column=1, row=0, padx=10)
-
-        advance_button.grid(column=0, row=6, sticky=W, pady=15)
-        
 class Info(InfoCore):
     solver: CppSolver
 
@@ -172,7 +186,7 @@ class ControlMngReplay(ControlManagerCore):
 class ControlReplay(ControlCore):
     control_mng: ControlMngReplay
     
-    def get_control_mng(self, run_cfg: RealTimeCfg, solver: SolverCore):
+    def get_control_mng(self, run_cfg: RealTimeCfg, solver: SolverCore, main_graph):
         return ControlMngReplay(run_cfg, solver)
 
     def configure_controls(self, main_frame: ttk.Frame):

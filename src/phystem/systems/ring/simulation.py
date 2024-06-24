@@ -9,12 +9,12 @@ from phystem.core.run_config import RunCfg, RunType, RealTimeCfg, ReplayDataCfg
 from phystem.systems.ring.configs import CreatorCfg, RingCfg, InvaginationCfg, InvaginationCreatorCfg
 from phystem.systems.ring.run_config import IntegrationCfg, UpdateType
 
-from phystem.systems.ring.ui import graph_type, graphs_cfg
+from phystem.systems.ring.ui.graph import graph_type
 from phystem.systems.ring.ui import ui_components
 
 
 from phystem.gui_phystem.mpl.widget import WidgetType
-from phystem.gui_phystem.application import AppCore
+from phystem.systems.ring.ui.graph import graphs_cfg
 
 class Simulation(SimulationCore):
     solver: CppSolver
@@ -171,7 +171,7 @@ class Simulation(SimulationCore):
                 if real_time_cfg.ui_settings.InfoT is None: 
                     real_time_cfg.ui_settings.InfoT = ui_components.InfoReplay
             
-            self.run_app(fig, update, "Ring", real_time_cfg.ui_settings)
+            self.run_app(fig, update, particles_graph, "Ring", real_time_cfg.ui_settings)
 
     def run_real_time_only_mpl(self):
         from phystem.systems.ring.ui.mpl import graph as mpl_graph

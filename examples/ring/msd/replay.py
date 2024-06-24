@@ -1,9 +1,10 @@
 from phystem.core.run_config import ReplayDataCfg, SaveCfg
 from phystem.gui_phystem.config_ui import UiSettings
 
-from phystem.systems.ring.ui import graphs_cfg, ui_components
+from phystem.systems.ring.ui import ui_components
 from phystem.systems.ring.simulation import Simulation
 from phystem.systems.ring.solver_config import ReplaySolverCfg
+from phystem.systems.ring.ui.graph import graphs_cfg
 
 run_cfg = ReplayDataCfg(
     root_path="data/rot_1",

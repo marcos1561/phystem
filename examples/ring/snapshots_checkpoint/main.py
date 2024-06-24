@@ -5,7 +5,7 @@ from phystem.core.run_config import RunType, CheckpointCfg, CollectDataCfg
 from phystem.core.run_config import RealTimeCfg, CollectDataCfg
 from phystem.core.collectors import ColAutoSaveCfg
 from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType, ParticleWindows
-from phystem.systems.ring.ui.graphs_cfg import *
+from phystem.systems.ring.ui.graph.graphs_cfg import *
 from phystem.systems.ring import utils
 from phystem.gui_phystem.config_ui import UiSettings
 
@@ -108,7 +108,7 @@ real_time_cfg = RealTimeCfg(
     graph_cfg = SimpleGraphCfg(
         begin_paused=True,
         show_density=False,
-        show_rings=True,
+        show_scatter=True,
         rings_kwargs={"s": 1},
         density_kwargs={"vmin": -1, "vmax":1},
         cbar_kwargs={"orientation": "horizontal", "label": "Densidade relativa"},

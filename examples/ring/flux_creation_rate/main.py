@@ -6,7 +6,7 @@ from phystem.systems.ring.configs import *
 from phystem.core.run_config import RunType, CheckpointCfg, CollectDataCfg
 from phystem.core.run_config import RealTimeCfg, CollectDataCfg, SaveCfg, ReplayDataCfg
 from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType, ParticleWindows
-from phystem.systems.ring.ui.graphs_cfg import *
+from phystem.systems.ring.ui.graph.graphs_cfg import *
 from phystem.systems.ring import utils
 
 import pipeline

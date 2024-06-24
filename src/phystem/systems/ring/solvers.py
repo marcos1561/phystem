@@ -158,8 +158,16 @@ class CppSolver:
         return self.cpp_solver.area_forces
     
     @property
+    def format_forces(self):
+        return self.cpp_solver.format_forces
+    
+    @property
     def obs_forces(self):
         return self.cpp_solver.obs_forces
+    
+    @property
+    def invasion_forces(self):
+        return self.cpp_solver.invasion_forces
     
     @property
     def total_forces(self):

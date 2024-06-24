@@ -174,8 +174,8 @@ class SimulationCore(ABC):
         
         run_cfg.func(self, run_cfg.func_cfg)
 
-    def run_app(self, fig: Figure, update, title=None, ui_settings: config_ui.UiSettings=None):
-        self.app = AppCore(fig, self.configs, self.solver, self.time_it, 
+    def run_app(self, fig: Figure, update, main_graph=None, title=None, ui_settings: config_ui.UiSettings=None):
+        self.app = AppCore(fig, main_graph, self.configs, self.solver, self.time_it, 
             update, title, ui_settings)
         self.app.run()
 

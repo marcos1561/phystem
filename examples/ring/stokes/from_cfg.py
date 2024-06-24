@@ -1,7 +1,7 @@
 from phystem.systems.ring.simulation import Simulation
 from phystem.core.run_config import RealTimeCfg
 from phystem.systems.ring import configs, utils, run_config
-from phystem.systems.ring.ui import graphs_cfg
+from phystem.systems.ring.ui.graph import graphs_cfg
 
 cfgs = Simulation.load_cfg("data/data_full_checkpoint/config.yaml")
 

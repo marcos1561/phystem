@@ -194,6 +194,8 @@ public:
     Vector3d vol_forces;
     Vector3d area_forces;
     Vector3d obs_forces;
+    Vector3d format_forces;
+    Vector3d invasion_forces;
 
     vector<vector<vector<double*>>> pos_t; // Transposta da posições das partículas
     
@@ -375,6 +377,8 @@ public:
         area_forces = Vector3d(num_max_rings, zero_vector_2d);
         total_forces = Vector3d(num_max_rings, zero_vector_2d);
         obs_forces = Vector3d(num_max_rings, zero_vector_2d);
+        format_forces = Vector3d(num_max_rings, zero_vector_2d);
+        invasion_forces = Vector3d(num_max_rings, zero_vector_2d);
 
         area_debug.area = vector<double>(num_max_rings);
 
@@ -937,22 +941,22 @@ public:
 
         double delta_area = area - (perimeter/p0_format) * (perimeter/p0_format);
 
-        double area_0_deriv_x =  2.0 * perimeter / (p0_format*p0_format) * ((v1[0] - point[0]) / d1 +  (v2[0] - point[0]) / d2);
-        double area_0_deriv_y =  2.0 * perimeter / (p0_format*p0_format) * ((v1[1] - point[1]) / d1 +  (v2[1] - point[1]) / d2);
+        double area_0_deriv_x = 2.0 * perimeter / (p0_format*p0_format) * ((v1[0] - point[0]) / d1 +  (v2[0] - point[0]) / d2);
+        double area_0_deriv_y = 2.0 * perimeter / (p0_format*p0_format) * ((v1[1] - point[1]) / d1 +  (v2[1] - point[1]) / d2);
         
         double gradient_x = k_format * delta_area * ((v2[1] - v1[1])/2.0 + area_0_deriv_x);
         double gradient_y = k_format * delta_area * (-(v2[0] - v1[0])/2.0 + area_0_deriv_y);
 
         #if DEBUG == 1
-        area_forces[ring_id][point_id][0] = -gradient_x;
-        area_forces[ring_id][point_id][1] = -gradient_y;
+        format_forces[ring_id][point_id][0] = -gradient_x;
+        format_forces[ring_id][point_id][1] = -gradient_y;
         #endif
 
         sum_forces_matrix[ring_id][point_id][0] -= gradient_x;
         sum_forces_matrix[ring_id][point_id][1] -= gradient_y;
     }
 
-    void format_forces(int ring_id) {
+    void calc_format_forces(int ring_id) {
         double perimeter;
         if (update_type == RingUpdateType::stokes) {
             perimeter = calc_perimeter((*continuos_ring_positions)[ring_id]);
@@ -1118,6 +1122,11 @@ public:
             double fx = dx/norm * k_invasion;
             double fy = dy/norm * k_invasion;
 
+            #if DEBUG == 1
+            invasion_forces[col_info.ring_id][col_info.p_id][0] = fx;
+            invasion_forces[col_info.ring_id][col_info.p_id][1] = fy;
+            #endif
+
             sum_forces_matrix[col_info.ring_id][col_info.p_id][0] += fx;
             sum_forces_matrix[col_info.ring_id][col_info.p_id][1] += fy;
         }
@@ -1157,7 +1166,7 @@ public:
         switch (dynamic_cfg.area_potencial)
         {
         case AreaPotencialType::format:
-            format_forces(ring_id);
+            calc_format_forces(ring_id);
             break;
         case AreaPotencialType::target_perimeter:
             target_perimeter_forces(ring_id);
@@ -1166,7 +1175,7 @@ public:
             target_area_forces(ring_id);
             break;
         case AreaPotencialType::target_area_and_format:
-            format_forces(ring_id);
+            calc_format_forces(ring_id);
             target_area_forces(ring_id);
             break;
         }
@@ -1185,6 +1194,11 @@ public:
                 vol_forces[ring_id][i][0] = 0.;
                 vol_forces[ring_id][i][1] = 0.;
                 
+                obs_forces[ring_id][i][0] = 0.;
+                obs_forces[ring_id][i][1] = 0.;
+                
+                invasion_forces[ring_id][i][0] = 0.;
+                invasion_forces[ring_id][i][1] = 0.;
             }
         }
         #endif
@@ -1275,7 +1289,7 @@ public:
             switch (dynamic_cfg.area_potencial)
             {
             case AreaPotencialType::format:
-                format_forces(ring_id);
+                calc_format_forces(ring_id);
                 break;
             case AreaPotencialType::target_perimeter:
                 target_perimeter_forces(ring_id);
@@ -1285,7 +1299,7 @@ public:
                 break;
             case AreaPotencialType::target_area_and_format:
                 target_area_forces(ring_id);
-                format_forces(ring_id);
+                calc_format_forces(ring_id);
                 break;
             }
         }
