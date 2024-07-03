@@ -2,8 +2,9 @@ from pathlib import Path
 from phystem.core.collectors import ColAutoSaveCfg
 from phystem.systems.ring.solvers import CppSolver
 from phystem.systems.ring.simulation import Simulation
+from phystem.systems.ring.state_saver import StateSaver
 
-from .base import RingCol, StateSaver
+from .base import RingCol
 
 class SnapshotsColCfg:
     def __init__(self, snaps_dt: float, wait_time: float = 0, autosave_cfg: ColAutoSaveCfg = None) -> None:

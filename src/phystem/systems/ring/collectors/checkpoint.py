@@ -3,7 +3,8 @@ from phystem.core import settings
 from phystem.core.collectors import ColAutoSaveCfg
 from phystem.systems.ring.solvers import CppSolver
 from phystem.systems.ring import Simulation
-from .base import RingCol, StateSaver
+from phystem.systems.ring.state_saver import StateSaver
+from .base import RingCol
 
 class CheckpointCol(RingCol):
     def __init__(self, 

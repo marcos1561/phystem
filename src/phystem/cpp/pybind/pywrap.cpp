@@ -87,7 +87,7 @@ PYBIND11_MODULE(cpp_lib, m) {
         ;
     
     py::class_<InPolCheckerCfg>(configs, "InPolCheckerCfg")
-        .def(py::init<int, int, int, bool>())
+        .def(py::init<int, int, int, int, bool>())
         ;
 
     //==

@@ -35,7 +35,8 @@ class CppSolver:
         
         in_pol_checker_cfg = cpp_lib.configs.InPolCheckerCfg(
             int_cfg.in_pol_checker.num_col_windows, int_cfg.in_pol_checker.num_rows_windows, 
-            int_cfg.in_pol_checker.update_freq, int_cfg.in_pol_checker.disable)
+            int_cfg.in_pol_checker.update_freq, int_cfg.in_pol_checker.steps_after, 
+            int_cfg.in_pol_checker.disable)
 
         integration_type_to_cpp_type = {
             IntegrationType.euler: cpp_lib.configs.RingIntegrationType.euler, 

@@ -45,6 +45,9 @@ class SimulationCore(ABC):
             rng_seed:
                 Seed para os geradores de números aleatórios.
         '''
+        if other_cfgs is None:
+            other_cfgs = {}
+
         self.creator_cfg = creator_cfg
         self.space_cfg = space_cfg
         self.dynamic_cfg = dynamic_cfg

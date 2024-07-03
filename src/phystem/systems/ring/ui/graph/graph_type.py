@@ -4,7 +4,7 @@ from . import graphs
 def get_graph_type(cfg: type[graphs_cfg.BaseGraphCfg]) -> type[graphs.BaseGraph]:
     '''Retorna a classe do gráfico da simulação, dado a sua configuração.'''
     cfg_to_cls = {
-        graphs_cfg.SimpleGraphCfg: graphs.SimpleGraph,
+        graphs_cfg.SimpleGraphCfg: graphs.MainGraph,
         graphs_cfg.ReplayGraphCfg: graphs.ReplayGraph,
     }
 

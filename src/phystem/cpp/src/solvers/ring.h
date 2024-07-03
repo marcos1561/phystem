@@ -6,6 +6,7 @@
 #include <iostream>
 #include <cstdlib> 
 #include <omp.h>
+#include <forward_list>
 #include <algorithm>
 
 #include "../configs/ring.h"
@@ -19,6 +20,8 @@
 using Vec2d = std::array<double, 2>;
 using Vector2d = std::vector<std::array<double, 2>>;
 using Vector3d = std::vector<std::vector<std::array<double, 2>>>;
+
+using ColInfo = InPolChecker::ColInfo;
 
 double dot_prod(Vec2d &a, Vec2d& b) {
     return a[0] * b[0] + a[1] * b[1];
@@ -38,6 +41,28 @@ double vector_dist(Vec2d& a, Vec2d& b) {
 
 double vector_mod(Vec2d& a) {
     return sqrt(a[0]*a[0] + a[1]*a[1]);
+}
+
+template <typename T>
+void remove_by_indices(std::forward_list<T>& flist, std::vector<size_t>& indices) {
+    /* Remove os items em `flist` de índices `indices`. */
+    // Sort indices in descending order
+    std::sort(indices.begin(), indices.end());
+
+    for (auto idx : indices) {
+        if (idx >= flist.max_size()) {
+            throw std::out_of_range("Index out of range");
+        }
+    }
+
+    auto prev = flist.before_begin();
+    for (auto idx = indices.rbegin(); idx != indices.rend(); ++idx) {
+        prev = flist.before_begin();
+        for (size_t i = 0; i < *idx; ++i) {
+            ++prev;
+        }
+        flist.erase_after(prev);
+    }
 }
 
 struct SpringDebug {
@@ -71,8 +96,51 @@ public:
     }
 };
 
+class ResolvedInv {
+public:
+    struct Invasion {
+        ColInfo col;
+        int num_steps_elapsed;
+    };
+
+    std::forward_list<Invasion> invasions;
+
+    void add_collision(ColInfo col_info) {
+        invasions.push_front(Invasion{col_info, 0});
+    }
+
+    void remove_ids(vector<size_t> indices) {
+        remove_by_indices(invasions, indices);
+    }
+
+    // vector<bool> resolved;
+    // int num_active;
+    // vector<int> active_ids;
+
+    // void add_collision(ColInfo col_info) {
+    //     bool has_added = false;
+    //     int added_id;
+    //     for (size_t i = 0; i < resolved.size(); i++)
+    //     {
+    //         if (resolved[i]) {
+    //             added_id = i;
+    //             collisions[i] = col_info;
+    //             resolved[i] = false;
+    //             has_added = true;
+    //         }
+    //     }
+
+    //     if (!has_added) {
+    //         added_id = resolved.size();
+    //         collisions.push_back(col_info);
+    //         resolved.push_back(false);
+    //     }
+    // }
+};
+
 class Ring {
 public:
+    // Dynamic Configs
     double spring_k;
     double spring_r;
 
@@ -92,26 +160,22 @@ public:
     double trans_diff;
     double rot_diff;
 
-    // double exclusion_vol;
-    // double diameter_six; 
-    // double diameter_twelve; 
-    // double force_r_lim;
-    
     double diameter; 
     double max_dist;
     double adh_force;
     double rep_force;
 
+    // State info
     Vector3d pos; // Posições das partículas
     Vector3d vel; // Velocidade das partículas
     vector<double> self_prop_angle; // Ângulo da direção da velocidade auto propulsora
-    // vector<vector<double>> self_prop_angle; // Ângulo da direção da velocidade auto propulsora
     int num_particles; // Número de partículas em cada anel
     
+    // Rings ids
     int num_active_rings; 
     vector<bool> mask;
-    vector<int> rings_ids;
-    vector<unsigned long int> unique_rings_ids;
+    vector<int> rings_ids; // ids dos anéis ativos no array de anéis 
+    vector<unsigned long int> unique_rings_ids; // uids dos anéis ativos
     UniqueId unique_id_mng;
 
     Vector3d old_pos; 
@@ -124,9 +188,7 @@ public:
     const RingUpdateType update_type;
     const RingIntegrationType integration_type;
 
-    //==
     // dt variável (não utilizado no momento)
-    //==
     double base_dt;
     double low_dt;
     int num_low_dt;
@@ -147,12 +209,12 @@ public:
 
     WindowsManagerRing windows_manager;
     InPolChecker in_pol_checker;
-
+    ResolvedInv resolved_invs;
+    int steps_after_resolved;
+    
     bool to_recalculate_ids = false;
 
-    //==
     // Stokes
-    //==
     StokesCfg stokes_cfg;
     double max_create_border;
 
@@ -166,23 +228,17 @@ public:
     double create_border;
     double remove_border;
 
-    //==
     // Invagination
-    //==
     std::map<int, double> inv_spring_k;
     std::map<int, bool> inv_is_rfix;
     std::map<int, bool> inv_is_lfix;
     int inv_num_affected;
 
-    //==
     // Area Potencial
-    //==
     Vector3d differences; // Vetor cujo i-ésimo elemento contém pos[i+1] - pos[i]
     Vector3d pos_continuos; // Posições das partículas de forma contínua
 
-    //==
     // RK4
-    //==
     // (k_i, anel, partícula, [x, y, theta])
     vector<vector<vector<array<double, 3>>>> k_matrix;
 
@@ -219,7 +275,7 @@ public:
     Ring(Vector3d &pos0, vector<double>& self_prop_angle0, int num_particles, RingCfg dynamic_cfg, 
         double height, double length, double dt, ParticleWindowsCfg particle_windows_cfg,
         RingUpdateType update_type=RingUpdateType::periodic_borders, RingIntegrationType integration_type=RingIntegrationType::euler, 
-        StokesCfg stokes_cfg=StokesCfg(), InPolCheckerCfg in_pol_checker_cfg=InPolCheckerCfg(3, 3, 1, true), int seed=-1) 
+        StokesCfg stokes_cfg=StokesCfg(), InPolCheckerCfg in_pol_checker_cfg=InPolCheckerCfg(3, 3, 1, 1, true), int seed=-1) 
     : num_particles(num_particles), dynamic_cfg(dynamic_cfg), height(height), length(length), dt(dt),
     update_type(update_type), integration_type(integration_type), 
     stokes_cfg(stokes_cfg) 
@@ -301,9 +357,11 @@ public:
         in_pol_checker = InPolChecker(continuos_ring_positions, &center_mass, &rings_ids, &num_active_rings, 
             height, length, in_pol_checker_cfg.num_cols_windows, in_pol_checker_cfg.num_rows_windows, 
             in_pol_checker_cfg.update_freq, in_pol_checker_cfg.disable);
-        
-        if (update_type == RingUpdateType::stokes)
+        steps_after_resolved = in_pol_checker_cfg.steps_after;
+
+        if (update_type == RingUpdateType::stokes) {
             init_stokes();
+        }
         
         #if DEBUG == 1
         rng_manager = RngManager(num_particles, num_max_rings, 5);
@@ -1094,6 +1152,7 @@ public:
                     
             if (in_pol_checker.is_inside_pol(p[0], p[1], col_info.col_ring_id) == false) {
                 in_pol_checker.is_col_resolved[col_id] = true;
+                resolved_invs.add_collision(col_info);
                 continue;
             }
 
@@ -1129,6 +1188,43 @@ public:
 
             sum_forces_matrix[col_info.ring_id][col_info.p_id][0] += fx;
             sum_forces_matrix[col_info.ring_id][col_info.p_id][1] += fy;
+        }
+
+        vector<size_t> ids_to_remove;
+        int count = 0;
+        for (auto& inv_i : resolved_invs.invasions) {
+            if (inv_i.num_steps_elapsed > steps_after_resolved) {
+                ids_to_remove.push_back(count);
+                continue;
+            }
+
+            auto& col_info = inv_i.col;
+            auto& ring_pos = pos[col_info.ring_id];
+
+            int after_p_id = col_info.p_id == (num_particles-1) ? 0 : col_info.p_id + 1; 
+            int before_p_id = col_info.p_id == 0 ? (num_particles - 1) : col_info.p_id - 1; 
+            
+            double dx = -(ring_pos[after_p_id][1] - ring_pos[before_p_id][1]);
+            double dy = (ring_pos[after_p_id][0] - ring_pos[before_p_id][0]);
+            double norm = periodic_dist(dx, dy);
+
+            double fx = dx/norm * k_invasion;
+            double fy = dy/norm * k_invasion;
+
+            #if DEBUG == 1
+            invasion_forces[col_info.ring_id][col_info.p_id][0] = fx;
+            invasion_forces[col_info.ring_id][col_info.p_id][1] = fy;
+            #endif
+
+            sum_forces_matrix[col_info.ring_id][col_info.p_id][0] += fx;
+            sum_forces_matrix[col_info.ring_id][col_info.p_id][1] += fy;
+
+            count += 1;
+            inv_i.num_steps_elapsed += 1;
+        }
+
+        if (ids_to_remove.size() > 0) {
+            resolved_invs.remove_ids(ids_to_remove);
         }
     }
 

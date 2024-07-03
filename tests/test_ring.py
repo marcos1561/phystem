@@ -8,7 +8,7 @@ from phystem.core.run_config import CheckpointCfg, load_configs
 
 from phystem.systems.ring.simulation import Simulation
 from phystem.systems.ring import collect_pipelines, utils
-from phystem.systems.ring.collectors import StateSaver
+from phystem.systems.ring.state_saver import StateSaver
 
 from phystem.systems.ring.configs import *
 from phystem.systems.ring.run_config import IntegrationCfg, UpdateType, ParticleWindows

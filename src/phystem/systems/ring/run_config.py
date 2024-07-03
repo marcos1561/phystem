@@ -41,10 +41,11 @@ class IntegrationType(Enum):
     rk4=2
 
 class InPolCheckerCfg:
-    def __init__(self, num_col_windows: int, num_rows_windows: int, update_freq: int, disable=False) -> None:
+    def __init__(self, num_col_windows: int, num_rows_windows: int, update_freq: int, steps_after, disable=False) -> None:
         self.num_col_windows = num_col_windows
         self.num_rows_windows = num_rows_windows
         self.update_freq = update_freq
+        self.steps_after = steps_after
         self.disable = disable
 
 class ParticleWindows:

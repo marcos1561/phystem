@@ -63,7 +63,7 @@ class Simulation(SimulationCore):
                 return SolverReplay(self.run_cfg.replay, self.dynamic_cfg, self.space_cfg)
 
         if self.run_cfg.checkpoint:
-            from phystem.systems.ring.collectors import StateSaver
+            from phystem.systems.ring.state_saver import StateSaver
             state_data, metadata = StateSaver.load(self.run_cfg.checkpoint.root_path)
             init_data = state_data.get_init_date()
         else:
@@ -104,9 +104,7 @@ class Simulation(SimulationCore):
         if graph_cfg is None:
             graph_cfg = graphs_cfg.SimpleGraphCfg()
 
-        # fig, ax = plt.subplots()
-        # fig = Figure(dpi=real_time_cfg.ui_settings.dpi)
-        fig = Figure()
+        fig = Figure(dpi=real_time_cfg.ui_settings.dpi)
         ax = fig.add_subplot()
 
         # particles_graph = graph_cfg.GraphCls(

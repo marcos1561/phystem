@@ -1,5 +1,5 @@
 from phystem.core.collectors import ColAutoSaveCfg
-from .base import StateData, StateSaver, RingCol
+from .base import RingCol
 from .creation_rate import CreationRateCol
 from .delta import DeltaCol
 from .density_vel import DenVelCol

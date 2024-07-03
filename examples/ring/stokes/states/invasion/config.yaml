@@ -1,0 +1,125 @@
+creator_cfg: !!python/object:phystem.systems.ring.configs.CreatorCfg
+  angle: []
+  center: []
+  num_p: 15
+  num_rings: 0
+  r: null
+dynamic_cfg: !!python/object:phystem.systems.ring.configs.RingCfg
+  adh_force: 1
+  area0: 15.581717451523549
+  area_potencial: target_area_and_format
+  diameter: 1
+  k_area: 2
+  k_format: 0.03
+  k_invasion: 8
+  max_dist: 1.05
+  mobility: 1
+  p0: 3.8
+  p0_format: 3.5449077018
+  relax_time: 1
+  rep_force: 20
+  rot_diff: 0.8
+  spring_k: 8
+  spring_r: 0.7
+  trans_diff: 0.0
+  vo: 1
+other_cfgs:
+  stokes: !!python/object:phystem.systems.ring.configs.StokesCfg
+    create_length: 4.83378301646785
+    flux_force: 3
+    num_max_rings: 233
+    obs_force: 10
+    obstacle_r: 6.0
+    obstacle_x: 0
+    obstacle_y: 0
+    remove_length: 4.83378301646785
+rng_seed: 40028922
+run_cfg: !!python/object:phystem.core.run_config.RealTimeCfg
+  checkpoint: null
+  fps: 30
+  func: nao salvo
+  graph_cfg: !!python/object:phystem.systems.ring.ui.graph.graphs_cfg.SimpleGraphCfg
+    ax_kwargs: {}
+    begin_paused: false
+    cbar_kwargs:
+      label: Densidade relativa
+      orientation: horizontal
+    cell_shape:
+    - 3
+    - 3
+    circles_cfg: !!python/object:phystem.systems.ring.ui.graph.graphs_cfg.ParticleCircleCfg
+      color: null
+      facecolor: true
+    cpp_is_debug: true
+    density_kwargs:
+      vmax: 1
+      vmin: -1
+    force_color:
+      ? !!python/object/apply:phystem.systems.ring.ui.graph.graphs_cfg.ForceName
+      - 1
+      : red
+      ? !!python/object/apply:phystem.systems.ring.ui.graph.graphs_cfg.ForceName
+      - 2
+      : blue
+      ? !!python/object/apply:phystem.systems.ring.ui.graph.graphs_cfg.ForceName
+      - 3
+      : green
+      ? !!python/object/apply:phystem.systems.ring.ui.graph.graphs_cfg.ForceName
+      - 6
+      : purple
+      ? !!python/object/apply:phystem.systems.ring.ui.graph.graphs_cfg.ForceName
+      - 5
+      : gray
+      ? !!python/object/apply:phystem.systems.ring.ui.graph.graphs_cfg.ForceName
+      - 7
+      : orange
+      ? !!python/object/apply:phystem.systems.ring.ui.graph.graphs_cfg.ForceName
+      - 4
+      : black
+    pause_on_high_vel: false
+    rings_kwargs:
+      s: 1
+    show_circles: true
+    show_cms: false
+    show_density: false
+    show_f_area: false
+    show_f_format: false
+    show_f_invasion: false
+    show_f_obs: false
+    show_f_springs: false
+    show_f_total: true
+    show_f_vol: false
+    show_invasion: false
+    show_ith_points: false
+    show_scatter: false
+    show_scatter_cont: false
+    show_springs: false
+  int_cfg: !!python/object:phystem.systems.ring.run_config.IntegrationCfg
+    dt: 0.01
+    in_pol_checker: !!python/object:phystem.systems.ring.run_config.InPolCheckerCfg
+      disable: false
+      num_col_windows: 15
+      num_rows_windows: 5
+      update_freq: 50
+    integration_type: !!python/object/apply:phystem.systems.ring.run_config.IntegrationType
+    - 0
+    particle_win_cfg: !!python/object:phystem.systems.ring.run_config.ParticleWindows
+      num_cols: 51
+      num_rows: 17
+      update_freq: 1
+    solver_type: !!python/object/apply:phystem.core.run_config.SolverType
+    - 2
+    update_type: !!python/object/apply:phystem.systems.ring.run_config.UpdateType
+    - 3
+  num_steps_frame: 1
+  ui_settings: !!python/object:phystem.gui_phystem.config_ui.UiSettings
+    ControlT: !!python/name:phystem.systems.ring.ui.ui_components.Control ''
+    InfoT: !!python/name:phystem.systems.ring.ui.ui_components.Info ''
+    always_update: true
+    dpi: null
+    fig_size_scale: 1.4
+    left_pannel_size: 0.3
+    window_scale: 0.83
+space_cfg: !!python/object:phystem.systems.ring.configs.SpaceCfg
+  height: 30
+  length: 90

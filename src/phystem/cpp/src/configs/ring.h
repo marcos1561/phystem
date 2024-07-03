@@ -101,11 +101,12 @@ struct InPolCheckerCfg {
     int num_cols_windows;
     int num_rows_windows;
     int update_freq;
+    int steps_after;
     bool disable;
     
     InPolCheckerCfg() { };
     
-    InPolCheckerCfg(int num_cols_windows, int num_rows_windows, int update_freq, bool disable=false)
+    InPolCheckerCfg(int num_cols_windows, int num_rows_windows, int update_freq, int steps_after, bool disable=false)
     : num_cols_windows(num_cols_windows), num_rows_windows(num_rows_windows), 
-    update_freq(update_freq), disable(disable) { }
+    update_freq(update_freq), steps_after(steps_after), disable(disable) { }
 };

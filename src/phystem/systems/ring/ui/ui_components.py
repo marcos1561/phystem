@@ -1,12 +1,19 @@
 from tkinter import ttk
 from tkinter import BooleanVar, W
+from tkinter.filedialog import askdirectory
+from tkinter import messagebox
+
+from pathlib import Path
+import traceback
+
 from phystem.core.run_config import RealTimeCfg, RunType, ReplayDataCfg
 from phystem.core.solvers import SolverCore
 
 from phystem.systems.ring.solvers import CppSolver, SolverReplay
 from phystem.systems.ring.configs import RingCfg, CreatorCfg
+from phystem.systems.ring.state_saver import StateSaver
 from phystem.systems.ring.ui.graph.graphs_cfg import *
-from phystem.systems.ring.ui.graph import SimpleGraph
+from phystem.systems.ring.ui.graph import MainGraph, BaseGraph
 
 from phystem.gui_phystem.widgets import CbOption
 from phystem.gui_phystem.info_ui import InfoCore
@@ -17,9 +24,9 @@ from phystem.utils.timer import TimeIt
 class ControlMng(ControlManagerCore):
     graph_cfg: SimpleGraphCfg
     solver: SolverCore
-    main_graph: SimpleGraph
+    main_graph: MainGraph
 
-    def __init__(self, run_cfg: RealTimeCfg, solver: SolverCore, main_graph) -> None:
+    def __init__(self, run_cfg: RealTimeCfg, solver: SolverCore, main_graph: BaseGraph) -> None:
         super().__init__(run_cfg, solver, main_graph)
         if self.graph_cfg.begin_paused:
             self.is_paused = True
@@ -69,6 +76,25 @@ class ControlMng(ControlManagerCore):
     def circles_facecolor(self):
         self.graph_cfg.circles_cfg.facecolor = self.vars["circles_facecolor"].get()
 
+    def save_state(self):
+        path = askdirectory(mustexist=False)
+        if path == ():
+            return
+        
+        try:
+            path = Path(path)
+        except Exception as e:
+            traceback.print_exception(e)
+            messagebox.showerror("Erro!", "Caminho inválido (Olhe o terminal para a exceção disparada).")
+
+        if not path.parent.exists():
+            messagebox.showerror("Erro!", f"A pasta pai ({path.parent}) não existe.")
+            return
+        
+        path.mkdir(parents=True, exist_ok=True)
+        StateSaver(self.solver, path, self.main_graph.sim_configs).save()
+        messagebox.showinfo("Sucesso!", f"Estado salvo com sucesso!")
+
 class Control(ControlCore):
     control_mng: ControlMng
 
@@ -90,7 +116,7 @@ class Control(ControlCore):
             ("Ith Points", "show_ith_points"),
         ]:
             show_widget.add(external_name, self.control_mng.vars[cfg_name],  lambda x=cfg_name: self.control_mng.show_component(x))
-            
+          
         forces_frame = ttk.LabelFrame(main_frame, text="Forces")
         forces_widget = CbOption(forces_frame, 4)
         for external_name, cfg_name in [
@@ -109,15 +135,19 @@ class Control(ControlCore):
         others_widget.add("Circles Color", self.control_mng.vars["circles_color"], self.control_mng.circles_color)
         others_widget.add("Circles Fc", self.control_mng.vars["circles_facecolor"], self.control_mng.circles_facecolor)
 
-        # Control widgets grid
         show_widget.grid()
         forces_widget.grid()
         others_widget.grid()
-        
+
+        save_state_bttn = ttk.Button(main_frame,
+            text="Save", command=self.control_mng.save_state,
+        )
+
         # Control widgets placement
         show_frame.grid(column=0, row=0, sticky="WE")
         forces_frame.grid(column=0, row=1, sticky="WE", pady=2)
         others_frame.grid(column=0, row=2, sticky="WE", pady=2)
+        save_state_bttn.grid(column=0, row=3, sticky="WE", pady=2)
 
 class Info(InfoCore):
     solver: CppSolver

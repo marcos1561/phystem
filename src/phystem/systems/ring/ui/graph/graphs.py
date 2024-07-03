@@ -9,7 +9,7 @@ from matplotlib import cm
 from phystem.systems.ring.solvers import CppSolver, SolverReplay
 from phystem.systems.ring.configs import SpaceCfg, StokesCfg
 
-from .graphs_cfg import SimpleGraphCfg, ReplayGraphCfg
+from .graphs_cfg import SimpleGraphCfg, ReplayGraphCfg, ForceName
 
 from matplotlib.figure import Figure
 from .graph_components import *
@@ -46,7 +46,7 @@ class BaseGraph(ABC):
     def update(self):
         pass
 
-class SimpleGraph(BaseGraph):
+class MainGraph(BaseGraph):
     def __init__(self, fig: Figure, ax: Axes, solver: CppSolver, sim_configs, graph_cfg: SimpleGraphCfg=None):
         super().__init__(fig, ax, solver, sim_configs, graph_cfg)
         if self.graph_cfg is None:
@@ -55,10 +55,11 @@ class SimpleGraph(BaseGraph):
         num_particles = self.sim_configs["creator_cfg"].num_p
         self.active_rings = ActiveRings(num_particles, solver)
 
-        self.ax.set(**self.graph_cfg.ax_kwargs)
         self.borders()
-        if sim_configs["other_cfgs"]["stokes"]:
+        if sim_configs["other_cfgs"].get("stokes") is not None:
             self.stokes_obstacle(zorder=3)
+        
+        self.ax.set(**self.graph_cfg.ax_kwargs)
         
         self.components: dict[str, GraphComponent] = {
             "scatter": ParticlesScatter(ax, self.active_rings, 
@@ -76,31 +77,31 @@ class SimpleGraph(BaseGraph):
                 dynamic_cfg = sim_configs["dynamic_cfg"]),
             "f_springs": RingForce(ax, self.active_rings,
                 solver_forces = self.solver.spring_forces,
-                color = self.graph_cfg.force_color[SimpleGraphCfg.ForceName.spring],
+                color = self.graph_cfg.force_color[ForceName.spring],
                 show_cfg_name = "show_f_springs"),
             "f_vol": RingForce(ax, self.active_rings,
                 solver_forces = self.solver.vol_forces,
-                color = self.graph_cfg.force_color[SimpleGraphCfg.ForceName.vol],
+                color = self.graph_cfg.force_color[ForceName.vol],
                 show_cfg_name = "show_f_vol"),
             "f_area": RingForce(ax, self.active_rings,
                 solver_forces = self.solver.area_forces,
-                color = self.graph_cfg.force_color[SimpleGraphCfg.ForceName.area],
+                color = self.graph_cfg.force_color[ForceName.area],
                 show_cfg_name = "show_f_area"),
             "f_format": RingForce(ax, self.active_rings,
                 solver_forces = self.solver.format_forces,
-                color = self.graph_cfg.force_color[SimpleGraphCfg.ForceName.format],
+                color = self.graph_cfg.force_color[ForceName.format],
                 show_cfg_name ="show_f_format"),
             "f_obs": RingForce(ax, self.active_rings,
                 solver_forces = self.solver.obs_forces,
-                color = self.graph_cfg.force_color[SimpleGraphCfg.ForceName.obs],
+                color = self.graph_cfg.force_color[ForceName.obs],
                 show_cfg_name = "show_f_obs"),
             "f_invasion": RingForce(ax, self.active_rings,
                 solver_forces = self.solver.invasion_forces,
-                color = self.graph_cfg.force_color[SimpleGraphCfg.ForceName.invasion],
+                color = self.graph_cfg.force_color[ForceName.invasion],
                 show_cfg_name = "show_f_invasion"),
             "f_total": RingForce(ax, self.active_rings,
                 solver_forces = self.solver.total_forces,
-                color = self.graph_cfg.force_color[SimpleGraphCfg.ForceName.total],
+                color = self.graph_cfg.force_color[ForceName.total],
                 show_cfg_name = "show_f_total"),
             "center_mass": CenterMass(ax, self.active_rings), 
             "invasion_points": InvasionPoints(ax, self.solver), 

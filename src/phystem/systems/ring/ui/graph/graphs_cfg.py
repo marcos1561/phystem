@@ -11,16 +11,16 @@ class ParticleCircleCfg:
         self.color = color
         self.facecolor = facecolor
 
-class SimpleGraphCfg(BaseGraphCfg):
-    class ForceName(Enum):
-        spring = auto()
-        vol = auto()
-        area = auto()
-        total = auto()
-        obs = auto()
-        format = auto()
-        invasion = auto()
+class ForceName(Enum):
+    spring = auto()
+    vol = auto()
+    area = auto()
+    total = auto()
+    obs = auto()
+    format = auto()
+    invasion = auto()
 
+class SimpleGraphCfg(BaseGraphCfg):
     def __init__(self, begin_paused=False, pause_on_high_vel=False, show_scatter=True, show_density=False,
         show_circles=False, show_springs=False, show_cms=False, show_invasion=False,
         show_ith_points=False, show_scatter_cont=False,
@@ -30,6 +30,9 @@ class SimpleGraphCfg(BaseGraphCfg):
         density_kwargs=None, rings_kwargs=None, cbar_kwargs=None, ax_kwargs=None,
         cell_shape=None, cpp_is_debug=True) -> None:
         super().__init__(begin_paused, pause_on_high_vel, cpp_is_debug)
+        if cell_shape is None:
+            cell_shape = [1, 1]
+
         self.show_scatter = show_scatter
         self.show_scatter_cont = show_scatter_cont
         self.show_density = show_density
@@ -53,13 +56,13 @@ class SimpleGraphCfg(BaseGraphCfg):
         self.show_f_invasion = show_f_invasion
 
         self.force_color = {
-            self.ForceName.spring: "red",
-            self.ForceName.vol: "blue",
-            self.ForceName.area: "green",
-            self.ForceName.format: "purple",
-            self.ForceName.obs: "gray",
-            self.ForceName.invasion: "orange",
-            self.ForceName.total: "black",
+            ForceName.spring: "red",
+            ForceName.vol: "blue",
+            ForceName.area: "green",
+            ForceName.format: "purple",
+            ForceName.obs: "gray",
+            ForceName.invasion: "orange",
+            ForceName.total: "black",
         }
         if force_color:
             for fname, color in force_color.items():
