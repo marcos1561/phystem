@@ -1,27 +1,26 @@
 from phystem.core.run_config import ReplayDataCfg, SaveCfg
 from phystem.gui_phystem.config_ui import UiSettings
 
-from phystem.systems.ring.ui import ui_components
 from phystem.systems.ring.simulation import Simulation
 from phystem.systems.ring.solver_config import ReplaySolverCfg
 from phystem.systems.ring.ui.graph import graphs_cfg
 
 run_cfg = ReplayDataCfg(
-    root_path="data/init_state_low_flux_force_snaps/snapshots",
+    root_path="data/teste",
     data_dirname="data",
     graph_cfg=graphs_cfg.ReplayGraphCfg(
-        density_kwargs={"vmin": 0, "vmax": 14}, 
+        density_kwargs={"vmin": 0, "vmax": 9}, 
         # scatter_kwargs={"s": 0.1, "c":"black", "alpha": 0.1}, 
         scatter_kwargs={"s": 4}, 
         # x_lims=(-300, 300),
         begin_paused=True,
-        show_density=False,
-        show_rings=True,
-        vel_colors=True,
+        show_density=True,
+        show_rings=False,
+        vel_colors=False,
     ),
     solver_cfg= ReplaySolverCfg(
         mode=ReplaySolverCfg.Mode.same_ids,
-        ring_per_grid=3, 
+        ring_per_grid=5, 
     ),
     num_steps_frame=1,
     ui_settings=UiSettings(
@@ -45,7 +44,6 @@ save_cfg = SaveCfg(
         vel_colors=True,
     ),
 )
-
 configs = run_cfg.system_cfg
 # configs["run_cfg"] = save_cfg
 

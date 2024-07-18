@@ -10,19 +10,19 @@ from pathlib import Path
 def graph_results(root_path):
     root_path = Path(root_path)
     
-    cr_data = CreationRateData(root_path / "cr")
+    # cr_data = CreationRateData(root_path / "cr")
     delta = DeltaCalculator(root_path / "delta", edge_k=1.4, root_path="results/delta")
     den_vel = DenVelCalculator(root_path / "den_vel", root_path="results/den_vel")
 
     delta.crunch_numbers(to_save=True)
     den_vel.crunch_numbers(to_save=True)
 
-    plt.subplot(231)
-    plt.title("Num Created")
-    plt.plot(cr_data.time, cr_data.num_created, ".-")
-    plt.subplot(232)
-    plt.title("Num Active")
-    plt.plot(cr_data.time, cr_data.num_active, ".-")
+    # plt.subplot(231)
+    # plt.title("Num Created")
+    # plt.plot(cr_data.time, cr_data.num_created, ".-")
+    # plt.subplot(232)
+    # plt.title("Num Active")
+    # plt.plot(cr_data.time, cr_data.num_active, ".-")
 
     plt.subplot(233)
     plt.title("Delta")
@@ -52,4 +52,4 @@ def test_autosave(data_path):
     print("times diff :", ((np.array(calc.times) - np.array(calc2.times))**2).sum())
 
 # test_autosave("../../../lovelace/datas/test2/delta")
-graph_results("../../../lovelace/datas/test2")
+graph_results("results/adh_1")

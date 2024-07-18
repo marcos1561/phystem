@@ -12,17 +12,17 @@ from phystem.gui_phystem.config_ui import UiSettings
 from pipeline import collect_pipeline
 
 dynamic_cfg = RingCfg(
-    spring_k=18,
-    spring_r=0.7,
+    spring_k=20,
+    spring_r=1*0.7,
     
     # area_potencial="target_area_and_format",
     area_potencial="target_area",
-    k_area=2,
+    k_area=4,
     k_format=0.03,
     # p0=4.828427, # Triângulo retângulo
     # p0=4.55901, # Triângulo equilátero
     # p0=4, # quadrado
-    p0=3.8,
+    p0=4,
     p0_format=3.5449077018*1.0, # Círculo
     # area0=53,
 
@@ -30,20 +30,20 @@ dynamic_cfg = RingCfg(
     
     diameter  = 1,
     max_dist  = 1 + 0.5*0.1,
-    rep_force = 22,
+    rep_force = 20,
     adh_force = 1,
     
     relax_time=1,
     mobility=1,
-    vo=1,
+    vo=0.5,
     
     trans_diff=0.0,
-    rot_diff=0.8,
+    rot_diff=1,
 )
 
 creator_cfg = CreatorCfg(
     num_rings = 0,
-    num_p = 15,
+    num_p = 10,
     r = None, angle = [], center = [],
 )
 
@@ -64,7 +64,7 @@ stokes_cfg = StokesCfg(
     create_length = 2.01 * radius,
     remove_length = 2.01 * radius,
     flux_force = 3, 
-    obs_force = 15,
+    obs_force = 25,
     num_max_rings = int(1.1 * num_ring_in_rect), 
 )
 
@@ -143,7 +143,7 @@ real_time_cfg = RealTimeCfg(
         always_update=False,
         # dpi=200,
     ),
-    checkpoint=CheckpointCfg("datas/init_full", override_cfgs=True)
+    # checkpoint=CheckpointCfg("datas/init_full", override_cfgs=True)
     # checkpoint=CheckpointCfg("../flux_creation_rate/data/init_state_low_flux_force/checkpoint")
 )
 # real_time_cfg.checkpoint.configs["run_cfg"].int_cfg.dt = 0.01/2

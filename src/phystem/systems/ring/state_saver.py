@@ -42,7 +42,7 @@ class StateSaver:
                 "metadata": self.metadata,
             }
     
-    def __init__(self, solver: CppSolver, root_path: Path, configs: dict, filenames: FileNames=None) -> None:
+    def __init__(self, solver: CppSolver, root_path: Path, configs: dict, xlims=(-1, -1), filenames: FileNames=None) -> None:
         '''Coletor para salvar o estado do sistema. O seu método `collect` não está implementado, para 
         salver o estado do sistema utilize `self.save`.
         
@@ -63,6 +63,9 @@ class StateSaver:
         self.root_path = Path(root_path)
         self.configs = configs
         self.filenames = filenames
+        self.xlims = xlims
+        
+        self.needs_mask = self.xlims[0] != -1 or self.xlims[1] != -1
 
         self.root_path.mkdir(exist_ok=True, parents=True)
         
@@ -109,30 +112,37 @@ class StateSaver:
         # Salvando estado do sistema
         ##
         self.ring_ids = self.solver.rings_ids[:self.solver.num_active_rings]
+        cms = np.array(self.solver.center_mass)[self.ring_ids]
+        mask = np.full(cms.shape[0], True)
+        if self.xlims[0] != -1:
+            mask = np.logical_and(mask, cms[:, 0] > self.xlims[0])
+        
+        if self.xlims[1] != -1:
+            mask = np.logical_and(mask, cms[:, 0] < self.xlims[1])
         
         if filenames.pos is not None:
             pos_path = directory / filenames.pos
 
             if continuos_ring:
-                np.save(pos_path, np.array(self.solver.pos_continuos)[self.ring_ids])
+                np.save(pos_path, np.array(self.solver.pos_continuos)[self.ring_ids][mask])
             else:
-                np.save(pos_path, np.array(self.solver.pos)[self.ring_ids])
+                np.save(pos_path, np.array(self.solver.pos)[self.ring_ids][mask])
         
         if filenames.angle is not None:
             angle_path = directory / filenames.angle
-            np.save(angle_path, np.array(self.solver.self_prop_angle)[self.ring_ids])
+            np.save(angle_path, np.array(self.solver.self_prop_angle)[self.ring_ids][mask])
 
         if filenames.uids is not None:
             uids_path = directory / filenames.uids
-            np.save(uids_path, np.array(self.solver.unique_rings_ids)[self.ring_ids])
+            np.save(uids_path, np.array(self.solver.unique_rings_ids)[self.ring_ids][mask])
         
         if filenames.ids is not None:
             ids_path = directory / filenames.ids
-            np.save(ids_path, self.ring_ids)
+            np.save(ids_path, self.ring_ids[mask])
 
         if filenames.vel is not None:
             vel_path = directory / filenames.vel
-            np.save(vel_path, np.array(self.solver.vel)[self.ring_ids])
+            np.save(vel_path, np.array(self.solver.vel)[self.ring_ids][mask])
 
     @staticmethod
     def load(path: Path, filenames: FileNames=None):

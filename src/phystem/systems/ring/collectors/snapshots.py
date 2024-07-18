@@ -7,8 +7,9 @@ from phystem.systems.ring.state_saver import StateSaver
 from .base import RingCol
 
 class SnapshotsColCfg:
-    def __init__(self, snaps_dt: float, wait_time: float = 0, autosave_cfg: ColAutoSaveCfg = None) -> None:
+    def __init__(self, snaps_dt: float, xlims=(-1, -1), wait_time: float = 0, autosave_cfg: ColAutoSaveCfg = None) -> None:
         self.snaps_dt = snaps_dt
+        self.xlims = xlims
         self.wait_time = wait_time
         self.autosave_cfg = autosave_cfg
 
@@ -27,7 +28,7 @@ class SnapshotsCol(RingCol):
         self.times = []
 
         self.snaps_saver = StateSaver(
-            solver=solver, root_path=self.data_path, configs=configs,
+            solver=solver, root_path=self.data_path, configs=configs, xlims=col_cfg.xlims,
         )
 
         if to_load_autosave:

@@ -16,7 +16,7 @@ from collect_func import collect_pos
 
 dynamic_cfg = RingCfg(
     spring_k=18,
-    spring_r=0.7,
+    spring_r=0.7*0 + 1,
     
     # area_potencial="target_area_and_format",
     area_potencial="target_area",
@@ -55,7 +55,7 @@ space_cfg = SpaceCfg(
 from math import pi
 a = 2
 creator_cfg = CreatorCfg(
-    num_rings = 1,
+    num_rings = 4,
     num_p = num_particles,
     r = radius,
     angle=[pi/4, -3*pi/4, 3*pi/4, -pi/4],

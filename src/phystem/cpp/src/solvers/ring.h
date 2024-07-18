@@ -734,6 +734,14 @@ public:
          * DEBUG, a forma também é somada em 'vol_forces'.
         */
 
+        // Prevent interaction between neighbor particles in the same ring.
+        if (ring_id == other_ring_id) {
+            int diff = abs(p_id - other_id);
+            if ((diff == 1) | (diff == (num_particles - 1))) {
+                return;
+            }
+        }
+
         auto &p = pos[ring_id][p_id];
         auto &other = pos[other_ring_id][other_id];
 
@@ -1367,8 +1375,8 @@ public:
 
                     double radius = sqrt(dx * dx + dy * dy);
                     if (radius < stokes_cfg.obstacle_r ) {
-                        double obs_force_x = radius_pos[0]/radius * stokes_cfg.obs_force;
-                        double obs_force_y = radius_pos[1]/radius * stokes_cfg.obs_force;
+                        double obs_force_x = radius_pos[0]/radius*(stokes_cfg.obstacle_r - radius) * stokes_cfg.obs_force;
+                        double obs_force_y = radius_pos[1]/radius*(stokes_cfg.obstacle_r - radius) * stokes_cfg.obs_force;
 
                         sum_forces_matrix[ring_id][spring_id][0] += obs_force_x;
                         sum_forces_matrix[ring_id][spring_id][1] += obs_force_y;

@@ -16,7 +16,7 @@ import pipeline
 
 dynamic_cfg = RingCfg(
     spring_k=20,
-    spring_r=0.7,
+    spring_r=1*0.7,
     
     # area_potencial="target_area_and_format",
     area_potencial="target_area",
@@ -69,7 +69,7 @@ stokes_cfg = StokesCfg(
     create_length = radius * 2.01,
     remove_length = radius * 2.01,
     flux_force = 2, 
-    obs_force = 14,
+    obs_force = 25,
     num_max_rings = int(space_shape[0] * space_shape[1] * 2), 
 )
 
@@ -102,31 +102,31 @@ collect_data_cfg = CollectDataCfg(
         checkpoint_period=0, 
         snapshot_period=0.5,
         save_type=pipeline.SaveType.snapshot),
-    checkpoint=CheckpointCfg(
-        root_path="data/init_state_low_flux_force/checkpoint"
-    )
+    # checkpoint=CheckpointCfg(
+    #     root_path="data/init_state_low_flux_force/checkpoint"
+    # )
 )
 
 real_time_cfg = RealTimeCfg(
     int_cfg=collect_data_cfg.int_cfg,
-    num_steps_frame=100,
+    num_steps_frame=30,
     fps=30,
     graph_cfg = SimpleGraphCfg(
-        begin_paused=False,
+        begin_paused=True,
         show_scatter=False,
         show_circles=True,
         show_invasion=True,
         circle_facecolor=True,
-        ax_kwargs={
-            "xlim": {-space_cfg.length/2, 0},
-        },
+        # ax_kwargs={
+        #     "xlim": {-space_cfg.length/2, 0},
+        # },
     ),
     ui_settings=UiSettings(
         always_update=True,
     ),
-    # checkpoint=CheckpointCfg(
-    #     root_path="states/invasion",
-    # )
+    checkpoint=CheckpointCfg(
+        root_path="data/init_state_flux-0_5/checkpoint",
+    )
 )
 # real_time_cfg.checkpoint.configs["dynamic_cfg"].k_area = 1 
 
