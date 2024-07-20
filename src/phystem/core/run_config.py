@@ -73,7 +73,7 @@ class SolverType(Enum):
 
 class CheckpointCfg:
     def __init__(self, root_path: Path, override_cfgs: bool = False,
-                 override_func_cfg=True, ignore_autosave=False) -> None:
+                 override_func_cfg=True, ignore_autosave=False, set_time=False) -> None:
         '''
         Parameters:
             root_path:
@@ -88,6 +88,9 @@ class CheckpointCfg:
 
             ignore_autosave:
                 Se for `True`, o checkpoint não é interpretado como auto-salvamento mesmo se ele for.    
+
+            set_time:
+                Seta o tempo do solver par o tempo salvo no checkpoint.
         '''
         self.root_path = Path(root_path)
         if self.root_path.stem == settings.autosave_container_name:
@@ -96,6 +99,7 @@ class CheckpointCfg:
         self.override_cfgs = override_cfgs
         self.override_func_cfg = override_func_cfg
         self.ignore_autosave = ignore_autosave
+        self.set_time = set_time
 
         self.configs: dict = load_configs(self.root_path / "config")
     

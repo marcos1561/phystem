@@ -91,7 +91,7 @@ class DeltaCalculator(Calculator):
         
         Parâmetros:
             edge_k:
-                Defino o valor máximo do comprimento dos links entre anéis
+                Define o valor máximo do comprimento dos links entre anéis
 
                 'valor máximo do link' := 'Diâmetro do anel' * 'edge_k'
         '''
@@ -128,7 +128,7 @@ class DeltaCalculator(Calculator):
         value["edge_k"] = self.edge_k
         return value
 
-    def crunch_numbers(self, to_save=False, id_stop=None):
+    def crunch_numbers(self, to_save=True, id_stop=None):
         for i in range(self.current_id, self.data.num_points_completed):
             if id_stop is not None and id_stop == i:
                 break

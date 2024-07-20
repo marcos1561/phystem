@@ -20,7 +20,7 @@ class CppSolver:
         if int_cfg.particle_win_cfg is None:
             int_cfg.particle_win_cfg = ParticleWindows(3, 3, -1)
         if int_cfg.in_pol_checker is None:
-            int_cfg.in_pol_checker = InPolCheckerCfg(3, 3, 1, True)
+            int_cfg.in_pol_checker = InPolCheckerCfg(3, 3, 1, 1, True)
 
         dynamic_cfg = cpp_lib.configs.RingCfg(dynamic_cfg.cpp_constructor_args())
         

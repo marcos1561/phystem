@@ -81,7 +81,7 @@ class Simulation(SimulationCore):
             solver.load_checkpoint(state_data.pos, state_data.angle, 
                 state_data.ids, state_data.uids)
             
-            if self.run_cfg.checkpoint.is_autosave:
+            if self.run_cfg.checkpoint.is_autosave or self.run_cfg.checkpoint.set_time:
                 solver.cpp_solver.sim_time = metadata["time"] 
                 solver.cpp_solver.num_time_steps = metadata["num_time_steps"] 
         

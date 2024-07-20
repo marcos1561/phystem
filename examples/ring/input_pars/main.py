@@ -69,14 +69,14 @@ stokes_cfg = StokesCfg(
 ##
 ## Select Run Type
 ##
-run_type = RunType.REAL_TIME
+run_type = RunType.COLLECT_DATA
 
 num_cols, num_rows = utils.particle_grid_shape(space_cfg, dynamic_cfg.max_dist)
 num_cols_cm, num_rows_cm = utils.rings_grid_shape(space_cfg, radius)
 
 center_region = -4 * 2*radius
 wait_dist = 4 * 2*radius
-tf = 120
+tf = 12
 xlims = [center_region - radius, center_region + radius]
 print(center_region, center_region + wait_dist)
 collect_data_cfg = CollectDataCfg(
@@ -90,7 +90,7 @@ collect_data_cfg = CollectDataCfg(
         in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50, 4),
     ), 
     tf=tf,
-    folder_path="datas/delta",
+    folder_path="datas/test_at",
     func=pipeline.collect_pipeline,
     func_cfg={
         "delta": {
@@ -137,7 +137,8 @@ real_time_cfg = RealTimeCfg(
         # dpi=200,
     ),
     # checkpoint=CheckpointCfg("datas/init_state_flux-0_5/checkpoint"),
-    checkpoint=CheckpointCfg("datas/adh_1/autosave"),
+    # checkpoint=CheckpointCfg("datas/adh_1/autosave"),
+    checkpoint=CheckpointCfg("datas/all/autosave"),
     # checkpoint=CheckpointCfg("../flux_creation_rate/data/init_state_low_flux_force/checkpoint")
 )
 

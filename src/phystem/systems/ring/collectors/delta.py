@@ -103,7 +103,7 @@ class DeltaCol(collectors.RingCol):
 
     @property
     def vars_to_save(self):
-        v =  super().vars_to_save
+        v = super().vars_to_save
         v.extend([
             "data_point_id",
             "last_start_time",

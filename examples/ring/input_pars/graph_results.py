@@ -71,4 +71,5 @@ def graph(results_path):
         ax.set_xlabel("Tempo")
 
 graph("results/adh_1")
+graph("results/adh1_2")
 plt.show()
