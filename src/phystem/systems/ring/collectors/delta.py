@@ -46,7 +46,7 @@ class TrackingList:
         return len(self.ids)
 
 class DeltaCol(collectors.RingCol):
-    def __init__(self, wait_dist, xlims, start_dt, check_dt,
+    def __init__(self, wait_dist, xlims, start_dt, check_dt, min_num_rings,
         solver, root_path: str, configs: dict,
         autosave_cfg: ColAutoSaveCfg=None,  
         xtol=1, save_final_close=False, to_load_autosave=False, exist_ok=False) -> None:
@@ -67,6 +67,9 @@ class DeltaCol(collectors.RingCol):
             check_dt:
                 Intervalo de tempo para chegar se os anéis monitorados percorreram a distância necessária.
 
+            min_num_rings:
+                Número mínimo de anéis para iniciar uma medida.
+
             start_dt:
                 Intervalo de tempo para tentar começar a coleta de um novo ponto experimental. 
 
@@ -80,6 +83,7 @@ class DeltaCol(collectors.RingCol):
         self.xlims = xlims
         self.start_dt = start_dt
         self.check_dt = check_dt
+        self.min_num_rings = min_num_rings
         self.xtol = xtol
         self.save_final_close = save_final_close
 
@@ -160,7 +164,7 @@ class DeltaCol(collectors.RingCol):
             new_indexes.append(count)
 
         selected_uids = possible_new_uids[new_indexes]
-        if len(selected_uids) == 0:
+        if len(selected_uids) < self.min_num_rings:
             return False
 
         selected_ids = possible_new_ids[new_indexes]
@@ -220,6 +224,11 @@ class DeltaCol(collectors.RingCol):
             ids_region = self.tracking.get("ids_region", idx) 
             cms_region = cms[ids_region]
             udis_region = uids[ids_region]
+            
+            # init_cms = np.load(self.data_path / f"cms_{current_dp_id}_i.npy")
+            # if cms_region.shape[0] != init_cms.shape[0]:
+            #     print("Erro") 
+
             np.save(self.data_path / f"cms_{current_dp_id}_f.npy", cms_region)
             np.save(self.data_path / f"uids_{current_dp_id}_f.npy", udis_region)
 

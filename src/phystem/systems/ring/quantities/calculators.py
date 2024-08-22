@@ -187,6 +187,7 @@ class DeltaCalculator(Calculator):
 
     @staticmethod
     def load_data(path: Path):
+        path = Path(path)
         DeltaResults = namedtuple('DeltaResults', ['times', 'deltas'])
 
         times = np.load(path / "times.npy")
