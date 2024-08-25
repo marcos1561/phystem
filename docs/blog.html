@@ -1,0 +1,13 @@
+---
+layout: base
+title: Blog
+---
+<head>
+  <meta charset="UTF-8">
+  <title>Redirecting...</title>
+  {% assign latest_post = site.posts.first %}
+  <meta http-equiv="refresh" content="0; url={{ latest_post.url | relative_url }}">
+</head>
+<body>
+  <p>If you are not redirected automatically, follow this <a href="{{ latest_post.url | relative_url }}">link</a>.</p>
+</body>

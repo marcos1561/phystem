@@ -14,4 +14,5 @@ Também existem sistemas já implementados que podem ser utilizados para explora
 de coletores de dados e calculadores de quantidades permite exploradores fazerem seu trabalho de forma mais
 eficiente, sendo possível utilizar o que já está disponível ou criar seus próprios coletores/calculadores.
 
-Interessado no projeto? Dê uma olhada na [documentação]({{ "docs/introduction.html" | relative_url }}).
+* Interessado no projeto? Dê uma olhada na [documentação]({{ "docs/introduction.html" | relative_url }}).
+* Dê uma olhada no que eu ando fazendo no [blog do Phystem]({{ "blog.html" | relative_url }})

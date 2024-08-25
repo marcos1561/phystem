@@ -1,0 +1,23 @@
+---
+layout: base
+---
+
+<div class="docs_container">
+  <div class="docs_sidebar", id="docs_sidebar">
+    <div class="toc">
+      <ul>
+        {% for post in site.posts %}
+          <li>
+            <a href="{{ post.url | relative_url }}">{{ post.title }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="blog_content">
+    <h1>{{ page.title }}</h1>
+    <p>{{ page.date | date_to_string }} - {{ page.author }}</p>
+    
+    {{ content }}
+  </div>
+</div>
