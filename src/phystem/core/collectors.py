@@ -7,9 +7,10 @@ from .autosave import AutoSavable
 from . import settings
 
 class ColAutoSaveCfg:
-    def __init__(self, freq_dt: float, to_save_state=True) -> None:
+    def __init__(self, freq_dt: float, to_save_state=True, save_data_freq_dt=None) -> None:
         self.freq_dt = freq_dt
         self.to_save_state = to_save_state
+        self.save_data_freq_dt = save_data_freq_dt
     
 class Collector(AutoSavable, ABC):
     '''Responsável pela coleta de dados gerados pelo solver.'''
@@ -57,6 +58,7 @@ class Collector(AutoSavable, ABC):
 
         self.autosave_cfg = autosave_cfg
         self.autosave_last_time = self.solver.time
+        self.autosave_data_last_time = self.solver.time
         
         # Caminho da pasta do auto-salvamento que contém os dados coletados. 
         self.autosave_data_path = self.autosave_root_path / "data"
@@ -71,6 +73,7 @@ class Collector(AutoSavable, ABC):
     def vars_to_save(self):
         return [
             "autosave_last_time",
+            "autosave_data_last_time",
         ]
 
     @abstractmethod
@@ -78,11 +81,20 @@ class Collector(AutoSavable, ABC):
         '''Realiza a coleta dos dados no instante atual.'''
         pass
 
+    @abstractmethod
+    def save(self) -> None:
+        pass
+
     def check_autosave(self):
         '''Realiza o auto-salvamento de acordo com a frequência definida.'''
         if self.solver.time - self.autosave_last_time > self.autosave_cfg.freq_dt:
             self.autosave_last_time = self.solver.time
             self.exec_autosave()
+        
+        if self.autosave_cfg.save_data_freq_dt:
+            if self.solver.time - self.autosave_data_last_time > self.autosave_cfg.save_data_freq_dt:
+                self.autosave_data_last_time = self.solver.time
+                self.save()
 
     @staticmethod
     def save_cfg(configs: dict[str], configs_path: Path) -> None:

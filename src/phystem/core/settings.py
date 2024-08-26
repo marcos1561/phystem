@@ -10,6 +10,7 @@ autosave_completion_flag_name = "is_completed"
 autosave_container_name = "autosave"
 autosave_root_name = "autosave"
 autosave_root_backup_name = "backup"
+autosave_root_temp_name = "temp"
 autosave_state_name = "state"
 
 '''Systems'''

@@ -6,9 +6,8 @@ from phystem.core.run_config import RealTimeCfg, CollectDataCfg
 from phystem.core.collectors import ColAutoSaveCfg
 from phystem.systems.ring.run_config import IntegrationType, IntegrationCfg, InPolCheckerCfg, UpdateType, ParticleWindows
 from phystem.systems.ring.ui.graph.graphs_cfg import *
-from phystem.systems.ring import utils
+from phystem.systems.ring import utils, collectors
 from phystem.gui_phystem.config_ui import UiSettings
-import pipeline
 
 dynamic_cfg = RingCfg(
     spring_k=20,
@@ -77,7 +76,7 @@ num_cols_cm, num_rows_cm = utils.rings_grid_shape(space_cfg, radius)
 
 center_region = -18
 wait_dist = 2 * 2*radius
-tf = 5000
+tf = 300
 xlims = [center_region - radius, center_region + radius]
 print(center_region, center_region + wait_dist)
 collect_data_cfg = CollectDataCfg(
@@ -91,8 +90,12 @@ collect_data_cfg = CollectDataCfg(
         in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50, 4),
     ), 
     tf=tf,
-    folder_path="datas/test_save_data",
-    func=pipeline.collect_pipeline,
+    folder_path="../datas/test_delta",
+    func=collectors.ColManager.get_pipeline({
+        "delta": collectors.DeltaCol,
+        "den_vel": collectors.DenVelCol,
+        "cr": collectors.CreationRateCol,
+    }),
     func_cfg={
         "delta": {
             "wait_dist": wait_dist,  
@@ -112,9 +115,9 @@ collect_data_cfg = CollectDataCfg(
             "collect_time": tf, 
             "collect_dt": 1,
         },
-        "autosave_cfg": ColAutoSaveCfg(freq_dt=10, save_data_freq_dt=100),
+        "autosave_cfg": ColAutoSaveCfg(freq_dt=10),
     },
-    checkpoint=CheckpointCfg("datas/test_save_data/autosave"),
+    # checkpoint=CheckpointCfg("datas/delta/autosave"),
 )
 
 real_time_cfg = RealTimeCfg(
@@ -122,7 +125,7 @@ real_time_cfg = RealTimeCfg(
     num_steps_frame=100,
     fps=30,
     graph_cfg = SimpleGraphCfg(
-        begin_paused=True,
+        begin_paused=False,
         show_scatter=False,
         show_circles=True,
         circle_facecolor=True,
@@ -141,7 +144,6 @@ real_time_cfg = RealTimeCfg(
     ),
     # checkpoint=CheckpointCfg("datas/init_state_flux-0_5/checkpoint"),
     # checkpoint=CheckpointCfg("datas/adh_1/autosave"),
-    # checkpoint=CheckpointCfg("datas/test_delta/autosave"),
     # checkpoint=CheckpointCfg("datas/all/autosave"),
     # checkpoint=CheckpointCfg("../flux_creation_rate/data/init_state_low_flux_force/checkpoint")
 )

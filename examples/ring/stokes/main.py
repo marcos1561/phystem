@@ -43,6 +43,9 @@ dynamic_cfg = RingCfg(
     trans_diff=0.0,
     rot_diff=1,
 )
+from lovelace.extreme_pars import extreme_configs
+dynamic_cfg, stokes_cfgs_dict = extreme_configs.get(align=1, den=1, force=1)
+print(dynamic_cfg)
 
 creator_cfg = CreatorCfg(
     num_rings = 0,
@@ -68,7 +71,7 @@ stokes_cfg = StokesCfg(
     obstacle_y  = 0,
     create_length = radius * 2.01,
     remove_length = radius * 2.01,
-    flux_force = 2, 
+    flux_force = stokes_cfgs_dict["flux_force"], 
     obs_force = 25,
     num_max_rings = int(space_shape[0] * space_shape[1] * 2), 
 )
@@ -124,9 +127,9 @@ real_time_cfg = RealTimeCfg(
     ui_settings=UiSettings(
         always_update=True,
     ),
-    checkpoint=CheckpointCfg(
-        root_path="data/init_state_flux-0_5/checkpoint",
-    )
+    # checkpoint=CheckpointCfg(
+    #     root_path="data/init_state_flux-0_5/checkpoint",
+    # )
 )
 # real_time_cfg.checkpoint.configs["dynamic_cfg"].k_area = 1 
 

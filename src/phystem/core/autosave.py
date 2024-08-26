@@ -1,6 +1,6 @@
 import pickle
 from pathlib import Path
-import os
+import os, shutil
 from . import settings
 
 class AutoSavePaths:
@@ -21,6 +21,7 @@ class AutoSavable():
     IS_COMPLETED_FLAG = settings.autosave_completion_flag_name
     ROOT_NAME = settings.autosave_root_name
     BACKUP_NAME = settings.autosave_root_backup_name
+    TEMP_NAME = settings.autosave_root_temp_name
 
     def __init__(self, root_path: Path, autosave_container_name=settings.autosave_container_name, 
         state_name=settings.autosave_state_name) -> None:
@@ -92,22 +93,31 @@ class AutoSavable():
         autosave_container_path = Path(autosave_container_path)
         
         # Check if root path has only one autosave
-        has_backup, has_autosave = False, False
+        has_temp, has_backup, has_autosave = False, False, False
         for item in autosave_container_path.iterdir():
             if item.is_dir() and item.stem == AutoSavable.BACKUP_NAME:
                 has_backup = True
             if item.is_dir() and item.stem == AutoSavable.ROOT_NAME:
                 has_autosave = True
+            if item.is_dir() and item.stem == AutoSavable.TEMP_NAME:
+                has_temp = True
 
-        if not (has_autosave and has_backup):
+        # Temp folders should not be here, this can happen in abrupt stops.
+        if has_temp:
+            shutil.rmtree(autosave_container_path / AutoSavable.TEMP_NAME)
+
+        if not (has_autosave or has_backup):
             return autosave_container_path
 
         autosave_path = autosave_container_path / AutoSavable.ROOT_NAME        
         is_completed_name = AutoSavable.IS_COMPLETED_FLAG + ".pickle"
         for _ in range(2):
             settings.autosave_completion_flag_name
-            with open(autosave_path / is_completed_name, "rb") as f:
-                is_completed = pickle.load(f)
+            try:
+                with open(autosave_path / is_completed_name, "rb") as f:
+                    is_completed = pickle.load(f)
+            except FileNotFoundError as e:
+                is_completed = False
 
             if is_completed:
                break

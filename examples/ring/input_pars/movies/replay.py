@@ -5,10 +5,10 @@ from phystem.systems.ring.solver_config import ReplaySolverCfg
 
 replay_cfg = ReplayDataCfg(
     # root_path="datas/explore_p0_2000/11/snaps",
-    root_path="movies/datas/snaps/adh_1",
+    root_path="datas/snaps/adh_1",
     graph_cfg=ReplayGraphCfg(
         # show_density=True,
-        vel_colors=True,
+        vel_colors=False,
         x_lims=(-124.58 - 3, -121.35 + 24.3),
         scatter_kwargs={"s": 2},
         colorbar_kwargs={"location": "bottom"},

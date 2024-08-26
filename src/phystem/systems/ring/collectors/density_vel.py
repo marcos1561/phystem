@@ -208,8 +208,8 @@ class DenVelCol(RingCol):
         np.save(vel_time_path, np.array(self.time_vel_arr))
         np.save(den_time_path, np.array(self.time_den_arr))
         
-        self.vel_data.strip()
-        self.den_data.strip()
+        # self.vel_data.strip()
+        # self.den_data.strip()
         self.save_data(self.vel_data, self.DataName.velocity)
         self.save_data(self.den_data, self.DataName.density)
 

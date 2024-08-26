@@ -135,6 +135,9 @@ class DeltaCalculator(Calculator):
             
             self.current_id = i
             pid = self.data.ids_completed[i]
+            if pid >= self.data.init_times.size:
+                continue
+
             if self.autosave_cfg:
                 self.check_autosave(i)
 
@@ -230,6 +233,7 @@ class DenVelCalculator(Calculator):
         vel_par_order = np.zeros(data.num_vel_points, dtype=float)
         for fid in range(0, data.vel_num_files):
             vels_cms = data.vel_data.get_file(fid)
+            vels_cms.strip()
 
             vels = (vels_cms.data[:,:,2:] - vels_cms.data[:,:,:2])/data.vel_frame_dt
             speeds = np.sqrt((vels**2).sum(axis=2))
@@ -252,6 +256,7 @@ class DenVelCalculator(Calculator):
         density_eq = np.zeros(data.num_den_points, dtype=float)
         for fid in range(0, data.den_num_files):
             den_cms = data.den_data.get_file(fid)
+            den_cms.strip()
             
             density_eq_i = den_cms.point_num_elements / data.density_eq
 
