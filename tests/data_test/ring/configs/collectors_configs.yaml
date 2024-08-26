@@ -48,6 +48,7 @@ run_cfg: !!python/object:phystem.core.run_config.CollectDataCfg
       num_col_windows: 12
       num_rows_windows: 6
       update_freq: 50
+      steps_after: 1
     integration_type: !!python/object/apply:phystem.systems.ring.run_config.IntegrationType
     - 0
     particle_win_cfg: !!python/object:phystem.systems.ring.run_config.ParticleWindows

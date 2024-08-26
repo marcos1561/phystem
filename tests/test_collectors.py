@@ -87,6 +87,7 @@ class TestRingCols(unittest.TestCase):
         wait_dist = 4 * 2*radius
         xlims = [center_region - radius, center_region + radius]
         func_cfg["delta"] = {
+            "min_num_rings": 1,
             "wait_dist": wait_dist,  
             "xlims": [center_region - radius, center_region + radius],
             "start_dt": (xlims[1] - xlims[0]) * dynamic_cfg.vo,

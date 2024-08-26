@@ -138,7 +138,7 @@ class StateSaver:
         
         if filenames.ids is not None:
             ids_path = directory / filenames.ids
-            np.save(ids_path, self.ring_ids[mask])
+            np.save(ids_path, np.array(self.ring_ids)[mask])
 
         if filenames.vel is not None:
             vel_path = directory / filenames.vel
