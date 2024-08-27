@@ -1450,16 +1450,20 @@ public:
     void calc_derivate(double &vel_x, double &vel_y, Vec2d self_vel_i, int ring_id, int particle_id) {
         int i = particle_id;
 
+        double rng_num_x, rng_num_y;
         #if DEBUG == 1    
             auto& rng_nums = rng_manager.get_random_num(i, ring_id);
-            double rng_trans_x = (double)rng_nums[1]/(double)RAND_MAX * 2. - 1.;
-            double rng_trans_y = (double)rng_nums[2]/(double)RAND_MAX * 2. - 1.;
+            rng_num_x = (double)rng_nums[1];
+            rng_num_y = (double)rng_nums[2];
         #else
-            double rng_trans_x = (double)rand()/(double)RAND_MAX * 2. - 1.;
-            double rng_trans_y = (double)rand()/(double)RAND_MAX * 2. - 1.;
+            rng_num_x = (double)rand();
+            rng_num_y = (double)rand();
         #endif
-        double noise_trans_x = rng_trans_x * sqrt(2. * trans_diff) / sqrt(dt); 
-        double noise_trans_y = rng_trans_y * sqrt(2. * trans_diff) / sqrt(dt); 
+        double rng_normal_x = sqrt(12.0) * (rng_num_x/(double)RAND_MAX - 0.5); 
+        double rng_normal_y = sqrt(12.0) * (rng_num_y/(double)RAND_MAX - 0.5); 
+
+        double noise_trans_x = rng_normal_x * sqrt(2. * trans_diff) / sqrt(dt); 
+        double noise_trans_y = rng_normal_y * sqrt(2. * trans_diff) / sqrt(dt); 
         
         double vel_x_i = vo * self_vel_i[0] + mobility * sum_forces_matrix[ring_id][i][0] + noise_trans_x;
         double vel_y_i = vo * self_vel_i[1] + mobility * sum_forces_matrix[ring_id][i][1] + noise_trans_y;
@@ -1495,13 +1499,17 @@ public:
     
         double speed = vector_mod(cm_vel);
 
-        // Geração do ruíno rotacional
+        // Geração do ruído rotacional
+        double random_num;
         #if DEBUG == 1    
             auto& rng_nums = rng_manager.get_random_num(0, ring_id);
-            double rng_rot = (double)rng_nums[0]/(double)RAND_MAX * 2. - 1.;
+            random_num = (double)rng_nums[0];
         #else
-            double rng_rot = (double)rand()/(double)RAND_MAX * 2. - 1.;
+            random_num = (double)rand();
         #endif
+        
+        // Esse número deve provir de um distribuição com variância 1 e média 0.
+        double rng_rot = sqrt(12.0) * (random_num/(double)RAND_MAX - 0.5); 
         double noise_rot = rng_rot * sqrt(2. * rot_diff) / sqrt(dt); 
         
         // Derivada do ângulo da velocidade auto propulsora
