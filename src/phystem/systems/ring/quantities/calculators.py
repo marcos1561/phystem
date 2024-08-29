@@ -258,7 +258,7 @@ class DenVelCalculator(Calculator):
             den_cms = data.den_data.get_file(fid)
             den_cms.strip()
             
-            density_eq_i = den_cms.point_num_elements / data.density_eq
+            density_eq_i = den_cms.point_num_elements / data.density_eq - 1
 
             init_id = fid * data.num_data_points_per_file
             final_id = init_id + den_cms.num_points
