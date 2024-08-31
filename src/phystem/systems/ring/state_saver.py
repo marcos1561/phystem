@@ -12,7 +12,7 @@ class StateData:
         self.ids = ids
         self.uids = uids
 
-    def get_init_date(self):
+    def get_init_data(self):
         from phystem.systems.ring.creators import InitData
         return InitData(self.pos, self.angle)
     

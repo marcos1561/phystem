@@ -1,7 +1,7 @@
 '''
 Configurações relacionadas ao sistema em questão.
 '''
-from phystem.systems.ring import creators
+from phystem.systems.ring import creators, utils
 
 class RingCfg:
     '''Variáveis relacionadas a dinâmica do sistema.'''
@@ -204,6 +204,61 @@ class CreatorCfg:
             "center": self.center,
         }
 
+class RectangleGridCfg:
+    CreatorType = creators.RectangularCreator
+    def __init__(self, num_x, num_y, space_x, space_y, num_particles, particle_diameter, ring_radius_k=1) -> None:
+        '''
+        Anéis em grade retangular (centrada na origem) com `num_x` anéis no eixo x e `num_y` no eixo y.
+        O espaçamento entre anéis vizinhos no eixo x é `space_x` e no eixo y `space_y`.
+        A direção das polarizações é aleatória com distribuição uniforme entre [0, 2*pi).
+        
+        # Argumentos:
+            ring_radius_k:
+                Constante que multiplica o raio do anel. Dessa forma, é possível iniciar os anéis comprimidos (< 0)
+                ou expandidos (> 1).
+        '''
+        self.num_x = num_x 
+        self.num_y = num_y 
+        self.space_x = space_x 
+        self.space_y = space_y 
+        self.num_particles = num_particles 
+        self.particle_diameter = particle_diameter
+        self.ring_radius_k = ring_radius_k
+
+    @classmethod
+    def from_relative_density(cls, num_x, num_y, rel_density, num_particles, particle_diameter, ring_radius_k):
+        '''
+        Configurações que possuem a densidade relativa setada em `rel_density` utilizando
+        o mesmo espaçamento em ambos os eixos, ou seja, `space_x = space_y`.
+
+        Sendo d a densidade (Nº de anéis por un. de área), temos que a densidade relativa é
+
+        d_r = d/d_eq - 1
+
+        Em que d_eq é a densidade de equilíbrio, que acontece quando setamos `space_x = space_y = 0`.
+        '''
+        real_ring_d = 2 * utils.get_real_ring_radius(particle_diameter, num_particles)
+        space = real_ring_d * (1/(rel_density +1)**.5 - 1)
+        return cls(num_x, num_y, space, space, num_particles, particle_diameter, ring_radius_k)
+
+    def get_space_cfg(self):
+        real_ring_d = 2 * utils.get_real_ring_radius(self.particle_diameter, self.num_particles)
+        height = self.num_y * (real_ring_d + self.space_y)
+        length = self.num_x * (real_ring_d + self.space_x)
+
+        return SpaceCfg(height, length)
+
+    def get_pars(self):
+        return {
+            "num_rings_x": self.num_x,
+            "num_rings_y": self.num_y,
+            "space_x": self.space_x,
+            "space_y": self.space_y,
+            "num_particles": self.num_particles,
+            "particle_diameter": self.particle_diameter,
+            "ring_radius_k": self.ring_radius_k,
+        }
+
 class InvaginationCreatorCfg:
     CreatorType = creators.InvaginationCreator
 
@@ -242,5 +297,23 @@ class SpaceCfg:
     def set(self, other):
         self.height = other.height
         self.length = other.length
+    
+    def max_num_inside(ring_diameter, self):
+        'Número ne anéis que cabem dentro do espaço'
+        return int(self.height * self.length / ring_diameter**2)
+
+    def particle_grid_shape(self, max_dist, frac=0.6):
+        from math import ceil
+        num_cols = int(ceil(self.length/max_dist) * frac)
+        num_rows = int(ceil(self.height/max_dist) * frac)
+        return (num_cols, num_rows)
+
+    def rings_grid_shape(self, radius, frac=0.5):
+        from math import ceil
+        num_cols = int(ceil(self.length / ((2 + frac)*radius)))
+        num_rows = int(ceil(self.height / ((2 + frac)*radius)))
+        return (num_cols, num_rows)
+
+
 
 

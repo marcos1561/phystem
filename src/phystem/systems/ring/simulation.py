@@ -65,13 +65,14 @@ class Simulation(SimulationCore):
         if self.run_cfg.checkpoint:
             from phystem.systems.ring.state_saver import StateSaver
             state_data, metadata = StateSaver.load(self.run_cfg.checkpoint.root_path)
-            init_data = state_data.get_init_date()
+            init_data = state_data.get_init_data()
         else:
             init_data = self.creator.create()
         
         stokes_cfg = None
         if self.other_cfgs is not None:
             stokes_cfg = self.other_cfgs.get("stokes", None)
+
 
         solver = CppSolver(**init_data.get_data(), num_particles=self.creator_cfg.num_p, 
             dynamic_cfg=self.dynamic_cfg, stokes_cfg=stokes_cfg, space_cfg=self.space_cfg,

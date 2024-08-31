@@ -1,6 +1,7 @@
 import numpy as np
 
 from phystem.core.creators import CreatorCore
+from phystem.systems.ring import utils
 
 class InitData:
     def __init__(self, pos: np.ndarray, self_prop_angle: np.ndarray, uids: np.ndarray=None) -> None:
@@ -27,6 +28,11 @@ class InitData:
             "self_prop_angle": self.self_prop_angle,
         }
 
+def get_base_ring(num_particles, particle_diameter):
+    ring_radius = utils.get_ring_radius(particle_diameter, num_particles)
+    angles = np.arange(0, np.pi*2, np.pi*2/num_particles)
+    ring_pos = np.array([np.cos(angles), np.sin(angles)]) * ring_radius
+    return ring_pos.T
 
 class Creator(CreatorCore):
     def __init__(self, num_rings: int, num_p: int, r: list[float], angle: list[float], center: list, 
@@ -91,6 +97,41 @@ class Creator(CreatorCore):
             self_prop_angle.append(self.angle[ring_id])
 
         return InitData(np.array(pos), np.array(self_prop_angle))
+
+class RectangularCreator(CreatorCore):
+    def __init__(self, num_rings_x, num_rings_y, space_x, space_y, num_particles, particle_diameter, 
+        ring_radius_k=1, rng_seed: int = None) -> None:
+        super().__init__(rng_seed)
+
+        self.num_rings_x = num_rings_x
+        self.num_rings_y = num_rings_y
+        self.space_x = space_x
+        self.space_y = space_y    
+        self.num_particles = num_particles
+        self.particle_diameter = particle_diameter
+        self.ring_radius_k = ring_radius_k
+    
+    def create(self) -> InitData:
+        ring_radius = utils.get_ring_radius(self.particle_diameter, self.num_particles)
+        real_ring_d = 2 * (ring_radius + self.particle_diameter/2)
+        num_rings = self.num_rings_x * self.num_rings_y
+
+        base_pos = get_base_ring(self.num_particles, self.particle_diameter) * self.ring_radius_k
+        pos = []
+        for i in range(self.num_rings_x):
+            x = (i + 1/2) * (self.space_x + real_ring_d)
+            for j in range(self.num_rings_y):
+                y = (j + 1/2) * (self.space_y + real_ring_d)
+                pos.append(base_pos + [x, y])
+        
+        height = self.num_rings_y * (real_ring_d + self.space_y)
+        width = self.num_rings_x * (real_ring_d + self.space_x)
+        central_point = [width/2, height/2]
+
+        pos = np.array(pos) - central_point
+        random_angles = np.random.random(num_rings) * 2*np.pi 
+
+        return InitData(pos, random_angles)
 
 class InvaginationCreator(CreatorCore):
     def __init__(self, num_rings: int, num_p: int, height: int, length: int, diameter: float,

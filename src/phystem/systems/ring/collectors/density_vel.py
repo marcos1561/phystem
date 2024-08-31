@@ -18,7 +18,7 @@ class DenVelCol(RingCol):
     
     def __init__(self, xlims, vel_dt, density_dt, vel_frame_dt, 
         solver: CppSolver, root_path: Path, configs: dict, 
-        memory_per_file=10*1e6,
+        transient_time=0, memory_per_file=10*1e6,
         autosave_cfg: ColAutoSaveCfg = None, to_load_autosave=False, exist_ok=False) -> None:
         '''Faz duas formas de coleta dos centros de massa na região definida 
         pelos limites no eixo x em `xlims`:
@@ -62,6 +62,9 @@ class DenVelCol(RingCol):
 
         Parâmetros:
         ----------
+            transient_time:
+                Tempo esperado para começar as medidas.
+            
             memory_per_file:
                 Tamanho da memória em bytes que o array com os dados terá. Se a coleta
                 preencher esse array, o mesmo é salvo na memória e outro array é inicializado.
@@ -73,7 +76,8 @@ class DenVelCol(RingCol):
         self.vel_dt = vel_dt
         self.den_dt = density_dt
         self.vel_frame_dt = vel_frame_dt
-        
+        self.transient_time = transient_time
+
         l = xlims[1] - xlims[0]
         h = configs["space_cfg"].height
         ring_r = utils.get_ring_radius(
@@ -121,6 +125,9 @@ class DenVelCol(RingCol):
 
     def collect(self) -> None:
         time = self.solver.time
+
+        if time < self.transient_time:
+            return
 
         collect_vel = self.to_collect_vel(time)
         collect_den = time - self.last_time_den > self.den_dt
