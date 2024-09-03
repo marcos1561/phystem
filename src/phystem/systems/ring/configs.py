@@ -204,8 +204,8 @@ class CreatorCfg:
             "center": self.center,
         }
 
-class RectangleGridCfg:
-    CreatorType = creators.RectangularCreator
+class RectangularGridCfg:
+    CreatorType = creators.RectangularGridCreator
     def __init__(self, num_x, num_y, space_x, space_y, num_particles, particle_diameter, ring_radius_k=1) -> None:
         '''
         Anéis em grade retangular (centrada na origem) com `num_x` anéis no eixo x e `num_y` no eixo y.
@@ -298,7 +298,7 @@ class SpaceCfg:
         self.height = other.height
         self.length = other.length
     
-    def max_num_inside(ring_diameter, self):
+    def max_num_inside(self, ring_diameter):
         'Número ne anéis que cabem dentro do espaço'
         return int(self.height * self.length / ring_diameter**2)
 

@@ -98,7 +98,7 @@ class Creator(CreatorCore):
 
         return InitData(np.array(pos), np.array(self_prop_angle))
 
-class RectangularCreator(CreatorCore):
+class RectangularGridCreator(CreatorCore):
     def __init__(self, num_rings_x, num_rings_y, space_x, space_y, num_particles, particle_diameter, 
         ring_radius_k=1, rng_seed: int = None) -> None:
         super().__init__(rng_seed)

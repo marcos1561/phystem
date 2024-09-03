@@ -393,7 +393,6 @@ class SaveCfg(RunCfg):
         self.num_steps_frame = self.t / (self.fps * self.duration * self.dt)
         if self.num_steps_frame < 1:
             self.num_steps_frame = 1
-            self.dt = self.speed/self.fps
         else:
             self.num_steps_frame = int(round(self.num_steps_frame))
 
