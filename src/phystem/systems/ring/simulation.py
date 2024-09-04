@@ -64,7 +64,7 @@ class Simulation(SimulationCore):
             if self.run_cfg.replay is not None:
                 num_max_rings = None
                 if self.run_cfg.int_cfg.update_type is UpdateType.STOKES:
-                    num_max_rings = self.run_cfg.system_cfg["other_cfgs"]["stokes"].num_max_rings
+                    num_max_rings = self.run_cfg.replay.system_cfg["other_cfgs"]["stokes"].num_max_rings
 
                 return SolverReplay(self.run_cfg.replay, num_max_rings)
 
