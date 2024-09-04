@@ -48,6 +48,7 @@ class ControlCore():
         play_bttn = widgets.PlayButton(main_frame, init_state=state, width=20,
             callback=self.control_mng.pause_callback,
         )
+        self.play_bttn = play_bttn
 
         speed_var = self.control_mng.vars["frequency"]
         speed_frame = ttk.Frame(main_frame)
@@ -72,6 +73,10 @@ class ControlCore():
         div.grid(column=0, row=2, columnspan=2, sticky="WE")
 
         speed_frame.columnconfigure(0, weight=1)
+
+    def set_is_paused(self, value):
+        if value != self.control_mng.is_paused:
+            self.play_bttn.on_click()
 
     def configure_controls(self, main_frame: ttk.Frame):
         pass

@@ -1,3 +1,4 @@
+from scipy.spatial import Voronoi
 import numpy as np
 import yaml
 from math import cos, pi
@@ -19,50 +20,11 @@ def get_ring_radius(p_diameter: float, num_particles: int):
 def num_rings_in_rect(ring_diameter: float, space_cfg):
     raise Exception("Use o método em SpaceCfg para isso.")
 
-def get_cm(rings: np.ndarray):
-    '''Retorna os centros de massa dos anéis em `rings`.
-
-    Parâmetros:
-        rings:
-            Array com as posições das partículas que compõem os anéis.
-            Seu shape dever ser :
-                
-                (N_a, N_p, 2)
-            
-            Onde:
-              
-                N_a: número de anéis
-                N_p: número de partículas
-                
-            O último elemento do shape é a dimensão, 0 para o eixo x e 1 para o eixo y. 
-            Então, rings[i, j, 1] é a coordenada no eixo y da j-ésima partícula do i-ésimo anel.     
-    
-    Retorno:
-        Array com shape (N_a, 2). Por exemplo, o elemento com índice [i, 0] é a coordenada x
-        do centro de massa do i-ésimo anel.
-    '''
-    return rings.sum(axis=1)/rings.shape[1]
-
-def get_vel_cm(vel: np.ndarray):
-    return vel.sum(axis=1)/vel.shape[1]
-
-def get_speed(vel_grid: np.array):
-    return np.sqrt((np.square(vel_grid)).sum(axis=0))
-
-def get_dist_pb(pos1: np.array, pos2: np.array, height, length):
-    diff = pos2 - pos1
-
-    x_filter = np.abs(diff[:,0]) > length/2 
-    y_filter = np.abs(diff[:,1]) > height/2 
-    
-    diff[x_filter, 0] -= np.copysign(length, diff[x_filter, 0]) 
-    diff[y_filter, 1] -= np.copysign(height, diff[y_filter, 1]) 
-    return diff
-
 def same_rings(pos1, ids1, pos2, ids2):
     '''
-    Retorna a intersecção entre `pos1` e `pos2` de forma
-    ordenada.
+    Dados os array `pos1` e `pos2` cujos elementos possuem índices
+    em `ids1` e `ids2`, respectivamente, retorna dois array cujos 
+    elementos na mesma posições possuem o mesmo índice.
     '''
     argsort1 = np.argsort(ids1)
     argsort2 = np.argsort(ids2)
@@ -209,9 +171,7 @@ class RetangularGrid:
 
 class RegularGrid(RetangularGrid):
     def __init__(self, length: float, height: float, num_cols: int, num_rows: int, center=(0, 0)) -> None:
-        '''
-        Grade retangular para uma retângulo centrado em `center`, com lados `length`x`height`. 
-        '''
+        "Grade retangular para uma retângulo centrado em `center`, com lados `length`x`height`."
         self.center = center
         self.length = length
         self.height = height
@@ -343,27 +303,12 @@ def neighbors_list(links, pos_list):
         neighs.append(neighs_ids)
     return neighs
 
-
-# def load_configs(path):
-#     with open(Path(path)/"config.yaml") as f:
-#         cfgs = yaml.unsafe_load(f)
-#     return cfgs
-
-
 def particle_grid_shape(space_cfg, max_dist, frac=0.6):
     raise Exception("Use o método em SpaceCfg para isso.")
 
 def rings_grid_shape(space_cfg, radius, frac=0.5):
     raise Exception("Use o método em SpaceCfg para isso.")
 
-from scipy.spatial import Voronoi
-
-def voro_edges(pos):
-    """Voronoi neighbors."""
-    vor = Voronoi(pos) # create Voronoi diagram
-    points_adj = vor.ridge_points
-    edges = np.sort(points_adj, axis=-1)
-    return np.array(sorted((a,b) for a,b in edges.astype(int)))
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt

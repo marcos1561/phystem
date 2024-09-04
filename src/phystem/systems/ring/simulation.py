@@ -54,13 +54,19 @@ class Simulation(SimulationCore):
         self.creator: Creator
 
         if self.run_cfg.id is RunType.REPLAY_DATA:
-            # return SolverRD(self.run_cfg)
-            return SolverReplay(self.run_cfg, self.dynamic_cfg, self.space_cfg)
+            num_max_rings = None
+            if self.run_cfg.int_cfg.update_type is UpdateType.STOKES:
+                num_max_rings = self.run_cfg.system_cfg["other_cfgs"]["stokes"].num_max_rings
+
+            return SolverReplay(self.run_cfg, num_max_rings)
 
         if self.run_cfg.id is RunType.SAVE_VIDEO:
             if self.run_cfg.replay is not None:
-                # return SolverReplay(self.run_cfg.replay)
-                return SolverReplay(self.run_cfg.replay, self.dynamic_cfg, self.space_cfg)
+                num_max_rings = None
+                if self.run_cfg.int_cfg.update_type is UpdateType.STOKES:
+                    num_max_rings = self.run_cfg.system_cfg["other_cfgs"]["stokes"].num_max_rings
+
+                return SolverReplay(self.run_cfg.replay, num_max_rings)
 
         if self.run_cfg.checkpoint:
             from phystem.systems.ring.state_saver import StateSaver
@@ -128,17 +134,17 @@ class Simulation(SimulationCore):
             control_mng = self.app.control.control_mng
 
             if control_mng.is_paused and control_mng.advance_once:
-               control_mng.is_paused = False 
+               self.app.control.set_is_paused(False)
             elif not control_mng.is_paused and control_mng.advance_once:
                control_mng.advance_once = False 
-               control_mng.is_paused = True 
+               self.app.control.set_is_paused(True)
 
             if not control_mng.is_paused or control_mng.advance_once:
                 i = 0
                 while i < real_time_cfg.num_steps_frame:
                     if graph_cfg.pause_on_high_vel:
                         if self.solver.update_debug.high_vel:
-                            control_mng.is_paused = True
+                            self.app.control.set_is_paused(True)
                             break
 
                     self.time_it.decorator("solver", self.solver.update)

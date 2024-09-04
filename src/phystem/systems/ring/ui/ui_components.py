@@ -1,3 +1,5 @@
+import copy
+
 from tkinter import ttk
 from tkinter import BooleanVar, W
 from tkinter.filedialog import askdirectory
@@ -31,6 +33,9 @@ class ControlMng(ControlManagerCore):
         if self.graph_cfg.begin_paused:
             self.is_paused = True
 
+        self.original_graph_cfgs = copy.deepcopy(run_cfg.graph_cfg)
+        self.original_graph_cfgs: SimpleGraphCfg
+
     def add_vars(self):
         # Components
         self.vars["show_circles"] = BooleanVar(value=self.graph_cfg.show_circles)
@@ -52,8 +57,9 @@ class ControlMng(ControlManagerCore):
         self.vars["show_f_invasion"] = BooleanVar(value=self.graph_cfg.show_f_invasion)
 
         # Other
-        self.vars["circles_color"] = BooleanVar(value=self.graph_cfg.circles_cfg.color is None)
-        self.vars["circles_facecolor"] = BooleanVar(value=self.graph_cfg.circles_cfg.facecolor)
+        self.vars["circles_color"] = BooleanVar(value=self.graph_cfg.circle_cfg.color is None)
+        self.vars["circles_facecolor"] = BooleanVar(value=self.graph_cfg.circle_cfg.facecolor)
+        self.vars["match_face_edge_color"] = BooleanVar(value=self.graph_cfg.circle_cfg.match_face_edge_color)
 
     def show_component(self, name):
         setattr(self.graph_cfg, name, self.vars[name].get())
@@ -69,12 +75,19 @@ class ControlMng(ControlManagerCore):
 
     def circles_color(self):
         if self.vars["circles_color"].get():
-            self.graph_cfg.circles_cfg.color = None
+            self.graph_cfg.circle_cfg.color = None
         else:
-            self.graph_cfg.circles_cfg.color = "black"
-
+            color = self.original_graph_cfgs.circle_cfg.color
+            if color is None:
+                color = ParticleCircleCfg.DEFAULT_COLOR
+            
+            self.graph_cfg.circle_cfg.color = color
+            
     def circles_facecolor(self):
-        self.graph_cfg.circles_cfg.facecolor = self.vars["circles_facecolor"].get()
+        self.graph_cfg.circle_cfg.facecolor = self.vars["circles_facecolor"].get()
+
+    def match_face_edge_color(self):
+        self.graph_cfg.circle_cfg.match_face_edge_color = self.vars["match_face_edge_color"].get()
 
     def save_state(self):
         path = askdirectory(mustexist=False)
@@ -94,6 +107,7 @@ class ControlMng(ControlManagerCore):
         path.mkdir(parents=True, exist_ok=True)
         StateSaver(self.solver, path, self.main_graph.sim_configs).save()
         messagebox.showinfo("Sucesso!", f"Estado salvo com sucesso!")
+
 
 class Control(ControlCore):
     control_mng: ControlMng
@@ -134,6 +148,7 @@ class Control(ControlCore):
         others_widget = CbOption(others_frame, 4)
         others_widget.add("Circles Color", self.control_mng.vars["circles_color"], self.control_mng.circles_color)
         others_widget.add("Circles Fc", self.control_mng.vars["circles_facecolor"], self.control_mng.circles_facecolor)
+        others_widget.add("Match Fc", self.control_mng.vars["match_face_edge_color"], self.control_mng.match_face_edge_color)
 
         show_widget.grid()
         forces_widget.grid()
@@ -199,31 +214,73 @@ class Info(InfoCore):
             )
 
 
-class ControlMngReplay(ControlManagerCore):
+class ControlMngReplay(ControlMng):
     graph_cfg: ReplayGraphCfg
     solver: SolverReplay
     run_cfg: ReplayDataCfg
 
-    def __init__(self, run_cfg: RealTimeCfg, solver: SolverCore) -> None:
-        super().__init__(run_cfg, solver)
+    # def __init__(self, run_cfg: RealTimeCfg, solver: SolverCore) -> None:
+    #     super().__init__(run_cfg, solver)
 
-        if self.graph_cfg.begin_paused:
-            self.is_paused = True
+    #     if self.graph_cfg.begin_paused:
+    #         self.is_paused = True
+
+    def add_vars(self):
+        # Components
+        self.vars["show_circles"] = BooleanVar(value=self.graph_cfg.show_circles)
+        self.vars["show_density"] = BooleanVar(value=self.graph_cfg.show_density)
+        self.vars["show_scatter"] = BooleanVar(value=self.graph_cfg.show_scatter)
+        self.vars["show_cms"] = BooleanVar(value=self.graph_cfg.show_cms)
+
+        # Other
+        self.vars["circles_color"] = BooleanVar(value=self.graph_cfg.circle_cfg.color is None)
+        self.vars["circles_facecolor"] = BooleanVar(value=self.graph_cfg.circle_cfg.facecolor)
+        self.vars["vel_color"] = BooleanVar(value=self.graph_cfg.vel_colors is None)
 
     def change_time_callback(self):
         self.solver.time_sign *= -1
     
+    def vel_color(self):
+        vel_color = self.vars["vel_color"].get()
+        self.graph_cfg.vel_colors = vel_color
+        self.main_graph.active_rings.use_custom_colors = vel_color
+
+        # if vel_color:
+        #     self.vars["circles_color"].set(False)
+
 class ControlReplay(ControlCore):
     control_mng: ControlMngReplay
     
     def get_control_mng(self, run_cfg: RealTimeCfg, solver: SolverCore, main_graph):
-        return ControlMngReplay(run_cfg, solver)
+        return ControlMngReplay(run_cfg, solver, main_graph)
 
     def configure_controls(self, main_frame: ttk.Frame):
+        show_frame = ttk.LabelFrame(main_frame, text="Components")
+        show_widget = CbOption(show_frame, 5)
+        for external_name, cfg_name in [
+            ("Scatter", "show_scatter"),
+            ("Circles", "show_circles"),
+            ("Density", "show_density"),
+            ("Cms", "show_cms"),
+        ]:
+            show_widget.add(external_name, self.control_mng.vars[cfg_name],  lambda x=cfg_name: self.control_mng.show_component(x))
+        
+        others_frame = ttk.LabelFrame(main_frame, text="Others")
+        others_widget = CbOption(others_frame, 4)
+        others_widget.add("Circles Color", self.control_mng.vars["circles_color"], self.control_mng.circles_color)
+        others_widget.add("Circles Fc", self.control_mng.vars["circles_facecolor"], self.control_mng.circles_facecolor)
+        others_widget.add("Vel Color", self.control_mng.vars["vel_color"], self.control_mng.vel_color)
+
         change_time_button = ttk.Button(main_frame, command=self.control_mng.change_time_callback,
             text="Reverter Tempo", width=20)
         
-        change_time_button.grid(column=0, row=7, sticky=W, pady=15)
+        show_widget.grid()
+        others_widget.grid()
+
+        # Control widgets placement
+        show_frame.grid(column=0, row=0, sticky="WE")
+        others_frame.grid(column=0, row=1, sticky="WE", pady=2)
+        change_time_button.grid(column=0, row=2, sticky=W, pady=15)
 
 class InfoReplay(InfoCore):
     solver: SolverReplay

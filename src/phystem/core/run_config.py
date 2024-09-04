@@ -302,6 +302,8 @@ class ReplayDataCfg(RealTimeCfg):
         # Carrega as configurações utilizadas nos dados salvos.
         self.system_cfg = load_configs(self.root_path / "config")
 
+        self.frame_dt = self.system_cfg["run_cfg"].func_cfg.snaps_dt
+
         init_cfg = self.system_cfg["run_cfg"].int_cfg
         super().__init__(int_cfg=init_cfg, num_steps_frame=num_steps_frame, fps=fps, 
                          graph_cfg=graph_cfg, ui_settings=ui_settings)

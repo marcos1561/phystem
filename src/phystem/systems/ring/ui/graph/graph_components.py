@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 
 from matplotlib import collections
@@ -10,6 +11,7 @@ from matplotlib import colors
 from phystem.systems.ring.solvers import CppSolver
 from phystem.systems.ring.configs import RingCfg
 from phystem.systems.ring import utils
+from phystem.systems.ring import rings_quantities
 from .active_rings import ActiveRings
 from .graphs_cfg import ParticleCircleCfg
 
@@ -83,7 +85,11 @@ class ParticleCircles(CollectionComp):
 
         if self.cfg.color is None:
             if self.cfg.facecolor:
-                self.artist.set(edgecolor="black")
+                if self.cfg.match_face_edge_color:
+                    self.artist.set(edgecolor=self.active_rings.colors_rgb)
+                else:
+                    self.artist.set(edgecolor="black")
+                
                 self.artist.set(facecolors=self.active_rings.colors_rgb)
             else:
                 self.artist.set(facecolors="none")
@@ -91,7 +97,12 @@ class ParticleCircles(CollectionComp):
         else:
             if self.cfg.facecolor:
                 self.artist.set(facecolors=self.cfg.color)
+                if self.cfg.match_face_edge_color:
+                    self.artist.set_edgecolor(self.cfg.color)
+                else:
+                    self.artist.set_edgecolor("black")
             else:
+                self.artist.set(facecolors="none")
                 self.artist.set_edgecolor(self.cfg.color)
 
 class ParticlesScatter(CollectionComp):
@@ -99,21 +110,25 @@ class ParticlesScatter(CollectionComp):
     def __init__(self, ax: Axes, active_rings: ActiveRings, zorder, scatter_kwargs):
         super().__init__(ax, show_cfg_name="show_scatter")
         self.active_rings = active_rings
-
+        
         self.unique_ring_color = False
-        if scatter_kwargs.get("c", None) is not None:
+        if scatter_kwargs.get("c") is not None:
             self.unique_ring_color = True
             self.artist = self.ax.scatter(*self.active_rings.pos.T, zorder=zorder, 
                 **scatter_kwargs)
         else:
+            # self.artist = self.ax.scatter(*self.active_rings.pos.T, zorder=zorder,
+            #     cmap=self.active_rings.cmap, c=self.active_rings.colors_value, vmin=0, vmax=1, **scatter_kwargs)
             self.artist = self.ax.scatter(*self.active_rings.pos.T, zorder=zorder,
-                cmap=self.active_rings.cmap, c=self.active_rings.colors_value, vmin=0, vmax=1, **scatter_kwargs)
+                c=self.active_rings.colors_rgb, **scatter_kwargs)
         self.artist.remove()
         
     def update_artist(self):
         self.artist.set_offsets(self.active_rings.pos)
         if not self.unique_ring_color:
-            self.artist.set_array(self.active_rings.colors_value)
+            # self.artist.set_array(self.active_rings.colors_value)
+            self.artist.set_color(self.active_rings.colors_rgb)
+
 
 class ParticlesScatterCont(CollectionComp):
     artist: collections.PathCollection
@@ -127,14 +142,16 @@ class ParticlesScatterCont(CollectionComp):
             self.artist = self.ax.scatter([], [], zorder=zorder, 
                 **scatter_kwargs)
         else:
-            self.artist = self.ax.scatter([], [], zorder=zorder,
-                cmap=self.active_rings.cmap, vmin=0, vmax=1, **scatter_kwargs)
+            # self.artist = self.ax.scatter([], [], zorder=zorder,
+            #     cmap=self.active_rings.cmap, vmin=0, vmax=1, **scatter_kwargs)
+            self.artist = self.ax.scatter([], [], zorder=zorder, **scatter_kwargs)
         self.artist.remove()
         
     def update_artist(self):
         self.artist.set_offsets(self.active_rings.pos_continuos)
         if not self.unique_ring_color:
-            self.artist.set_array(self.active_rings.colors_value)
+            # self.artist.set_array(self.active_rings.colors_value)
+            self.artist.set_color(self.active_rings.colors_rgb)
 
 class RingSprings(CollectionComp):
     artist: collections.LineCollection
@@ -198,17 +215,19 @@ class Density(CollectionComp):
 
         print(f"grid_shape: {num_rows}, {num_cols}")
         self.density_eq = cell_shape[0]*cell_shape[1]
-        self.grid = utils.RegularGrid(l, h, num_cols, num_rows)
+        self.density_calc = rings_quantities.Density(l, h, num_cols, num_rows)
+        # self.grid = utils.RegularGrid(l, h, num_cols, num_rows)
 
-        self.artist = ax.pcolormesh(*self.grid.edges, self.get_density(), shading='flat',
+        self.artist = ax.pcolormesh(*self.density_calc.grid.edges, self.get_density(), shading='flat',
                 zorder=1, cmap="coolwarm" ,**artist_kwargs)
         self.artist.remove()
 
     def get_density(self):
         cm = np.array(self.active_rings.solver.center_mass)[self.active_rings.ids]
-        coords = self.grid.coords(cm)
-        count = self.grid.count(coords)/self.density_eq - 1
-        return count
+        # coords = self.grid.coords(cm)
+        # count = self.grid.count(coords)/self.density_eq - 1
+        # return count
+        return self.density_calc.get_from_cm(cm)/self.density_eq - 1
 
     def update_artist(self):
         self.artist.set_array(self.get_density())

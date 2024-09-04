@@ -7,7 +7,7 @@ from phystem.systems.ring.run_config import IntegrationCfg, UpdateType, Integrat
 from phystem import cpp_lib
 
 from .solver_config import *
-from . import utils
+from . import utils, rings_quantities
 
 class CppSolver:
     def __init__(self, pos: np.ndarray, self_prop_angle: np.ndarray, num_particles: int,
@@ -226,10 +226,10 @@ class CppSolver:
         return self.cpp_solver.mean_vel(ring_id)
     
 class SolverReplay:
-    def __init__(self, run_cfg: ReplayDataCfg, dynamic_cfg: RingCfg, space_cfg: SpaceCfg) -> None:
+    def __init__(self, run_cfg: ReplayDataCfg, num_max_rings) -> None:
         self.root_path = run_cfg.data_path
-        # self.data_dir = run_cfg.data_path
         self.dt = run_cfg.int_cfg.dt
+        self.num_max_rings = num_max_rings
 
         self.solver_cfg: ReplaySolverCfg
         self.set_solver_cfg(run_cfg)
@@ -238,161 +238,118 @@ class SolverReplay:
             metadata = yaml.unsafe_load(f)
             self.num_frames = metadata["num_frames"]
 
-        mode = self.solver_cfg.mode
-
-        self.init_func_map = {
-            ReplaySolverCfg.Mode.normal: self.init_normal,
-            ReplaySolverCfg.Mode.same_ids: self.init_same_ids,
-            ReplaySolverCfg.Mode.same_ids_pre_calc: self.init_same_ids_pre_calc,
-        }
-        self.update_func_map = {
-            ReplaySolverCfg.Mode.normal: self.update_normal,
-            ReplaySolverCfg.Mode.same_ids: self.update_same_ids,
-            ReplaySolverCfg.Mode.same_ids_pre_calc: self.update_same_ids_pre_calc,
-        }
-
-        self.init_func = self.init_func_map[mode]
-        self.update_func = self.update_func_map[mode]
-
-        self.count = 0
-        self.time_sign = 1
         self.times = np.load(self.root_path / "times.npy") 
-        self.time = self.times[self.count]
         
-        self.init_func()
+        #state
+        self.frame = -1
+        self.time_sign = 1
+        
+        self.init()
+        self.update()
+
         self.num_particles = self.pos.shape[1]
-        
-        #=
-        # Density
-        #=
-        ring_per_grid = self.solver_cfg.ring_per_grid
+        if num_max_rings is None:
+            self.num_max_rings = self.pos.shape[0]
+        self.num_max_rings = num_max_rings
 
-        self.space_cfg = space_cfg
-        self.ring_d = utils.get_ring_radius(dynamic_cfg.diameter, self.num_particles)
+    @property
+    def num_active_rings(self):
+        return self.pos.shape[0]
 
-        height, length = space_cfg.height, space_cfg.length
-        num_rows, num_cols = (int(height/ring_per_grid/self.ring_d), int(length/ring_per_grid/self.ring_d))
-        self.grid = utils.RegularGrid(
-            length=length, height=height,
-            num_cols=num_cols, num_rows=num_rows,
-        )
-        self.ring_count = np.zeros(self.grid.shape_mpl, dtype=int)
-        self.calc_density()
-        
+    @property
+    def rings_ids(self):
+        return range(self.num_active_rings)
+
+    @property
+    def pos_continuos(self):
+        return self.pos
+    
+    @property
+    def center_mass(self):
+        return rings_quantities.get_cm(self.pos)
 
     def set_solver_cfg(self, run_cfg: ReplayDataCfg):
         self.solver_cfg = run_cfg.solver_cfg
-    
+        if self.solver_cfg is None:
+            self.solver_cfg = ReplaySolverCfg()
+
     def update_visual_aids(self):
         pass
 
-    def init_normal(self):
-        self.update_pos_normal(0)
-
-    def init_same_ids(self):
+    def init(self, frame=0):
+        'Inicializa as posições para o frame `frame`'
         if not self.solver_cfg.vel_from_solver:
             self.pos2_original, self.ids2 = self.load(0)
-        self.update_same_ids(0)
-
-    def init_same_ids_pre_calc(self):
-        ids_dir = os.path.join(self.root_path, "same_ids")
-        self.all_ids = np.load(os.path.join(ids_dir, "ids.npy"))
-        self.all_ids_size = np.load(os.path.join(ids_dir, "ids_size.npy"))
+    
+    # def init_same_ids_pre_calc(self):
+    #     ids_dir = os.path.join(self.root_path, "same_ids")
+    #     self.all_ids = np.load(os.path.join(ids_dir, "ids.npy"))
+    #     self.all_ids_size = np.load(os.path.join(ids_dir, "ids_size.npy"))
         
-        self.pos2_original = np.load(os.path.join(self.data_dir, f"pos_{0}.npy"))
-        self.update_pos_same_ids_pre_calc(0)
-        self.calc_vel_cm(0)
-    
-    def update_pos_normal(self, frame):
-        self.pos = np.load(self.root_path / f"pos_{frame}.npy")
-    
-    def update_pos_same_ids(self, frame):
-        if frame >= self.num_frames-1:
-            return
+    #     self.pos2_original = np.load(os.path.join(self.data_dir, f"pos_{0}.npy"))
+    #     self.update_pos_same_ids_pre_calc(0)
+    #     self.calc_vel_cm(0)
 
-        if self.solver_cfg.vel_from_solver:
-            self.pos, self.ids = self.load(frame)
-        else:
-            self.pos, self.ids = self.pos2_original, self.ids2
-            self.pos2_original, self.ids2 = self.load(frame+1) 
-            self.pos, self.pos2 = self.same_rings(self.pos, self.ids, self.pos2_original, self.ids2)
-    
-    def update_pos_same_ids_pre_calc(self, frame):
-        self.pos = self.pos2_original
-        self.pos2_original = np.load(self.root_path / f"pos_{frame+1}.npy")
+    # def update_pos_same_ids_pre_calc(self, frame):
+    #     self.pos = self.pos2_original
+    #     self.pos2_original = np.load(self.root_path / f"pos_{frame+1}.npy")
 
-        self.pos = self.pos[self.all_ids[frame, 0, :self.all_ids_size[frame]]]
-        self.pos2 = self.pos2_original[self.all_ids[frame, 1, :self.all_ids_size[frame]]]
-
-    def update_normal(self, frame):
-        self.update_pos_normal(frame)
-
-    def update_same_ids(self, frame):
-        self.update_pos_same_ids(frame)
-        self.calc_vel_cm(frame)
-    
-    def update_same_ids_pre_calc(self, frame):
-        self.update_pos_same_ids_pre_calc(frame)
-        self.calc_vel_cm(frame)
-
-
-    @staticmethod
-    def same_rings(pos1, ids1, pos2, ids2):
-        argsort1 = np.argsort(ids1)
-        argsort2 = np.argsort(ids2)
-        
-        ids1_sorted = np.sort(ids1)
-        ids2_sorted = np.sort(ids2)
-
-        common_ids = np.intersect1d(ids1_sorted, ids2_sorted)
-        id_mask1 = np.where(np.in1d(ids1_sorted, common_ids))[0]
-        id_mask2 = np.where(np.in1d(ids2_sorted, common_ids))[0]
-        return pos1[argsort1[id_mask1]], pos2[argsort2[id_mask2]]
+    #     self.pos = self.pos[self.all_ids[frame, 0, :self.all_ids_size[frame]]]
+    #     self.pos2 = self.pos2_original[self.all_ids[frame, 1, :self.all_ids_size[frame]]]
 
     def load(self, frame):
+        '''
+        Carrega e retorna as posições e uids do frame
+        de índice `frame`.
+        '''
         pos = np.load(self.root_path / f"pos_{frame}.npy")
         ids = np.load(self.root_path / f"uids_{frame}.npy")
         return pos, ids
 
-    def calc_vel_cm(self, frame):
+    def get_vel_cm(self):
+        '''
+        Calcula e retorna a velocidade do centro de massa do frame atual e sua direção. 
+        O calculo é realizado utilizando a posição do próximo frame.
+        
+        Retorno:
+            (vel_cm, vel_cm_dir)
+        '''
         if self.solver_cfg.vel_from_solver:
-            vel = np.load(os.path.join(self.data_dir, f"vel_{frame}.npy"))
+            vel = np.load(os.path.join(self.data_dir, f"vel_{self.frame}.npy"))
         else:
             vel = (self.pos2 - self.pos)/self.dt
         
-        self.vel_cm = vel.sum(axis=1)/vel.shape[1]
-        self.vel_cm_dir = np.arctan2(self.vel_cm[:, 1], self.vel_cm[:, 0])
+        vel_cm = vel.sum(axis=1)/vel.shape[1]
+        vel_cm_dir = np.arctan2(vel_cm[:, 1], vel_cm[:, 0])
+        return vel_cm, vel_cm_dir
 
-    def calc_density(self):
-        self.cm = self.pos.sum(axis=1)/self.pos.shape[1]
 
-        x = self.cm[:, 0] + self.space_cfg.length/2
-        y = self.cm[:, 1] + self.space_cfg.height/2
+    def update_pos(self):
+        "Atualiza as posições para o frame atual"
+        if self.frame >= self.num_frames-1:
+            return
 
-        col_pos = (x / self.grid.cell_size[0]).astype(int)
-        row_pos = (y / self.grid.cell_size[1]).astype(int)
-
-        row_pos[row_pos == self.grid.shape_mpl[0]] -= 1
-        col_pos[col_pos == self.grid.shape_mpl[1]] -= 1
-
-        self.ring_count[:] = 0
-        for idx in range(col_pos.size):
-            self.ring_count[row_pos[idx], col_pos[idx]] += 1
+        if self.solver_cfg.vel_from_solver:
+            self.pos, self.ids = self.load(self.frame)
+        else:
+            self.pos, self.ids = self.pos2_original, self.ids2
+            self.pos2_original, self.ids2 = self.load(self.frame+1) 
+            self.pos, self.pos2 = utils.same_rings(self.pos, self.ids, self.pos2_original, self.ids2)
 
     def update(self):
-        self.count += self.time_sign
+        'Avança para o próximo frame.'
+        self.frame += self.time_sign
         
-        if self.count >= self.num_frames: 
-            self.count = self.num_frames-1
+        if self.frame >= self.num_frames: 
+            self.frame = self.num_frames-1
             return
-        elif self.count < 0:
-            self.count = 0
+        elif self.frame < 0:
+            self.frame = 0
             return
 
-        self.update_func(self.count)
-        self.calc_density()
-
-        self.time = self.times[self.count]
+        self.update_pos()
+        
+        self.time = self.times[self.frame]
 
 class SolverRD:
     '''

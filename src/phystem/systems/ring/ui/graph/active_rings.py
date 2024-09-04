@@ -1,14 +1,27 @@
 
+from abc import ABC, abstractmethod
+
 import numpy as np
 from phystem.systems.ring.solvers import CppSolver
 from matplotlib import cm
 
+class CustomColors(ABC):
+    "Classe base para calcular as cores dos anéis."
+    @abstractmethod
+    def update(self):
+        "Atualiza `self.colors_value` e `self.colors_rgb`"
+        pass
+    
 class ActiveRings:
-    def __init__(self, num_particles: int, solver: CppSolver):
+    def __init__(self, num_particles: int, solver: CppSolver, custom_colors:CustomColors=None, use_custom_colors=False):
         self.solver = solver
+        self.custom_colors = custom_colors
+        
+        self.use_custom_colors = use_custom_colors
+
         self.num_particles = num_particles
         self.total_num_particles = num_particles * solver.num_max_rings
-        
+
         total_num_particles = solver.num_max_rings * num_particles
         self._pos = np.empty((total_num_particles, 2), dtype=float)
         self._ids = np.empty(solver.num_max_rings, dtype=int)
@@ -79,10 +92,14 @@ class ActiveRings:
 
     @property
     def colors_value(self):
+        if self.use_custom_colors:
+            return self.custom_colors.colors_value
         return self._colors_value[self.ids].flatten()
     
     @property
     def colors_rgb(self):
+        if self.use_custom_colors:
+            return self.custom_colors.colors_rgb
         return self._colors_rgb[self.ids].reshape(-1, 4)
     
     def reset_updated_flags(self):
@@ -90,4 +107,8 @@ class ActiveRings:
         self.has_updated_pos_continuos = False
         self.has_updated_ids = False
         self.has_updated_cms = False
+        self.has_updated_colors = False
+
+        if self.use_custom_colors:
+            self.custom_colors.update()
 
