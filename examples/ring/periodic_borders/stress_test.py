@@ -68,7 +68,7 @@ for j in range(n):
 
 creator_cfg = CreatorCfg(
     num_rings = num_rings,
-    num_p = 15,
+    num_particles = 15,
     r = radius,
     angle=np.random.random(num_rings)*2*pi,
     center= centers,

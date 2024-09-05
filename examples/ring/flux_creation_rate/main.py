@@ -48,11 +48,11 @@ space_cfg = SpaceCfg(
 
 creator_cfg = CreatorCfg(
     num_rings = 0,
-    num_p = 15,
+    num_particles = 15,
     r = None, angle = [], center = [],
 )
 
-radius = utils.get_ring_radius(dynamic_cfg.diameter, creator_cfg.num_p) 
+radius = utils.get_ring_radius(dynamic_cfg.diameter, creator_cfg.num_particles) 
 stokes_cfg = StokesCfg(
     obstacle_r  = space_cfg.height/5,
     obstacle_x  = 0*space_cfg.length/8/2,

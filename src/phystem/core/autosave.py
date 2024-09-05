@@ -51,7 +51,7 @@ class AutoSavable():
 
     @property
     def vars_to_save(self) -> list[str]:
-        '''Nome dos atributos para serem salvos no auto-salvamento'''
+        "Nome dos atributos para serem salvos no auto-salvamento"
         raise Exception("'vars_to_save' não foi implementado.")
     
     def get_vars_to_save(self):
@@ -62,13 +62,13 @@ class AutoSavable():
             setattr(self, name, value)
 
     def autosave(self):
-        '''Salva o estado atual.'''
+        "Salva o estado atual."
         if self.vars_to_save is not None:
             with open(self.autosave_state_path, "wb") as f:
                 pickle.dump(self.get_vars_to_save(), f)
 
     def exec_autosave(self, *args, **kwargs):
-        '''Executa o auto-salvamento setando uma flag que informa a completude da operação.'''
+        "Executa o auto-salvamento setando uma flag que informa a completude da operação."
         os.rename(self.autosave_container_path / self.BACKUP_NAME, self.autosave_container_path / "temp")
         os.rename(self.autosave_container_path / self.ROOT_NAME, self.autosave_container_path / self.BACKUP_NAME)
         os.rename(self.autosave_container_path / "temp", self.autosave_container_path / self.ROOT_NAME)
@@ -86,7 +86,8 @@ class AutoSavable():
     
     @staticmethod
     def get_autosave_path(autosave_container_path: Path):
-        '''Retorno o caminho de uma pasta que contém um
+        '''
+        Retorno o caminho de uma pasta que contém um
         auto-salvamento válido, dodo o caminho que contém
         todos os auto-salvamentos.
         '''
@@ -129,7 +130,7 @@ class AutoSavable():
         return autosave_path
 
     def load_autosave(self, use_backup=False):
-        '''Carrega o estado salvo e retorna o caminho raiz do auto-salvamento.'''
+        "Carrega o estado salvo e retorna o caminho raiz do auto-salvamento."
         if use_backup:
             autosave_path = self.autosave_container_path / AutoSavable.BACKUP_NAME
         else:

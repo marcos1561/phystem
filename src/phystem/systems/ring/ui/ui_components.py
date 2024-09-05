@@ -172,7 +172,7 @@ class Info(InfoCore):
 
         dynamic_cfg: RingCfg = self.cfgs["dynamic_cfg"]
         creator_cfg: CreatorCfg = self.cfgs["creator_cfg"]
-        self.cfg_info = dynamic_cfg.info() + f"N = {creator_cfg.num_p}\n" 
+        self.cfg_info = dynamic_cfg.info() + f"N = {creator_cfg.num_particles}\n" 
 
     def get_info(self) -> str:
         if self.cfgs["run_cfg"].id is RunType.REPLAY_DATA:
@@ -290,7 +290,7 @@ class InfoReplay(InfoCore):
 
         dynamic_cfg: RingCfg = self.cfgs["dynamic_cfg"]
         creator_cfg: CreatorCfg = self.cfgs["creator_cfg"]
-        self.cfg_info = dynamic_cfg.info() + f"N = {creator_cfg.num_p}\n" 
+        self.cfg_info = dynamic_cfg.info() + f"N = {creator_cfg.num_particles}\n" 
 
     def get_info(self) -> str:
         return (

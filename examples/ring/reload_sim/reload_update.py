@@ -9,7 +9,7 @@ from phystem.systems.ring.ui.graph import graphs_cfg
 real_time_cfg = run_config.RealTimeCfg(
     int_cfg=configs["run_cfg"].int_cfg,
     # graph_cfg=graphs_cfg.MainGraphCfg(show_circles=True),
-    graph_cfg=graphs_cfg.SimpleGraphCfg(rings_kwargs={"s": 6}),
+    graph_cfg=graphs_cfg.SimpleGraphCfg(scatter_kwargs={"s": 6}),
     num_steps_frame=10,
 )
 configs["run_cfg"] = real_time_cfg

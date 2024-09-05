@@ -35,7 +35,7 @@ def get_base_ring(num_particles, particle_diameter):
     return ring_pos.T
 
 class Creator(CreatorCore):
-    def __init__(self, num_rings: int, num_p: int, r: list[float], angle: list[float], center: list, 
+    def __init__(self, num_rings: int, num_particles: int, r: list[float], angle: list[float], center: list, 
         rng_seed: int = None) -> None:
         '''Cria a configuração inicial do anel em formato de círculo com todas as 
         velocidades auto propulsoras iguais.
@@ -47,7 +47,7 @@ class Creator(CreatorCore):
             num_rings:
                 Número de anéis.
             
-            num_p:
+            num_particles:
                 Número de partículas no anel.
         
             r:
@@ -66,7 +66,7 @@ class Creator(CreatorCore):
         super().__init__(rng_seed)
 
         self.num_rings = num_rings
-        self.num_p = num_p
+        self.num_particles = num_particles
         self.r = r
         self.angle = angle
         self.center = center
@@ -83,10 +83,10 @@ class Creator(CreatorCore):
         self_prop_angle = []
 
         for ring_id in range(self.num_rings):
-            ring_pos_angles = np.arange(0, np.pi*2, np.pi*2/self.num_p)
+            ring_pos_angles = np.arange(0, np.pi*2, np.pi*2/self.num_particles)
             
-            if ring_pos_angles.size != self.num_p:
-                raise Exception(f"'pos_angle' tem tamanho '{ring_pos_angles.size}', mas deveria ter '{self.num_p}'")
+            if ring_pos_angles.size != self.num_particles:
+                raise Exception(f"'pos_angle' tem tamanho '{ring_pos_angles.size}', mas deveria ter '{self.num_particles}'")
 
             ring_pos = np.array([np.cos(ring_pos_angles), np.sin(ring_pos_angles)]) * self.r[ring_id]
 
@@ -107,16 +107,16 @@ class RectangularGridCreator(CreatorCore):
         self.num_rings_y = num_rings_y
         self.space_x = space_x
         self.space_y = space_y    
-        self.num_p = num_particles
+        self.num_particles = num_particles
         self.particle_diameter = particle_diameter
         self.ring_radius_k = ring_radius_k
     
     def create(self) -> InitData:
-        ring_radius = utils.get_ring_radius(self.particle_diameter, self.num_p)
+        ring_radius = utils.get_ring_radius(self.particle_diameter, self.num_particles)
         real_ring_d = 2 * (ring_radius + self.particle_diameter/2)
         num_rings = self.num_rings_x * self.num_rings_y
 
-        base_pos = get_base_ring(self.num_p, self.particle_diameter) * self.ring_radius_k
+        base_pos = get_base_ring(self.num_particles, self.particle_diameter) * self.ring_radius_k
         pos = []
         for i in range(self.num_rings_x):
             x = (i + 1/2) * (self.space_x + real_ring_d)

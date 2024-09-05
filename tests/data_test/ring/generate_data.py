@@ -45,7 +45,7 @@ def generate_normal_data():
     a = 2
     creator_cfg = CreatorCfg(
         num_rings = 4,
-        num_p = 30,
+        num_particles = 30,
         r = radius,
         angle=[pi/4, -3*pi/4, 3*pi/4, -pi/4],
         center=[

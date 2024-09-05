@@ -56,7 +56,7 @@ from math import pi
 a = 2
 creator_cfg = CreatorCfg(
     num_rings = 4,
-    num_p = num_particles,
+    num_particles = num_particles,
     r = radius,
     angle=[pi/4, -3*pi/4, 3*pi/4, -pi/4],
     center=[

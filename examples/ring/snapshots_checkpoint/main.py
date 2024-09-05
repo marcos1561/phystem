@@ -44,11 +44,11 @@ dynamic_cfg = RingCfg(
 
 creator_cfg = CreatorCfg(
     num_rings = 0,
-    num_p = 15,
+    num_particles = 15,
     r = None, angle = [], center = [],
 )
 
-radius = utils.get_ring_radius(dynamic_cfg.diameter, creator_cfg.num_p) 
+radius = utils.get_ring_radius(dynamic_cfg.diameter, creator_cfg.num_particles) 
 
 space_cfg = SpaceCfg(
     height = 7 * 2*radius,
@@ -109,7 +109,7 @@ real_time_cfg = RealTimeCfg(
         begin_paused=True,
         show_density=False,
         show_scatter=True,
-        rings_kwargs={"s": 1},
+        scatter_kwargs={"s": 1},
         density_kwargs={"vmin": -1, "vmax":1},
         cbar_kwargs={"orientation": "horizontal", "label": "Densidade relativa"},
         ax_kwargs={"title": "t=8000"},

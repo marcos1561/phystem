@@ -82,6 +82,8 @@ class ColManager(RingCol):
                 solver.update()
                 collectors.collect()
 
+            if collectors.autosave_cfg:
+                collectors.exec_autosave()
             collectors.save()
             prog.update(solver.time)
         

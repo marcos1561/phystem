@@ -85,16 +85,25 @@ class Collector(AutoSavable, ABC):
     def save(self) -> None:
         pass
 
+    def exec_autosave(self,):
+        self.autosave_last_time = self.solver.time
+        return super().exec_autosave()
+
+    def exec_autosave_data(self):
+        self.autosave_data_last_time = self.solver.time
+        self.save()
+
     def check_autosave(self):
         '''Realiza o auto-salvamento de acordo com a frequência definida.'''
-        if self.solver.time - self.autosave_last_time > self.autosave_cfg.freq_dt:
-            self.autosave_last_time = self.solver.time
-            self.exec_autosave()
-        
         if self.autosave_cfg.save_data_freq_dt:
             if self.solver.time - self.autosave_data_last_time > self.autosave_cfg.save_data_freq_dt:
-                self.autosave_data_last_time = self.solver.time
-                self.save()
+                # self.autosave_data_last_time = self.solver.time
+                # self.save()
+                self.exec_autosave_data()
+        
+        if self.solver.time - self.autosave_last_time > self.autosave_cfg.freq_dt:
+            # self.autosave_last_time = self.solver.time
+            self.exec_autosave()
 
     @staticmethod
     def save_cfg(configs: dict[str], configs_path: Path) -> None:

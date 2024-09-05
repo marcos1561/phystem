@@ -30,7 +30,7 @@ dynamic_cfg = RingCfg(
     k_invasion = 8,
     
     diameter  = 1,
-    max_dist  = 1 + 0.5*0.1,
+    max_dist  = 1 * (1 + 0.1818),
     rep_force = 20,
     adh_force = 1,
     
@@ -39,23 +39,23 @@ dynamic_cfg = RingCfg(
     vo=0.5,
     
     trans_diff=0,
-    rot_diff=0.8,
+    rot_diff=1/3,
 )
 
 creator_cfg = CreatorCfg(
     num_rings = 0,
-    num_p = 10,
+    num_particles = 10,
     r = None, angle = [], center = [],
 )
 
-radius = utils.get_ring_radius(dynamic_cfg.diameter, creator_cfg.num_p) 
+radius = utils.get_ring_radius(dynamic_cfg.diameter, creator_cfg.num_particles) 
 
 space_cfg = SpaceCfg(
     height = 7 * 2*radius,
     length = 20 * 2*radius,
 )
 
-num_ring_in_rect = utils.num_rings_in_rect(2*radius, space_cfg)
+num_ring_in_rect = space_cfg.max_num_inside(2*radius)
 stokes_cfg = StokesCfg(
     obstacle_r  = 0.4 * space_cfg.height/2,
     obstacle_x  = 0,
@@ -70,10 +70,10 @@ stokes_cfg = StokesCfg(
 ##
 ## Select Run Type
 ##
-run_type = RunType.COLLECT_DATA
+run_type = RunType.REAL_TIME
 
-num_cols, num_rows = utils.particle_grid_shape(space_cfg, dynamic_cfg.max_dist)
-num_cols_cm, num_rows_cm = utils.rings_grid_shape(space_cfg, radius)
+num_cols, num_rows = space_cfg.particle_grid_shape(dynamic_cfg.max_dist)
+num_cols_cm, num_rows_cm = space_cfg.rings_grid_shape(radius)
 
 center_region = -18
 wait_dist = 2 * 2*radius
@@ -114,7 +114,7 @@ collect_data_cfg = CollectDataCfg(
         },
         "autosave_cfg": ColAutoSaveCfg(freq_dt=10, save_data_freq_dt=100),
     },
-    checkpoint=CheckpointCfg("datas/test_save_data/autosave"),
+    # checkpoint=CheckpointCfg("datas/test_save_data/autosave"),
 )
 
 real_time_cfg = RealTimeCfg(
@@ -122,11 +122,15 @@ real_time_cfg = RealTimeCfg(
     num_steps_frame=100,
     fps=30,
     graph_cfg = SimpleGraphCfg(
-        begin_paused=True,
-        show_scatter=False,
-        show_circles=True,
-        circle_facecolor=True,
-        rings_kwargs={"s": 1},
+        begin_paused=False,
+        show_scatter=True,
+        show_circles=False,
+        circles_cfg=ParticleCircleCfg(
+            color="#1f77b4",
+        #     facecolor=True,
+        #     match_face_edge_color=True,
+        ),
+        scatter_kwargs={"s": 10}, #"c": "#1f77b4"},
         density_kwargs={"vmin": -1, "vmax":1},
         cbar_kwargs={"orientation": "horizontal", "label": "Densidade relativa"},
         ax_kwargs={"title": "t=8000"},

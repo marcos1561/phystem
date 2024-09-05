@@ -70,7 +70,7 @@ for j in range(n):
 
 creator_cfg = CreatorCfg(
     num_rings = num_rings,
-    num_p = num_p,
+    num_particles = num_p,
     r = radius,
     angle=np.random.random(num_rings)*2*pi,
     center= centers,
@@ -126,7 +126,7 @@ real_time_cfg = RealTimeCfg(
     fps=30,
     graph_cfg = SimpleGraphCfg(
         begin_paused=False,
-        rings_kwargs={"s": 4},
+        scatter_kwargs={"s": 4},
     ),
     # graph_cfg = MainGraphCfg(
     #     show_circles      = True,

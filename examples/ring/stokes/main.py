@@ -49,11 +49,11 @@ print(dynamic_cfg)
 
 creator_cfg = CreatorCfg(
     num_rings = 0,
-    num_p = 10,
+    num_particles = 10,
     r = None, angle = [], center = [],
 )
 
-radius = ring_utils.get_ring_radius(dynamic_cfg.diameter, creator_cfg.num_p)
+radius = ring_utils.get_ring_radius(dynamic_cfg.diameter, creator_cfg.num_particles)
 
 space_cfg = SpaceCfg(
     height = 2 * 2*radius,

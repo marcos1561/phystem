@@ -226,10 +226,14 @@ class CppSolver:
         return self.cpp_solver.mean_vel(ring_id)
     
 class SolverReplay:
-    def __init__(self, run_cfg: ReplayDataCfg, num_max_rings) -> None:
+    def __init__(self, run_cfg: ReplayDataCfg, num_max_rings, cfg: ReplaySolverCfg=None) -> None:
         self.root_path = run_cfg.data_path
         self.dt = run_cfg.int_cfg.dt
         self.num_max_rings = num_max_rings
+        
+        if cfg is None:
+            cfg = ReplaySolverCfg()
+        self.cfg = cfg
 
         self.solver_cfg: ReplaySolverCfg
         self.set_solver_cfg(run_cfg)
@@ -326,14 +330,14 @@ class SolverReplay:
 
     def update_pos(self):
         "Atualiza as posições para o frame atual"
-        if self.frame >= self.num_frames-1:
+        if self.frame >= self.num_frames-self.cfg.calc_vel_dframes:
             return
 
         if self.solver_cfg.vel_from_solver:
             self.pos, self.ids = self.load(self.frame)
         else:
             self.pos, self.ids = self.pos2_original, self.ids2
-            self.pos2_original, self.ids2 = self.load(self.frame+1) 
+            self.pos2_original, self.ids2 = self.load(self.frame+self.cfg.calc_vel_dframes) 
             self.pos, self.pos2 = utils.same_rings(self.pos, self.ids, self.pos2_original, self.ids2)
 
     def update(self):
@@ -341,7 +345,7 @@ class SolverReplay:
         self.frame += self.time_sign
         
         if self.frame >= self.num_frames: 
-            self.frame = self.num_frames-1
+            self.frame = self.num_frames-self.cfg.calc_vel_dframes
             return
         elif self.frame < 0:
             self.frame = 0

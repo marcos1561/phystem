@@ -32,7 +32,7 @@ class BaseGraph(ABC):
         if sim_configs["other_cfgs"].get("stokes") is not None:
             self.stokes_obstacle(zorder=3)
 
-        num_particles = self.sim_configs["creator_cfg"].num_p
+        num_particles = self.sim_configs["creator_cfg"].num_particles
         self.active_rings = ActiveRings(num_particles, solver)
 
     def borders(self, r_scale=1):
@@ -157,12 +157,13 @@ class ReplayGraph(BaseGraph):
             "density": Density(ax, self.active_rings,
                 cell_shape = self.graph_cfg.cell_shape, 
                 sim_configs = sim_configs,
-                artist_kwargs = self.graph_cfg.density_kwargs,),
+                artist_kwargs = self.graph_cfg.density_kwargs,
+                colorbar_kwargs=self.graph_cfg.colorbar_kwargs,),
             "center_mass": CenterMass(ax, self.active_rings), 
         }
 
         self.update()
-
+        # fig.colorbar(self.components.get("density").artist)
         # space_cfg: SpaceCfg = sim_configs["space_cfg"]
 
         # h = space_cfg.height/2

@@ -33,7 +33,7 @@ class Pipeline:
 
         creator_cfg = CreatorCfg(
             num_rings = num_rings,
-            num_p = 30,
+            num_particles = 30,
             r = radius,
             angle=np.random.random(num_rings)*2*np.pi,
             center= centers,

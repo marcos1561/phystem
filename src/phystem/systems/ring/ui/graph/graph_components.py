@@ -6,7 +6,7 @@ from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection, PatchCollection
 from matplotlib.patches import Circle
-from matplotlib import colors
+from matplotlib import colors, colorbar
 
 from phystem.systems.ring.solvers import CppSolver
 from phystem.systems.ring.configs import RingCfg
@@ -15,6 +15,24 @@ from phystem.systems.ring import rings_quantities
 from .active_rings import ActiveRings
 from .graphs_cfg import ParticleCircleCfg
 
+class ArtistList:
+    def __init__(self):
+        self._artist_list: dict[str, Artist] = {}
+
+    def add(self, name, artist: Artist):
+        self._artist_list[name] = artist
+
+    def get(self, name):
+        return self._artist_list[name]
+    
+    def remove(self):
+        for artist in self._artist_list.values():
+            artist.remove()
+
+    @property
+    def items(self):
+        return self._artist_list.values()
+
 class GraphComponent:
     def __init__(self, ax: Axes, show_cfg_name: str):
         self.ax = ax
@@ -22,16 +40,15 @@ class GraphComponent:
 
         self.has_added = False
         self.has_removed = True
-        self.artist: Artist
+        self.artist_list = ArtistList()
 
     def add(self):
         pass
     
     def remove(self):
-        print("Removendo", self.show_cfg_name)
-        self.artist.remove()
+        self.artist_list.remove()
 
-    def update_artist(self):
+    def update_artists(self):
         pass
 
     def update(self, to_show):
@@ -40,7 +57,7 @@ class GraphComponent:
                 self.add()
                 self.has_added = True
                 self.has_removed = False
-            self.update_artist()
+            self.update_artists()
         else:
             if not self.has_removed:
                 self.remove()
@@ -49,8 +66,21 @@ class GraphComponent:
 
 class CollectionComp(GraphComponent):
     def add(self):
-        self.ax.add_collection(self.artist)
+        for artist in self.artist_list.items:
+            self.ax.add_collection(artist)
   
+class ColorBarableComp(CollectionComp):
+    def get_color_bar(self) -> colorbar.Colorbar:
+        pass
+
+    def add(self):
+        self.colormap = self.get_color_bar()
+        return super().add()
+    
+    def remove(self):
+        self.colormap.remove()
+        return super().remove()
+
 class ParticleCircles(CollectionComp):
     def __init__(self, ax: Axes, active_rings: ActiveRings, radius, cfg: ParticleCircleCfg=None):
         super().__init__(ax, show_cfg_name="show_circles")
@@ -78,7 +108,9 @@ class ParticleCircles(CollectionComp):
             **kwargs,
         )
 
-    def update_artist(self):
+        self.artist_list.add("main", self.artist)
+
+    def update_artists(self):
         for idx, pos_i in enumerate(self.active_rings.pos):
             self.circles[idx].center = pos_i
         self.artist.set_paths(self.circles[:self.active_rings.num_particles_active])
@@ -106,7 +138,6 @@ class ParticleCircles(CollectionComp):
                 self.artist.set_edgecolor(self.cfg.color)
 
 class ParticlesScatter(CollectionComp):
-    artist: collections.PathCollection
     def __init__(self, ax: Axes, active_rings: ActiveRings, zorder, scatter_kwargs):
         super().__init__(ax, show_cfg_name="show_scatter")
         self.active_rings = active_rings
@@ -122,8 +153,9 @@ class ParticlesScatter(CollectionComp):
             self.artist = self.ax.scatter(*self.active_rings.pos.T, zorder=zorder,
                 c=self.active_rings.colors_rgb, **scatter_kwargs)
         self.artist.remove()
+        self.artist_list.add("main", self.artist)
         
-    def update_artist(self):
+    def update_artists(self):
         self.artist.set_offsets(self.active_rings.pos)
         if not self.unique_ring_color:
             # self.artist.set_array(self.active_rings.colors_value)
@@ -131,7 +163,6 @@ class ParticlesScatter(CollectionComp):
 
 
 class ParticlesScatterCont(CollectionComp):
-    artist: collections.PathCollection
     def __init__(self, ax: Axes, active_rings: ActiveRings, zorder, scatter_kwargs):
         super().__init__(ax, show_cfg_name="show_scatter_cont")
         self.active_rings = active_rings
@@ -146,15 +177,15 @@ class ParticlesScatterCont(CollectionComp):
             #     cmap=self.active_rings.cmap, vmin=0, vmax=1, **scatter_kwargs)
             self.artist = self.ax.scatter([], [], zorder=zorder, **scatter_kwargs)
         self.artist.remove()
+        self.artist_list.add("main", self.artist)
         
-    def update_artist(self):
+    def update_artists(self):
         self.artist.set_offsets(self.active_rings.pos_continuos)
         if not self.unique_ring_color:
             # self.artist.set_array(self.active_rings.colors_value)
             self.artist.set_color(self.active_rings.colors_rgb)
 
 class RingSprings(CollectionComp):
-    artist: collections.LineCollection
     def __init__(self, ax: Axes, active_rings: ActiveRings, solver: CppSolver, dynamic_cfg: RingCfg):
         super().__init__(ax, show_cfg_name="show_springs")
         self.active_rings = active_rings
@@ -169,6 +200,7 @@ class RingSprings(CollectionComp):
             linewidths=1,
             zorder=1,
         )
+        self.artist_list.add("main", self.artist)
 
     def get_segments(self) -> list:
         segments = []
@@ -198,18 +230,21 @@ class RingSprings(CollectionComp):
 
         return dist_to_colors
 
-    def update_artist(self):
+    def update_artists(self):
         self.artist.set_segments(self.get_segments())
         self.artist.set_array(self.get_distances())
 
-class Density(CollectionComp):
-    artist: collections.QuadMesh
-    def __init__(self, ax: Axes, active_rings: ActiveRings, cell_shape: tuple, sim_configs, artist_kwargs):
+class Density(ColorBarableComp):
+    def __init__(self, ax: Axes, active_rings: ActiveRings, cell_shape: tuple, sim_configs, artist_kwargs, colorbar_kwargs=None):
         super().__init__(ax, show_cfg_name="show_density")
+        if colorbar_kwargs is None:
+            colorbar_kwargs = {}
+        self.colorbar_kwargs = colorbar_kwargs
+        
         self.active_rings = active_rings
 
         l, h = sim_configs["space_cfg"].length, sim_configs["space_cfg"].height
-        ring_d = utils.get_ring_radius(sim_configs["dynamic_cfg"].diameter, sim_configs["creator_cfg"].num_p) * 2
+        ring_d = utils.get_ring_radius(sim_configs["dynamic_cfg"].diameter, sim_configs["creator_cfg"].num_particles) * 2
         num_rows = int(h/(ring_d * cell_shape[0]))
         num_cols = int(l/(ring_d * cell_shape[1]))
 
@@ -222,6 +257,11 @@ class Density(CollectionComp):
                 zorder=1, cmap="coolwarm" ,**artist_kwargs)
         self.artist.remove()
 
+        self.artist_list.add("main", self.artist)
+
+    def get_color_bar(self):
+        return self.ax.figure.colorbar(self.artist, ax=self.ax, **self.colorbar_kwargs)
+
     def get_density(self):
         cm = np.array(self.active_rings.solver.center_mass)[self.active_rings.ids]
         # coords = self.grid.coords(cm)
@@ -229,7 +269,7 @@ class Density(CollectionComp):
         # return count
         return self.density_calc.get_from_cm(cm)/self.density_eq - 1
 
-    def update_artist(self):
+    def update_artists(self):
         self.artist.set_array(self.get_density())
 
 class RingForce(CollectionComp):
@@ -259,6 +299,8 @@ class RingForce(CollectionComp):
         )
         self.artist.remove()
 
+        self.artist_list.add("main", self.artist)
+
     def update_forces(self):
         count = 0
         for ring_id in self.active_rings.ids:
@@ -266,7 +308,7 @@ class RingForce(CollectionComp):
                 self.forces[count] = self.solver_forces[ring_id][p_id]
                 count += 1
 
-    def update_artist(self):
+    def update_artists(self):
         self.update_forces()
 
         self.artist.remove()
@@ -280,7 +322,6 @@ class RingForce(CollectionComp):
         # self.artist.set_UVC(U=self.forces[:self.active_rings.num_particles_active, 0], V=self.forces[:self.active_rings.num_particles_active, 1])
 
 class CenterMass(CollectionComp):
-    artist: collections.PathCollection
     def __init__(self, ax: Axes, active_rings: ActiveRings):
         super().__init__(ax, "show_cms")
         self.active_rings = active_rings
@@ -288,11 +329,12 @@ class CenterMass(CollectionComp):
         self.artist = self.ax.scatter([], [], c="black")
         self.artist.remove()
 
-    def update_artist(self):
+        self.artist_list.add("main", self.artist)
+
+    def update_artists(self):
         self.artist.set_offsets(self.active_rings.cms)
 
 class InvasionPoints(CollectionComp):
-    artist: collections.PathCollection
     def __init__(self, ax: Axes, solver: CppSolver):
         super().__init__(ax, "show_invasion")
         self.solver = solver
@@ -300,7 +342,9 @@ class InvasionPoints(CollectionComp):
             c="black", marker="x", zorder=10)
         self.artist.remove()
 
-    def update_artist(self):
+        self.artist_list.add("main", self.artist)
+
+    def update_artists(self):
         inside_points = self.solver.in_pol_checker.inside_points
         num_inside_points = self.solver.in_pol_checker.num_inside_points 
         if num_inside_points > 0:
@@ -310,7 +354,6 @@ class InvasionPoints(CollectionComp):
             self.artist.set_visible(False)
 
 class IthPoints(CollectionComp):
-    artist: collections.PathCollection
     def __init__(self, ax: Axes, active_rings: ActiveRings, zorder, particle_idx="last"):
         super().__init__(ax, "show_ith_points")
         self.active_rings = active_rings
@@ -322,7 +365,9 @@ class IthPoints(CollectionComp):
         self.artist = ax.scatter([], [], c="black", zorder=zorder)
         self.artist.remove()
 
-    def update_artist(self):
+        self.artist_list.add("main", self.artist)
+
+    def update_artists(self):
         num_p = self.active_rings.num_particles
         end_idx = self.particle_idx + (len(self.active_rings.ids) - 1) * num_p
         ith_ids = np.arange(self.particle_idx, end_idx+1, num_p)

@@ -39,9 +39,9 @@ class Simulation(SimulationCore):
 
         pos = creator_cfg.CreatorType(**creator_cfg.get_pars(), rng_seed=self.rng_seed).create().pos
         if pos.shape[0] > 0:
-            creator_cfg.num_p = pos.shape[1]
+            creator_cfg.num_particles = pos.shape[1]
 
-        dynamic_cfg.adjust_area_pars(creator_cfg.num_p)
+        dynamic_cfg.adjust_area_pars(creator_cfg.num_particles)
 
     def get_creator(self) -> Creator:
         if self.run_cfg.id is RunType.REPLAY_DATA:
@@ -58,7 +58,7 @@ class Simulation(SimulationCore):
             if self.run_cfg.int_cfg.update_type is UpdateType.STOKES:
                 num_max_rings = self.run_cfg.system_cfg["other_cfgs"]["stokes"].num_max_rings
 
-            return SolverReplay(self.run_cfg, num_max_rings)
+            return SolverReplay(self.run_cfg, num_max_rings, self.run_cfg.solver_cfg)
 
         if self.run_cfg.id is RunType.SAVE_VIDEO:
             if self.run_cfg.replay is not None:
@@ -66,7 +66,7 @@ class Simulation(SimulationCore):
                 if self.run_cfg.int_cfg.update_type is UpdateType.STOKES:
                     num_max_rings = self.run_cfg.replay.system_cfg["other_cfgs"]["stokes"].num_max_rings
 
-                return SolverReplay(self.run_cfg.replay, num_max_rings)
+                return SolverReplay(self.run_cfg.replay, num_max_rings, self.run_cfg.replay.solver_cfg)
 
         if self.run_cfg.checkpoint:
             from phystem.systems.ring.state_saver import StateSaver
@@ -80,7 +80,7 @@ class Simulation(SimulationCore):
             stokes_cfg = self.other_cfgs.get("stokes", None)
 
 
-        solver = CppSolver(**init_data.get_data(), num_particles=self.creator_cfg.num_p, 
+        solver = CppSolver(**init_data.get_data(), num_particles=self.creator_cfg.num_particles, 
             dynamic_cfg=self.dynamic_cfg, stokes_cfg=stokes_cfg, space_cfg=self.space_cfg,
             int_cfg=self.run_cfg.int_cfg, rng_seed=self.rng_seed)
         

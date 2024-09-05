@@ -100,7 +100,7 @@ class DeltaCalculator(Calculator):
 
         configs = self.data.configs
         ring_d = utils.get_ring_radius(
-            configs["dynamic_cfg"].diameter, configs["creator_cfg"].num_p) * 2
+            configs["dynamic_cfg"].diameter, configs["creator_cfg"].num_particles) * 2
         
         self.edge_k = edge_k
         self.debug = debug
@@ -269,6 +269,8 @@ class DenVelCalculator(Calculator):
 
     @staticmethod
     def load_data(path: Path):
+        path = Path(path)
+
         DenResults = namedtuple('DenResults', ['times', 'den_eq'])
         VelResults = namedtuple('VelResults', ['times', 'vel_par'])
 

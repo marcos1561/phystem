@@ -1,5 +1,5 @@
 from phystem.core.run_config import ReplayDataCfg, SaveCfg
-from phystem.systems.ring.ui.graph.graphs_cfg import ReplayGraphCfg
+from phystem.systems.ring.ui.graph.graphs_cfg import ReplayGraphCfg, ParticleCircleCfg
 from phystem.systems.ring import Simulation
 from phystem.systems.ring.solver_config import ReplaySolverCfg
 
@@ -7,15 +7,22 @@ replay_cfg = ReplayDataCfg(
     # root_path="datas/explore_p0_2000/11/snaps",
     root_path="datas/snaps/adh_1",
     graph_cfg=ReplayGraphCfg(
-        # show_density=True,
-        vel_colors=False,
-        x_lims=(-124.58 - 3, -121.35 + 24.3),
-        scatter_kwargs={"s": 2},
-        colorbar_kwargs={"location": "bottom"},
+        show_density=True,
+        show_circles=False,
+        show_scatter=False,
+        # vel_colors=False,
+        x_lims=(-20, 20),
+        circles_cfg=ParticleCircleCfg(
+            facecolor=True,
+            color=ParticleCircleCfg.DEFAULT_COLOR,
+        ),
+        scatter_kwargs={"s": 1},
+        density_kwargs={"vmin": -1, "vmax": 1},
+        colorbar_kwargs={"location": "bottom", "label": "Densidade Relativa"},
+        cell_shape=(2, 2),
     ),
     solver_cfg=ReplaySolverCfg(
-        mode=ReplaySolverCfg.Mode.same_ids,
-        ring_per_grid=3,
+        calc_vel_dframes=5*10,
     ),
     fps=30,
 )

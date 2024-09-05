@@ -171,10 +171,10 @@ class InvaginationCfg:
 class CreatorCfg:
     '''Configurações passadas ao construtor da configuração inicial.'''
     CreatorType = creators.Creator
-    def __init__(self, num_rings: int,  num_p: int, r: list[float], angle: list[float],
+    def __init__(self, num_rings: int,  num_particles: int, r: list[float], angle: list[float],
         center: list[list[float]]) -> None:
         self.num_rings = num_rings
-        self.num_p = num_p
+        self.num_particles = num_particles
     
         self.r = self.process_scalar_input(r)
         self.angle = self.process_scalar_input(angle)
@@ -190,7 +190,7 @@ class CreatorCfg:
     def set(self, other):
         self.r = other.r
         self.num_rings = other.num_rings
-        self.num_p = other.num_p
+        self.num_particles = other.num_particles
         self.vo = other.vo
         self.angle = other.angle
         self.center = other.center
@@ -198,7 +198,7 @@ class CreatorCfg:
     def get_pars(self):
         return {
             "num_rings": self.num_rings,
-            "num_p": self.num_p,
+            "num_particles": self.num_particles,
             "r": self.r,
             "angle": self.angle,
             "center": self.center,

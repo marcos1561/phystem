@@ -316,7 +316,7 @@ class Info(graph.Info):
         super().__init__(ax)
         self.solver = solver
         self.time_it = time_it
-        self.cfg_info = dynamic_cfg.info() + f"N = {creator_cfg.num_p}\n" 
+        self.cfg_info = dynamic_cfg.info() + f"N = {creator_cfg.num_particles}\n" 
 
     def get_info(self):
         sim_info = (
