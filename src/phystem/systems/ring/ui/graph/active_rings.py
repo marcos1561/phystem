@@ -4,14 +4,35 @@ from abc import ABC, abstractmethod
 import numpy as np
 from phystem.systems.ring.solvers import CppSolver
 from matplotlib import cm
+from matplotlib.axes import Axes
+from matplotlib.colorbar import Colorbar
 
 class CustomColors(ABC):
     "Classe base para calcular as cores dos anéis."
+    
+    def __init__(self, cmap, colorbar_kwargs=None) -> None:
+        if colorbar_kwargs is None:
+            colorbar_kwargs = {}
+        
+        self.cmap = cmap
+        self.colorbar_kwargs = colorbar_kwargs
+        self.colorbar: Colorbar = None
+
     @abstractmethod
     def update(self):
         "Atualiza `self.colors_value` e `self.colors_rgb`"
         pass
-    
+
+    def add_colorbar(self, ax: Axes):
+        if self.colorbar is None:
+            self.colorbar = ax.figure.colorbar(self.cmap, ax=ax, **self.colorbar_kwargs)
+            self.ax = ax
+    def remove_colorbar(self):
+        if self.colorbar is not None:
+            self.colorbar.remove()
+            self.ax.set_anchor("C")
+            self.colorbar = None
+
 class ActiveRings:
     def __init__(self, num_particles: int, solver: CppSolver, custom_colors:CustomColors=None, use_custom_colors=False):
         self.solver = solver

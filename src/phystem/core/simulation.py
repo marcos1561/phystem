@@ -230,7 +230,7 @@ class SimulationCore(ABC):
         ani = animation.FuncAnimation(fig, update, frames=frames)
 
         self.save_configs(save_video_cfg.path.parent / (save_video_cfg.path.stem + "_config"))
-        ani.save(save_video_cfg.path, fps=save_video_cfg.fps, progress_callback=progress.update)
+        ani.save(save_video_cfg.path, fps=save_video_cfg.fps, dpi=fig.get_dpi(), progress_callback=progress.update)
 
         t2 = time.time()
         from datetime import timedelta

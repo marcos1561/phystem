@@ -2,7 +2,7 @@ from matplotlib.figure import Figure
 
 from phystem.core.simulation import SimulationCore
 from phystem.core.solvers import SolverCore
-from phystem.systems.ring.solvers import CppSolver, SolverRD, SolverReplay
+from phystem.systems.ring.solvers import CppSolver, SolverReplay
 from phystem.systems.ring.creators import CreatorRD, Creator
 
 from phystem.core.run_config import RunCfg, RunType, RealTimeCfg, ReplayDataCfg
@@ -111,7 +111,7 @@ class Simulation(SimulationCore):
         if graph_cfg is None:
             graph_cfg = graphs_cfg.SimpleGraphCfg()
 
-        fig = Figure(dpi=real_time_cfg.ui_settings.dpi)
+        fig = Figure(dpi=real_time_cfg.ui_settings.dpi, constrained_layout=True, **graph_cfg.figure_kwargs)
         ax = fig.add_subplot()
 
         # particles_graph = graph_cfg.GraphCls(

@@ -256,13 +256,17 @@ class SolverReplay:
             self.num_max_rings = self.pos.shape[0]
         self.num_max_rings = num_max_rings
 
+        self._ring_ids = np.arange(self.num_max_rings)
+
     @property
     def num_active_rings(self):
         return self.pos.shape[0]
 
     @property
     def rings_ids(self):
-        return range(self.num_active_rings)
+        if self.num_active_rings > self._ring_ids.size:
+            self._ring_ids = np.arange(self.num_active_rings)
+        return self._ring_ids
 
     @property
     def pos_continuos(self):
@@ -283,7 +287,7 @@ class SolverReplay:
     def init(self, frame=0):
         'Inicializa as posições para o frame `frame`'
         if not self.solver_cfg.vel_from_solver:
-            self.pos2_original, self.ids2 = self.load(0)
+            self.pos2_original, self.ids2 = self.load(frame)
     
     # def init_same_ids_pre_calc(self):
     #     ids_dir = os.path.join(self.root_path, "same_ids")
@@ -354,51 +358,3 @@ class SolverReplay:
         self.update_pos()
         
         self.time = self.times[self.frame]
-
-class SolverRD:
-    '''
-    Solver utilizado no modo replay. Apenas itera sobre os dados salvos.  
-    '''
-    def __init__(self, run_cfg: ReplayDataCfg) -> None:
-        import os
-        
-        self.pos_all = np.load(os.path.join(run_cfg.directory, "pos.npy"))
-        self.graph_points_all = np.load(os.path.join(run_cfg.directory, "graph_points.npy"))
-        self.vel_all = np.load(os.path.join(run_cfg.directory, "vel.npy"))
-        self.time_arr = np.load(os.path.join(run_cfg.directory, "time.npy"))
-
-        self.graph_points = self.graph_points_all[0]
-        self.pos = self.pos_all[0]
-        self.pos_t = self.pos.T
-        self.vel = self.vel_all[0]
-        
-        self.num_particles = self.pos_all.shape[1]
-        self.id = 0
-        self.dt = run_cfg.dt
-        
-        self.run_cfg = run_cfg
-        self.count = 0
-
-        self.count_zero_speed = -1
-        self.count_overlap = -1
-        self.spring_forces = np.zeros((self.num_particles, 2))
-        self.vol_forces = np.zeros((self.num_particles, 2))
-        self.total_forces = np.zeros((self.num_particles, 2))
-    
-    @property
-    def time(self):
-        return self.time_arr[self.id]    
-
-    def mean_vel(self, ring_id: int):
-        return -1
-
-    def update(self):
-        self.count += 1
-        if self.count > self.run_cfg.frequency:
-            self.count = 0
-            self.id += 1
-
-            self.graph_points[:] = self.graph_points_all[self.id]
-            self.pos[:] = self.pos_all[self.id]
-            self.pos_t = self.pos.T
-            self.vel[:] = self.vel_all[self.id]

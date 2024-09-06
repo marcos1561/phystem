@@ -372,7 +372,10 @@ class SaveCfg(RunCfg):
         super().__init__(int_cfg, checkpoint)
         
         if ui_settings is None:
-            ui_settings = config_ui.UiSettings()
+            if self.replay is not None:
+                ui_settings = self.replay.ui_settings
+            else:
+                ui_settings = config_ui.UiSettings()
 
         self.ui_settings = ui_settings
         self.replay = replay

@@ -43,7 +43,7 @@ class GraphComponent:
         self.artist_list = ArtistList()
 
     def add(self):
-        pass
+        self.ax.set_anchor('C') 
     
     def remove(self):
         self.artist_list.remove()
@@ -66,6 +66,7 @@ class GraphComponent:
 
 class CollectionComp(GraphComponent):
     def add(self):
+        super().add()
         for artist in self.artist_list.items:
             self.ax.add_collection(artist)
   

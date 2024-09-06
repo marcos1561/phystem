@@ -1,10 +1,16 @@
 from enum import Enum, auto
 
 class BaseGraphCfg:
-    def __init__(self, begin_paused=False, pause_on_high_vel=False, cpp_is_debug=True) -> None:
+    def __init__(self, begin_paused=False, pause_on_high_vel=False, cpp_is_debug=True, figure_kwargs=None) -> None:
+        if figure_kwargs is None:
+            figure_kwargs = {
+                "facecolor": "white",
+            }
+
         self.begin_paused = begin_paused
         self.pause_on_high_vel = pause_on_high_vel
         self.cpp_is_debug = cpp_is_debug
+        self.figure_kwargs = figure_kwargs
 
 class ParticleCircleCfg:
     DEFAULT_COLOR = "#1f77b4"
@@ -28,11 +34,11 @@ class SimpleGraphCfg(BaseGraphCfg):
         show_circles=False, show_springs=False, show_cms=False, show_invasion=False,
         show_ith_points=False, show_scatter_cont=False,
         show_f_springs=False, show_f_vol = False, show_f_area = False, show_f_total = False,
-        show_f_format=False, show_f_obs=False, show_f_invasion=False,
+        show_f_format=False, show_f_obs=False, show_f_invasion=False, figure_kwargs=None,
         force_color: dict[ForceName, str] = None, circles_cfg: ParticleCircleCfg=None,
         density_kwargs=None, scatter_kwargs=None, cbar_kwargs=None, ax_kwargs=None,
         cell_shape=None, cpp_is_debug=True) -> None:
-        super().__init__(begin_paused, pause_on_high_vel, cpp_is_debug)
+        super().__init__(begin_paused, pause_on_high_vel, cpp_is_debug, figure_kwargs)
         if cell_shape is None:
             cell_shape = [1, 1]
 
@@ -83,18 +89,19 @@ class SimpleGraphCfg(BaseGraphCfg):
 class ReplayGraphCfg(BaseGraphCfg):
     def __init__(self, scatter_kwargs=None, density_kwargs=None, colorbar_kwargs=None, 
         x_lims=None, vel_colors=False, circles_cfg: ParticleCircleCfg=None,
-        cell_shape=None,
+        cell_shape=None, figure_kwargs=None,
         show_scatter=True, show_circles=False, show_density=False, show_cms=False,
         begin_paused=False, pause_on_high_vel=False, cpp_is_debug=True) -> None:
-        super().__init__(begin_paused, pause_on_high_vel, cpp_is_debug)
+        super().__init__(begin_paused, pause_on_high_vel, cpp_is_debug, figure_kwargs)
         if cell_shape is None:
             cell_shape = [1, 1]
-        
+            
+
         self.show_scatter = show_scatter
         self.show_circles = show_circles
         self.show_density = show_density
         self.show_cms = show_cms
-        
+
         self.x_lims = x_lims
         self.vel_colors =  vel_colors
         self.cell_shape = cell_shape
@@ -107,8 +114,8 @@ class ReplayGraphCfg(BaseGraphCfg):
         if scatter_kwargs is None:
             self.scatter_kwargs = {}
 
-        if "c" not in self.scatter_kwargs.keys():
-            self.scatter_kwargs["c"] = "#1f77b4"
+        # if "c" not in self.scatter_kwargs.keys():
+        #     self.scatter_kwargs["c"] = "#1f77b4"
 
         self.density_kwargs = density_kwargs
         if density_kwargs is None:
@@ -119,7 +126,8 @@ class ReplayGraphCfg(BaseGraphCfg):
             self.colorbar_kwargs = {}
 
         if vel_colors:
-            del self.scatter_kwargs["c"]
+            if self.scatter_kwargs.get("c"):
+                del self.scatter_kwargs["c"]
             self.circle_cfg.color = None
 
 if __name__ == "__main__":

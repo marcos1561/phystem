@@ -235,13 +235,18 @@ class ControlMngReplay(ControlMng):
         # Other
         self.vars["circles_color"] = BooleanVar(value=self.graph_cfg.circle_cfg.color is None)
         self.vars["circles_facecolor"] = BooleanVar(value=self.graph_cfg.circle_cfg.facecolor)
-        self.vars["vel_color"] = BooleanVar(value=self.graph_cfg.vel_colors is None)
-
+        self.vars["vel_color"] = BooleanVar(value=self.graph_cfg.vel_colors is not None)
+        
     def change_time_callback(self):
         self.solver.time_sign *= -1
     
     def vel_color(self):
         vel_color = self.vars["vel_color"].get()
+        if vel_color == True:
+            self.main_graph.active_rings.custom_colors.add_colorbar(self.main_graph.ax)
+        else:
+            self.main_graph.active_rings.custom_colors.remove_colorbar()
+        
         self.graph_cfg.vel_colors = vel_color
         self.main_graph.active_rings.use_custom_colors = vel_color
 

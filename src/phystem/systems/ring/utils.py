@@ -310,6 +310,45 @@ def rings_grid_shape(space_cfg, radius, frac=0.5):
     raise Exception("Use o método em SpaceCfg para isso.")
 
 
+def roll_segmented_cmap(cmap, amount):
+    '''
+    Translada o `cmap`  por `amount` unidades, considerando 
+    que as bordas são periódicas.
+    '''
+    channel_to_id = {
+        "red": 0, "green": 1, "blue": 2,
+    }
+
+    segmentdata = {}
+    for channel in ["red", "green", "blue"]:
+        segmentdata[channel] = [list(row) for row in cmap._segmentdata[channel]]
+
+    for channel in ["red", "green", "blue"]:
+        color_data = segmentdata[channel] 
+        for row in color_data:
+            row[0] += amount
+        
+        add_idx = None
+        for idx, value in enumerate(color_data):
+            if value[0] > 1:
+                add_idx = idx
+                break
+
+        color_value = cmap(amount)[channel_to_id[channel]]
+        color_data.insert(add_idx, [1, color_value, color_value])
+        color_data.insert(add_idx+1, [0, color_value, color_value])
+
+        for value in color_data:
+            if value[0] > 1:
+                value[0] -= 1
+        
+        color_values = [row[0] for row in color_data]
+        segmentdata[channel] = [row for _, row in sorted(zip(color_values, color_data))]
+
+    from matplotlib.colors import LinearSegmentedColormap        
+    return LinearSegmentedColormap("rolled", segmentdata)
+
+
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from matplotlib.patches import Circle
