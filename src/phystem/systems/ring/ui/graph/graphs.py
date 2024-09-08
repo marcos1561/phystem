@@ -64,8 +64,8 @@ class MainGraph(BaseGraph):
         if self.graph_cfg is None:
             self.graph_cfg = SimpleGraphCfg()
 
-        self.ax.set(**self.graph_cfg.ax_kwargs)
-        
+        self.ax.set(**graph_cfg.ax_kwargs)
+
         self.components: dict[str, GraphComponent] = {
             "scatter": ParticlesScatter(ax, self.active_rings, 
                 zorder = 2, 
@@ -116,53 +116,6 @@ class MainGraph(BaseGraph):
 
         self.update()
 
-
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-from matplotlib.colors import LinearSegmentedColormap
-
-def shifted_cmap(cmap, start=0, midpoint=0.5, stop=1.0, name='shifted'):
-    """
-    Function to offset the "center" of a colormap. Useful for data with a
-    diverging colormap where you want the midpoint to be somewhere other than
-    the center.
-    
-    cmap : The matplotlib colormap to be altered
-    start : Offset from the lowest point in the colormap's range.
-            Should be between 0.0 and 1.0.
-            Defaults to 0.0 (no lower offset).
-    midpoint : The new center of the colormap. Should be between 0.0 and 1.0.
-               In general, this should be 1 - vmax/(vmax + abs(vmin))
-               For example if your data range from -15.0 to +5.0 and you want
-               the center of the colormap at 0.0, `midpoint` should be  1 - 5/(5 + 15))
-               Defaults to 0.5 (no shift).
-    stop : Offset from the highest point in the colormap's range.
-           Should be between 0.0 and 1.0.
-           Defaults to 1.0 (no upper offset).
-    """
-    cdict = {'red': [], 'green': [], 'blue': [], 'alpha': []}
-
-    # Regular index to compute the colors
-    regular_index = np.linspace(start, stop, 256)
-
-    # Shifted index for applying the shift
-    shifted_index = np.hstack([
-        np.linspace(0.0, midpoint, 128, endpoint=False),
-        np.linspace(midpoint, 1.0, 128, endpoint=True)
-    ])
-
-    for ri, si in zip(regular_index, shifted_index):
-        r, g, b, a = cmap(ri)
-        cdict['red'].append((si, r, r))
-        cdict['green'].append((si, g, g))
-        cdict['blue'].append((si, b, b))
-        cdict['alpha'].append((si, a, a))
-
-    newcmap = LinearSegmentedColormap(name, cdict)
-    return newcmap
-
-
 class VelocityColor(CustomColors):
     def __init__(self, solver: SolverReplay, colorbar_kwargs=None):
         cmap = cm.ScalarMappable(
@@ -193,6 +146,8 @@ class ReplayGraph(BaseGraph):
         
         if self.graph_cfg.x_lims is not None:
             self.ax.set_xlim(*self.graph_cfg.x_lims)
+
+        self.ax.set(**self.graph_cfg.ax_kwargs)
 
         self.active_rings.custom_colors = VelocityColor(solver, graph_cfg.colorbar_kwargs)
         if self.graph_cfg.vel_colors:

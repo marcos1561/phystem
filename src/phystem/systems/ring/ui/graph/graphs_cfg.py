@@ -1,21 +1,25 @@
 from enum import Enum, auto
 
 class BaseGraphCfg:
-    def __init__(self, begin_paused=False, pause_on_high_vel=False, cpp_is_debug=True, figure_kwargs=None) -> None:
+    def __init__(self, begin_paused=False, pause_on_high_vel=False, cpp_is_debug=True, 
+        ax_kwargs=None, figure_kwargs=None) -> None:
         if figure_kwargs is None:
             figure_kwargs = {
                 "facecolor": "white",
             }
+        if ax_kwargs is None:
+            ax_kwargs = {}
 
         self.begin_paused = begin_paused
         self.pause_on_high_vel = pause_on_high_vel
         self.cpp_is_debug = cpp_is_debug
         self.figure_kwargs = figure_kwargs
+        self.ax_kwargs = ax_kwargs
 
 class ParticleCircleCfg:
     DEFAULT_COLOR = "#1f77b4"
 
-    def __init__(self, color=None, facecolor=False, match_face_edge_color=False) -> None:
+    def __init__(self, color=None, facecolor=True, match_face_edge_color=False) -> None:
         self.color = color
         self.facecolor = facecolor
         self.match_face_edge_color = match_face_edge_color
@@ -38,7 +42,7 @@ class SimpleGraphCfg(BaseGraphCfg):
         force_color: dict[ForceName, str] = None, circles_cfg: ParticleCircleCfg=None,
         density_kwargs=None, scatter_kwargs=None, cbar_kwargs=None, ax_kwargs=None,
         cell_shape=None, cpp_is_debug=True) -> None:
-        super().__init__(begin_paused, pause_on_high_vel, cpp_is_debug, figure_kwargs)
+        super().__init__(begin_paused, pause_on_high_vel, cpp_is_debug, ax_kwargs, figure_kwargs)
         if cell_shape is None:
             cell_shape = [1, 1]
 
@@ -79,20 +83,19 @@ class SimpleGraphCfg(BaseGraphCfg):
 
         self.density_kwargs = density_kwargs
         self.cbar_kwargs = cbar_kwargs
-        self.ax_kwargs = ax_kwargs
         self.scatter_kwargs = scatter_kwargs
         
-        for name in ["density_kwargs", "cbar_kwargs", "ax_kwargs", "scatter_kwargs"]:
+        for name in ["density_kwargs", "cbar_kwargs", "scatter_kwargs"]:
             if getattr(self, name) is None:
                 setattr(self, name, {})
 
 class ReplayGraphCfg(BaseGraphCfg):
     def __init__(self, scatter_kwargs=None, density_kwargs=None, colorbar_kwargs=None, 
         x_lims=None, vel_colors=False, circles_cfg: ParticleCircleCfg=None,
-        cell_shape=None, figure_kwargs=None,
+        cell_shape=None, figure_kwargs=None, ax_kwargs=None,
         show_scatter=True, show_circles=False, show_density=False, show_cms=False,
         begin_paused=False, pause_on_high_vel=False, cpp_is_debug=True) -> None:
-        super().__init__(begin_paused, pause_on_high_vel, cpp_is_debug, figure_kwargs)
+        super().__init__(begin_paused, pause_on_high_vel, cpp_is_debug, ax_kwargs, figure_kwargs)
         if cell_shape is None:
             cell_shape = [1, 1]
             

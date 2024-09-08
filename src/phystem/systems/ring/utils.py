@@ -17,6 +17,23 @@ def get_ring_radius(p_diameter: float, num_particles: int):
     '''
     return p_diameter / (2 * (1 - cos(2*pi/(num_particles))))**.5
 
+def get_equilibrium_spring_l(num_particles, area_o):
+    '''
+    Retorna o comprimento que as molas devem ter para que a área de equilíbrio
+    de um anel com `num_particles`, apenas considerando as molas, seja a mesma
+    de `area_o`. 
+    '''
+    theta = np.pi * 2 / num_particles
+    return 2 * (area_o / num_particles * (1 - np.cos(theta)) / np.sin(theta))**.5
+
+def get_equilibrium_p0(num_particles):
+    '''
+    Retorna o p0 em que o anel está em equilíbrio
+    em uma configuração circular.
+    '''
+    theta = 2 * np.pi / num_particles
+    return 2 * (num_particles * (1 - np.cos(theta))/np.sin(theta))**.5
+
 def num_rings_in_rect(ring_diameter: float, space_cfg):
     raise Exception("Use o método em SpaceCfg para isso.")
 

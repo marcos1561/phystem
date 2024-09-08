@@ -65,7 +65,8 @@ class RingCfg:
     def adjust_area_pars(self, num_particles: int):
         print("adjust:", num_particles)
         if self.area_potencial in ["target_area", "target_area_and_format"]:
-            perimeter = num_particles * self.diameter
+            perimeter = num_particles * self.spring_r
+            # perimeter = num_particles * self.diameter
             if self.area0 is None:
                 self.area0 = (perimeter / self.p0)**2
             else:
@@ -182,7 +183,9 @@ class CreatorCfg:
         self.center = center
 
     def process_scalar_input(self, input):
-        if type(input) in (float, int):
+        try:
+            _ = iter(input)
+        except TypeError as te:
             return [input] * self.num_rings
         else:
             return input

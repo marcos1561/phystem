@@ -299,9 +299,8 @@ class RingForce(CollectionComp):
                 **artist_kwargs
         )
         self.artist.remove()
-
         self.artist_list.add("main", self.artist)
-
+    
     def update_forces(self):
         count = 0
         for ring_id in self.active_rings.ids:
@@ -312,7 +311,9 @@ class RingForce(CollectionComp):
     def update_artists(self):
         self.update_forces()
 
-        self.artist.remove()
+        if self.artist in self.ax.collections:
+            self.artist.remove()
+        
         self.artist = self.ax.quiver(
             self.active_rings.pos[:, 0], self.active_rings.pos[:, 1], 
             self.forces[:self.active_rings.num_particles_active, 0], self.forces[:self.active_rings.num_particles_active, 1],   
@@ -321,6 +322,8 @@ class RingForce(CollectionComp):
 
         # self.artist.set_offsets(self.active_rings.pos)
         # self.artist.set_UVC(U=self.forces[:self.active_rings.num_particles_active, 0], V=self.forces[:self.active_rings.num_particles_active, 1])
+
+        self.artist_list.add("main", self.artist)
 
 class CenterMass(CollectionComp):
     def __init__(self, ax: Axes, active_rings: ActiveRings):
