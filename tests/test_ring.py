@@ -30,19 +30,37 @@ class TestRing(unittest.TestCase):
 
         run_cfg: CollectDataCfg = cfg["run_cfg"] 
         int_cfg: IntegrationCfg = run_cfg.int_cfg
+        space_cfg: SpaceCfg = cfg["space_cfg"]
 
         run_cfg.folder_path = folder_path
         
         # num_cols = int(ceil(size/(diameter*1.2)) * 0.6)
-        num_cols, num_rows = utils.particle_grid_shape(cfg["space_cfg"], cfg["dynamic_cfg"].max_dist)
+        num_cols, num_rows =  space_cfg.particle_grid_shape(cfg["dynamic_cfg"].max_dist)
         int_cfg.particle_win_cfg = ParticleWindows(
             num_cols=num_cols, num_rows=num_rows,
             update_freq= 1
         )
         int_cfg.update_type = UpdateType.PERIODIC_WINDOWS
 
-        run_cfg.func = collect_pipelines.get_func(run_cfg.func_id)
 
+        def collect_func(sim, cfg):
+            from phystem.systems.ring.solvers import CppSolver
+            from phystem.systems.ring.collectors import StateSaver
+            from phystem.utils import progress
+            solver: CppSolver = sim.solver
+            run_cfg: CollectDataCfg = sim.run_cfg
+
+            prog = progress.Continuos(run_cfg.tf)
+
+            state_saver = StateSaver(solver, run_cfg.folder_path, sim.init_configs)
+            while solver.time < run_cfg.tf:
+                solver.update()
+                prog.update(solver.time)
+        
+            state_saver.save()
+
+        run_cfg.func = collect_func
+        
         sim = Simulation(**cfg)
         sim.run()
 

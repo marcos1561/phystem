@@ -183,8 +183,18 @@ public:
         space_info(space_info), update_freq(update_freq) {
         num_entitys = point_pos->size();
         num_points = (*point_pos)[0].size();
+        
+
         col_size = space_info.length/(double)num_cols;
         row_size = space_info.height/(double)num_rows;
+        
+        // std::cout << "=================" << std::endl;
+        // std::cout << "col_size: " << col_size << std::endl;
+        // std::cout << "row_size: " << row_size << std::endl;
+        // std::cout << "space_length: " << space_info.length << std::endl;
+        // std::cout << "space_height: " << space_info.height << std::endl;
+        // std::cout << "num_cols: " << num_cols << std::endl;
+        // std::cout << "num_rows: " << num_rows << std::endl;
 
         counter = 0;
 
@@ -235,6 +245,49 @@ public:
                 windows_center[i][j] = {center_x, center_y};
             }
         }
+    }
+
+    std::vector<std::array<int, 2>> get_window_point_elements(float x, float y) {
+        /**
+         * Retorna os elementos da janela que possui o ponto (x, y).
+         */
+        int col_pos = (int)((x - space_info.center[0] + space_info.length/2.) / col_size);
+        int row_pos = (int)((y - space_info.center[1] + space_info.height/2.) / row_size);
+
+        if (row_pos == num_rows)
+            row_pos -= 1;
+        if (col_pos == num_cols)
+            col_pos -= 1;
+
+        auto window = windows[row_pos][col_pos];
+        std::vector<std::array<int, 2>> elements; 
+        for (int i = 0; i < capacity[row_pos][col_pos]; i++) {
+            elements.push_back(window[i]);
+        }
+
+        auto & neighbors = window_neighbor[row_pos][col_pos];
+        for (auto neigh_id : neighbors) {
+            auto & neigh_window = windows[neigh_id[0]][neigh_id[1]];
+            int neigh_window_cap = capacity[neigh_id[0]][neigh_id[1]];
+
+            for (int j = 0; j < neigh_window_cap; j ++) {
+                elements.push_back(neigh_window[j]);
+            }
+        }
+        
+        return elements;
+    }
+
+    std::vector<std::array<int, 2>> get_window_elements(int row_id, int col_id) {
+        int cap = capacity[row_id][col_id];
+        
+        std::vector<std::array<int, 2>> elements; 
+        for (int i = 0; i < cap; i++)
+        {
+            elements.push_back(windows[row_id][col_id][i]);
+        }
+        
+        return elements;
     }
 
     void update_entity(int entity_id) {

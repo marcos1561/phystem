@@ -1,6 +1,9 @@
 '''
 Configurações relacionadas ao sistema em questão.
 '''
+import numpy as np
+from scipy.optimize import fsolve 
+
 from phystem.systems.ring import creators, utils
 
 class RingCfg:
@@ -61,7 +64,59 @@ class RingCfg:
         self.max_dist = max_dist
         self.rep_force = rep_force
         self.adh_force = adh_force
-      
+
+    def get_equilibrium_relative_area(self, num_particles):
+        '''
+        Retorna a área de equilíbrio relativa a `area0`. A área de
+        equilíbrio ocorre quando a força da área se balança com a
+        força das molas.
+        '''
+        area0 = self.area0
+        if area0 is None:
+            area0 = self.get_area0(num_particles)
+
+        return utils.get_equilibrium_relative_area(
+            k_a=self.k_area, k_m=self.spring_k, a0=area0,
+            spring_r=self.spring_r, num_particles=num_particles,
+        )
+    
+    def get_equilibrium_area(self, num_particles):
+        '''
+        Retorna a área de equilíbrio do anel. A área de
+        equilíbrio ocorre quando a força da área se balança com a
+        força das molas.
+        '''
+        area0 = self.area0
+        if area0 is None:
+            area0 = self.get_area0(num_particles)
+
+        return self.get_equilibrium_relative_area(num_particles) * area0
+
+    def get_max_k_adh(self, dt, relative_area, num_particles, x=1):
+        area0 = self.area0
+        if area0 is None:
+            area0 = self.get_area0(num_particles)
+
+        adh_size = self.max_dist - self.diameter
+
+        return utils.get_max_k_adh(adh_size, dt, self.k_area, area0, self.spring_r, relative_area,
+            self.mobility, self.vo, x)
+
+    def get_area0(self, num_particles):
+        '''
+        Retorna a área de equilíbrio da força da área para
+        o dado número de partículas, levando em consideração `p0`.
+        '''
+        return (num_particles * self.spring_r / self.p0)**2
+    
+    def get_p0(self, num_particles):
+        '''
+        Retorna o p0 para o dado número de partículas, levando em 
+        consideração `area0`.
+        '''
+        return num_particles * self.spring_r / self.area0**.5
+
+
     def adjust_area_pars(self, num_particles: int):
         print("adjust:", num_particles)
         if self.area_potencial in ["target_area", "target_area_and_format"]:
@@ -72,25 +127,6 @@ class RingCfg:
             else:
                 self.p0 = perimeter / self.area0**.5
 
-    def set(self, other):
-        raise Exception("Pensei que não tava usando isso >:( ")
-        
-        self.spring_k = other.spring_k
-        self.spring_r = other.spring_r
-        
-        self.bend_k = other.k_bend
-        self.p0 = other.p0
-
-        self.mobility = other.mobility
-        self.relax_time = other.relax_time
-        self.vo = other.vo
-
-        self.trans_diff = other.trans_diff
-        self.rot_diff = other.rot_diff
-
-        self.exclusion_vol = other.exclusion_vol
-        self.diameter = other.diameter
-    
     def cpp_constructor_args(self):
         return {
             "spring_k": self.spring_k,
@@ -305,10 +341,11 @@ class SpaceCfg:
         'Número ne anéis que cabem dentro do espaço'
         return int(self.height * self.length / ring_diameter**2)
 
-    def particle_grid_shape(self, max_dist, frac=0.6):
-        from math import ceil
-        num_cols = int(ceil(self.length/max_dist) * frac)
-        num_rows = int(ceil(self.height/max_dist) * frac)
+    def particle_grid_shape(self, max_dist, frac=1.05):
+        from math import floor
+        box_size = max_dist * frac
+        num_cols = int(floor(self.length/box_size))
+        num_rows = int(floor(self.height/box_size))
         return (num_cols, num_rows)
 
     def rings_grid_shape(self, radius, frac=0.5):

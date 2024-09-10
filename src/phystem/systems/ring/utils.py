@@ -1,4 +1,5 @@
 from scipy.spatial import Voronoi
+from scipy.optimize import fsolve
 import numpy as np
 import yaml
 from math import cos, pi
@@ -17,22 +18,105 @@ def get_ring_radius(p_diameter: float, num_particles: int):
     '''
     return p_diameter / (2 * (1 - cos(2*pi/(num_particles))))**.5
 
-def get_equilibrium_spring_l(num_particles, area_o):
+def get_equilibrium_spring_l(num_particles, area0):
     '''
     Retorna o comprimento que as molas devem ter para que a área de equilíbrio
     de um anel com `num_particles`, apenas considerando as molas, seja a mesma
     de `area_o`. 
     '''
     theta = np.pi * 2 / num_particles
-    return 2 * (area_o / num_particles * (1 - np.cos(theta)) / np.sin(theta))**.5
+    return 2 * (area0 / num_particles * (1 - np.cos(theta)) / np.sin(theta))**.5
 
 def get_equilibrium_p0(num_particles):
     '''
-    Retorna o p0 em que o anel está em equilíbrio
-    em uma configuração circular.
+    Retorna o p0 em que `area0` é igual a área de equilíbrio
+    apenas considerando as molas.
     '''
     theta = 2 * np.pi / num_particles
     return 2 * (num_particles * (1 - np.cos(theta))/np.sin(theta))**.5
+
+def get_invasion_equilibrium_config(k_r, k_m, k_a, lo, ro, area0, relative_area_eq, vo, mu):
+    '''
+    Considerando a situação de equilíbrio do pior cenário de invasão entre anéis, 
+    retorna duas quantidades:
+    * Metade do ângulo que a partícula invasora faz com as partículas
+        do anel sendo invadido.
+    * Distância entre as partículas do anel sendo invadido.
+    '''
+    def fp(theta, l):
+        return k_r/ro * (ro - l / (2*np.sin(theta)))
+    
+    def fm(theta, l):
+        return k_m * (l - lo)
+
+    def get_l1(theta, l):
+        return l / (2 * np.sin(theta))
+
+    def get_cos_alpha(theta, l):
+        l1 = get_l1(theta, l)
+        return l1, (ro**2 - lo**2 - l1**2) / (-2 * l1 * lo)
+
+    def sin_beta(theta, l):
+        l1, cos_alpha = get_cos_alpha(theta, l)
+        if cos_alpha > 1:
+            print("Merda", cos_alpha)
+            print(l, theta/np.pi*180)
+            print(l1, ro, lo)
+            print("============")
+        return np.sin(theta) *  cos_alpha + np.cos(theta) * np.sqrt(1 - cos_alpha**2) 
+
+    def fa(theta, l):
+        # return k_a * area0 * (1 - relative_area_eq) * lo * sin_beta(theta, l)
+        return k_a * area0 * (1 - relative_area_eq) * lo
+
+    def eq1(theta, l):
+        return mu * (2 * fp(theta, l) * np.cos(theta) - fa(theta, l)) - vo
+        # return mu * (2 * fp(theta, l) * np.cos(theta)) - vo
+    
+    def eq2(theta, l):
+        return fp(theta, l) * np.sin(theta) - fm(theta, l)
+
+    def func(x):
+        theta, l = x[0], x[1]
+        return [
+            eq1(theta, l),
+            eq2(theta, l),
+        ]
+
+    r =  fsolve(func, [10/180 * np.pi, lo], maxfev=500)
+    return r, func(r)
+
+def get_equilibrium_relative_area(k_a, k_m, a0, spring_r, num_particles):
+    "Retorna a área de equilíbrio em relação a `a0`."
+    theta = 2 * np.pi / num_particles
+    
+    def get_r(f):
+        return np.sqrt(f * 2 * a0 / (num_particles * np.sin(theta))) 
+
+    def get_fm(f):
+        return k_m * (get_r(f) * np.sqrt(2*(1 - np.cos(theta))) - spring_r)
+
+    def get_fm_total(f):
+        return 2 * get_fm(f) * np.sin(theta/2)
+
+    def get_fa(f):
+        r = get_r(f)
+        return k_a * (a0 - 10/2 * r**2 * np.sin(theta)) * r * np.sin(theta)
+
+    def func(f):
+        return get_fa(f) - get_fm_total(f)
+
+    return fsolve(func, 0.5)
+
+def get_max_k_adh(adh_size, dt, k_a, area0, lo, relative_area, mu, vo, x=1):
+    '''
+    Retorna o valor máximo de `k_adh` em relação a problemas numéricos. `x` deve
+    ser um valor entre 0 e 1 utilizada para definir em qual ponto da região de
+    adesão (que será `x * adh_size`) será feito o cálculo.
+    '''
+    x = adh_size * x
+    area_prime = k_a * area0 * lo * (1 - relative_area)
+    return adh_size/mu * (1/(2*dt) - vo/x) - adh_size/x * area_prime
 
 def num_rings_in_rect(ring_diameter: float, space_cfg):
     raise Exception("Use o método em SpaceCfg para isso.")

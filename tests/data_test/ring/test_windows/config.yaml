@@ -13,7 +13,7 @@ creator_cfg: !!python/object:phystem.systems.ring.configs.CreatorCfg
     - -7.333333333333334
   - - -7.333333333333334
     - 7.333333333333334
-  num_p: 30
+  num_particles: 30
   num_rings: 4
   r:
   - 3.666666666666667
@@ -30,7 +30,7 @@ dynamic_cfg: !!python/object:phystem.systems.ring.configs.RingCfg
   k_invasion: -1
   max_dist: 1.1666
   mobility: 1
-  p0: 4.743416490252569
+  p0: 1.4230249470757705
   p0_format: -1
   relax_time: 1
   rep_force: 30
@@ -39,15 +39,15 @@ dynamic_cfg: !!python/object:phystem.systems.ring.configs.RingCfg
   spring_r: 0.3
   trans_diff: 0.1
   vo: 1
-other_cfgs: null
+other_cfgs: {}
 rng_seed: 40028922
 run_cfg: !!python/object:phystem.core.run_config.CollectDataCfg
   checkpoint: null
-  folder_path: normal_data
+  folder_path: !!python/object/apply:pathlib.PosixPath
+  - test_windows
   func: nao salvo
   func_cfg: null
-  func_id: !!python/object/apply:phystem.systems.ring.collect_pipelines.FuncID
-  - 1
+  func_id: null
   int_cfg: !!python/object:phystem.systems.ring.run_config.IntegrationCfg
     dt: 0.0005
     in_pol_checker: null

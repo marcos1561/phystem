@@ -36,6 +36,7 @@ PYBIND11_MODULE(cpp_lib, m) {
     // Data Types
     //==
     py::bind_vector<vector<int>>(data_types, "ListInt");
+    py::bind_vector<vector<bool>>(data_types, "ListBool");
     py::bind_vector<Vector3d>(data_types, "Vector3d");
     py::bind_vector<VecList>(data_types, "PosVec");
     py::bind_vector<List>(data_types, "List");
@@ -43,6 +44,7 @@ PYBIND11_MODULE(cpp_lib, m) {
     py::bind_vector<PyVecList>(data_types, "PyVecList");
     py::bind_vector<PyVecList3d>(data_types, "PyVecList3d");
     py::bind_vector<vector<unsigned long int>>(data_types, "VecUInt");
+    py::bind_vector<vector<InPolChecker::ColInfo>>(data_types, "ListColInfo");
 
     //==
     // Configs
@@ -84,6 +86,9 @@ PYBIND11_MODULE(cpp_lib, m) {
     
     py::class_<ParticleWindowsCfg>(configs, "ParticleWindowsCfg")
         .def(py::init<int, int, int>())
+        .def_readonly("num_cols", &ParticleWindowsCfg::num_cols)
+        .def_readonly("num_rows", &ParticleWindowsCfg::num_rows)
+        .def_readonly("update_freq", &ParticleWindowsCfg::update_freq)
         ;
     
     py::class_<InPolCheckerCfg>(configs, "InPolCheckerCfg")
@@ -116,18 +121,32 @@ PYBIND11_MODULE(cpp_lib, m) {
     py::class_<WindowsManagerRing>(managers, "WindowsManagerRing")
         .def(py::init<vector<vector<array<double, 2>>>*, vector<int>*, int*, int, int, SpaceInfo>())
         .def("update_window_members", &WindowsManagerRing::update_window_members)
+        .def("get_window_elements", &WindowsManagerRing::get_window_elements)
         .def_readonly("col_size", &WindowsManagerRing::col_size)
         .def_readonly("row_size", &WindowsManagerRing::row_size)
         .def_readonly("windows", &WindowsManagerRing::windows)
         .def_readonly("capacity", &WindowsManagerRing::capacity)
         .def_readonly("windows_ids", &WindowsManagerRing::windows_ids)
         .def_readonly("window_neighbor", &WindowsManagerRing::window_neighbor)
+        .def_readonly("window_length", &WindowsManagerRing::window_length)
+        .def_readonly("window_height", &WindowsManagerRing::window_height)
+        .def_readonly("col_size", &WindowsManagerRing::col_size)
+        .def_readonly("row_size", &WindowsManagerRing::row_size)
         ;
     
+    py::class_<InPolChecker::ColInfo>(managers, "ColInfo")
+        .def(py::init<int, int, int>())
+        .def_readonly("ring_id", &InPolChecker::ColInfo::ring_id)
+        .def_readonly("p_id", &InPolChecker::ColInfo::p_id)
+        .def_readonly("col_ring_id", &InPolChecker::ColInfo::col_ring_id)
+        ;
+
     py::class_<InPolChecker>(managers, "InPolChecker")
         .def(py::init<Vector3d*, VecList*, vector<int>*, int*, int, int, double, bool>())
         .def_readonly("num_inside_points", &InPolChecker::num_inside_points)
         .def_readonly("inside_points", &InPolChecker::inside_points)
+        .def_readonly("collisions", &InPolChecker::collisions)
+        .def_readonly("is_col_resolved", &InPolChecker::is_col_resolved)
         ;
 
     //==
@@ -184,6 +203,7 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def("update_visual_aids", &Ring::update_visual_aids, py::call_guard<py::gil_scoped_release>())
         .def("init_invagination", &Ring::init_invagination, py::call_guard<py::gil_scoped_release>())
         .def("load_checkpoint", &Ring::load_checkpoint, py::call_guard<py::gil_scoped_release>())
+        .def("get_particle_id", &Ring::get_particle_id, py::call_guard<py::gil_scoped_release>())
         .def_readwrite("sim_time", &Ring::sim_time, byref)
         .def_readwrite("num_time_steps", &Ring::num_time_steps, byref)
         .def_readonly("num_max_rings", &Ring::num_max_rings, byref)
@@ -203,7 +223,9 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def_readonly("excluded_vol_debug", &Ring::excluded_vol_debug)
         .def_readonly("area_debug", &Ring::area_debug)
         .def_readonly("spring_forces", &Ring::spring_forces)
-        .def_readonly("total_forces", &Ring::total_forces)
+        .def_readonly("self_prop_vel", &Ring::self_prop_vel)
+        .def_readonly("total_forces", &Ring::sum_forces_matrix)
+        // .def_readonly("total_forces", &Ring::total_forces)
         .def_readonly("vol_forces", &Ring::vol_forces)
         .def_readonly("area_forces", &Ring::area_forces)
         .def_readonly("format_forces", &Ring::format_forces)
@@ -213,5 +235,6 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def_readonly("center_mass", &Ring::center_mass)
         .def_readonly("in_pol_checker", &Ring::in_pol_checker)
         .def_readonly("num_created_rings", &Ring::num_created_rings)
+        .def_readonly("windows_manager", &Ring::windows_manager)
         ;
 }

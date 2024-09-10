@@ -64,6 +64,61 @@ class MainGraph(BaseGraph):
         if self.graph_cfg is None:
             self.graph_cfg = SimpleGraphCfg()
 
+        def onclick(event):
+            ids = solver.cpp_solver.get_particle_id(event.xdata, event.ydata)
+            ring_id, p_id = ids
+            
+            pos = solver.pos[ring_id][p_id]
+            area_force = solver.area_forces[ring_id][p_id]
+            spring_force = solver.spring_forces[ring_id][p_id]
+            vol_force = solver.vol_forces[ring_id][p_id]
+            self_prop_vel = solver.self_prop_vel[ring_id][p_id]
+            area = solver.area_debug.area[ring_id]
+            
+            print("pos", pos)
+            print("area_force", area_force)
+            print("spring_force", spring_force)
+            print("vol_force", vol_force)
+            print("self_prop_vel", self_prop_vel)
+            print("area", area)
+            print("f_0", area/sim_configs["dynamic_cfg"].area0)
+            print("f_eq", area/sim_configs["dynamic_cfg"].get_equilibrium_area(sim_configs["creator_cfg"].num_particles))
+            print("invs", self.solver.in_pol_checker.collisions)
+            print("self_prop_vel: ", self.solver.self_prop_vel[2])
+            print(ids)
+
+            print("==========")
+
+        # row_id = 5
+        # col_id = 5
+
+        # windows_manager = self.solver.windows_manager
+
+        # w = windows_manager.window_length
+        # h = windows_manager.window_height
+
+        # sh = sim_configs["space_cfg"].height
+        # sw = sim_configs["space_cfg"].length
+
+        # x1 = -sw/2 + w * (col_id)
+        # x2 = x1 + w
+        
+        # y1 = -sh/2 + h * row_id
+        # y2 = y1 + h
+
+        # self.ax.plot(
+        #     [x1, x2, x2, x1, x1],
+        #     [y1, y1, y2, y2, y1],
+        # )
+
+        # def onclick(event):
+        #     clicked_id = solver.cpp_solver.get_particle_id(event.xdata, event.ydata)
+        #     ids = solver.windows_manager.get_window_elements(0, 10)
+        #     print(ids)
+        #     print("Clicada", clicked_id)
+
+        fig.canvas.mpl_connect('button_press_event', onclick)
+
         self.ax.set(**graph_cfg.ax_kwargs)
 
         self.components: dict[str, GraphComponent] = {

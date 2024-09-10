@@ -203,6 +203,10 @@ class CppSolver:
     def num_created_rings(self):
         return self.cpp_solver.num_created_rings
     
+    @property
+    def windows_manager(self):
+        return self.cpp_solver.windows_manager
+    
     def load_checkpoint(self, pos, angle, ids, uids):
         pos_in = [cpp_lib.data_types.PosVec(ring_pos) for ring_pos in pos]
 

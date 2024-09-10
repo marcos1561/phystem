@@ -58,15 +58,31 @@ def generate_normal_data():
 
     seed = 40028922
 
+    def collect_func(sim, cfg):
+        from phystem.systems.ring.solvers import CppSolver
+        from phystem.systems.ring.collectors import StateSaver
+        from phystem.utils import progress
+        solver: CppSolver = sim.solver
+        run_cfg: CollectDataCfg = sim.run_cfg
+
+        prog = progress.Continuos(run_cfg.tf)
+
+        state_saver = StateSaver(solver, run_cfg.folder_path, sim.init_configs)
+        while solver.time < run_cfg.tf:
+            solver.update()
+            prog.update(solver.time)
+    
+        state_saver.save()
+
+
     collect_data_cfg = CollectDataCfg(
         int_cfg=IntegrationCfg(
             dt=0.001/2,
             update_type=UpdateType.PERIODIC_NORMAL,
         ),
-        tf = 100,
+        tf=100,
         folder_path="test_windows",
-        func_id = collect_pipelines.FuncID.last_pos,
-        get_func= collect_pipelines.get_func,
+        func=collect_func,
     )
 
     sim = Simulation(creator_cfg, dynamic_cfg, space_cfg, run_cfg=collect_data_cfg, rng_seed=seed)

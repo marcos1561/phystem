@@ -53,12 +53,12 @@ int main() {
     cfg.adh_force = -.75;
     cfg.rep_force = 30.;
 
-    auto data = ring::init_cfg(2, n, r, cfg.vo);
+    auto data = ring::init_cfg(30, n, r, cfg.vo);
     data.pos = Vector3d(0);
     data.self_prop_angle = std::vector<double>(0);
 
     auto solver = Ring(data.pos, data.self_prop_angle, n, cfg, size, size, dt, p_win_cfg, 
-        RingUpdateType::stokes, RingIntegrationType::euler, stokes_cfg, InPolCheckerCfg(3, 4, 10));
+        RingUpdateType::stokes, RingIntegrationType::euler, stokes_cfg, InPolCheckerCfg(3, 4, 10, 1));
 
     // solver.init_invagination(10, 7, cfg.spring_k*1.1, cfg.spring_k*0.9);
 
@@ -71,6 +71,9 @@ int main() {
         auto pos = solver.pos[0][0];
         std::cout << pos[0] << ", " << pos[1] << std::endl;
         std::cout << "Num active: " << solver.num_active_rings << std::endl;
+        auto p_id = solver.get_particle_id(-19.2969, 23.7088);
+        std::cout << p_id[0] << "|" << p_id[1] << std::endl;
+
         // std::cout << solver.self_prop_angle[0][0] << std::endl;
     }
     
