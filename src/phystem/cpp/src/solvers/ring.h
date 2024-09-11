@@ -718,7 +718,8 @@ public:
         */
 
         // Prevent interaction between neighbor particles in the same ring.
-        if (ring_id == other_ring_id) {
+        bool same_ring = ring_id == other_ring_id;
+        if (same_ring) {
             int diff = abs(p_id - other_id);
             if ((diff == 1) | (diff == (num_particles - 1))) {
                 return;
@@ -748,6 +749,9 @@ public:
 
         double force_r;
         if (dist > diameter) {
+            if (same_ring) {
+                return;
+            } 
             // Força atrativa
             force_r = adh_force * (diameter - dist) / (max_dist - diameter);
         } else {

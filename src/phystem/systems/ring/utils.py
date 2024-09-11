@@ -18,6 +18,16 @@ def get_ring_radius(p_diameter: float, num_particles: int):
     '''
     return p_diameter / (2 * (1 - cos(2*pi/(num_particles))))**.5
 
+def get_second_order_neighbors_dist(num_particles, lo):
+    '''
+    Dado um anel com `num_particles` partículas, cujas molas possuem
+    comprimento `lo`, retorna a distância entre partículas que estão
+    separadas por outra partícula. É assumido que o anel está no formato
+    de um polígono regular.
+    '''
+    theta = np.pi * (1- 2/num_particles)
+    return lo * (2*(1-np.cos(theta)))**.5    
+
 def get_equilibrium_spring_l(num_particles, area0):
     '''
     Retorna o comprimento que as molas devem ter para que a área de equilíbrio
@@ -74,7 +84,7 @@ def get_invasion_equilibrium_config(k_r, k_m, k_a, lo, ro, area0, relative_area_
         # return mu * (2 * fp(theta, l) * np.cos(theta)) - vo
     
     def eq2(theta, l):
-        return fp(theta, l) * np.sin(theta) - fm(theta, l)
+        return mu * (fp(theta, l) * np.sin(theta) - fm(theta, l)) + vo
 
     def func(x):
         theta, l = x[0], x[1]

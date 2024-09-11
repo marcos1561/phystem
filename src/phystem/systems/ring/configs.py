@@ -116,6 +116,15 @@ class RingCfg:
         '''
         return num_particles * self.spring_r / self.area0**.5
 
+    def will_invade(self, num_particles, relative_area, tol=1e-3):
+        area0 = self.get_area0(num_particles)
+        _, est_value = utils.get_invasion_equilibrium_config(
+            k_r=self.rep_force, k_m=self.spring_k, k_a=self.k_area,
+            lo=self.spring_r, ro=self.diameter, area0=area0,
+            relative_area_eq=relative_area, vo=self.vo, mu=self.mobility,
+        )
+        return abs(est_value[0]) + abs(est_value[1]) > tol
+
 
     def adjust_area_pars(self, num_particles: int):
         print("adjust:", num_particles)

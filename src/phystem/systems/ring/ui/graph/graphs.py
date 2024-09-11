@@ -72,19 +72,19 @@ class MainGraph(BaseGraph):
             area_force = solver.area_forces[ring_id][p_id]
             spring_force = solver.spring_forces[ring_id][p_id]
             vol_force = solver.vol_forces[ring_id][p_id]
-            self_prop_vel = solver.self_prop_vel[ring_id][p_id]
+            self_prop_vel = solver.self_prop_vel[ring_id]
             area = solver.area_debug.area[ring_id]
             
-            print("pos", pos)
-            print("area_force", area_force)
-            print("spring_force", spring_force)
-            print("vol_force", vol_force)
-            print("self_prop_vel", self_prop_vel)
-            print("area", area)
+            # print("pos", pos)
+            # print("area_force", area_force)
+            # print("spring_force", spring_force)
+            # print("vol_force", vol_force)
+            # print("self_prop_vel", self_prop_vel)
+            # print("area", area)
             print("f_0", area/sim_configs["dynamic_cfg"].area0)
-            print("f_eq", area/sim_configs["dynamic_cfg"].get_equilibrium_area(sim_configs["creator_cfg"].num_particles))
-            print("invs", self.solver.in_pol_checker.collisions)
-            print("self_prop_vel: ", self.solver.self_prop_vel[2])
+            # print("f_eq", area/sim_configs["dynamic_cfg"].get_equilibrium_area(sim_configs["creator_cfg"].num_particles))
+            # print("invs", self.solver.in_pol_checker.collisions)
+            # print("self_prop_vel: ", self.solver.self_prop_vel[2])
             print(ids)
 
             print("==========")
@@ -123,10 +123,11 @@ class MainGraph(BaseGraph):
 
         self.components: dict[str, GraphComponent] = {
             "scatter": ParticlesScatter(ax, self.active_rings, 
-                zorder = 2, 
+                zorder=2, 
                 scatter_kwargs = self.graph_cfg.scatter_kwargs),
             "circles": ParticleCircles(ax, self.active_rings, 
-                radius = sim_configs["dynamic_cfg"].diameter/2,
+                radius=sim_configs["dynamic_cfg"].diameter/2,
+                # radius2=sim_configs["dynamic_cfg"].max_dist/2,
                 cfg = self.graph_cfg.circle_cfg),
             "density": Density(ax, self.active_rings,
                 cell_shape = self.graph_cfg.cell_shape, 

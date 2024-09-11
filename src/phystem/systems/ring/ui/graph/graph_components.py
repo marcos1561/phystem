@@ -83,21 +83,27 @@ class ColorBarableComp(CollectionComp):
         return super().remove()
 
 class ParticleCircles(CollectionComp):
-    def __init__(self, ax: Axes, active_rings: ActiveRings, radius, cfg: ParticleCircleCfg=None):
+    def __init__(self, ax: Axes, active_rings: ActiveRings, radius, radius2=None, cfg: ParticleCircleCfg=None):
         super().__init__(ax, show_cfg_name="show_circles")
         if cfg is None:
             cfg = ParticleCircleCfg()
 
+        self.has_radius2 = radius2 is not None
         self.cfg = cfg
+
         
         num_max_rings = active_rings.solver.num_max_rings
         num_particles = active_rings.num_particles
 
         self.active_rings = active_rings
         self.circles = []
+        self.circles_adh = []
         for _ in range(num_max_rings * num_particles):
             self.circles.append(Circle((0, 0), radius))
+            if self.has_radius2:
+                self.circles_adh.append(Circle((0, 0), radius2))
         self.circles = np.array(self.circles)
+        self.circles_adh = np.array(self.circles_adh)
 
         self.color = cfg.color
         kwargs = {}
@@ -109,12 +115,26 @@ class ParticleCircles(CollectionComp):
             **kwargs,
         )
 
+        self.artist_adh = PatchCollection([],
+            facecolors="none",
+            edgecolor="yellow",
+        )
+
         self.artist_list.add("main", self.artist)
+        if self.has_radius2:
+            self.artist_list.add("adh", self.artist_adh)
 
     def update_artists(self):
-        for idx, pos_i in enumerate(self.active_rings.pos):
+        pos = self.active_rings.pos
+
+        for idx, pos_i in enumerate(pos):
             self.circles[idx].center = pos_i
         self.artist.set_paths(self.circles[:self.active_rings.num_particles_active])
+
+        if self.has_radius2:
+            for idx, pos_i in enumerate(pos):
+                self.circles_adh[idx].center = pos_i
+            self.artist_adh.set_paths(self.circles_adh[:self.active_rings.num_particles_active])
 
         if self.cfg.color is None:
             if self.cfg.facecolor:
