@@ -235,23 +235,22 @@ class ControlMngReplay(ControlMng):
         # Other
         self.vars["circles_color"] = BooleanVar(value=self.graph_cfg.circle_cfg.color is None)
         self.vars["circles_facecolor"] = BooleanVar(value=self.graph_cfg.circle_cfg.facecolor)
-        self.vars["vel_color"] = BooleanVar(value=self.graph_cfg.vel_colors is not None)
+        self.vars["vel_colors"] = BooleanVar(value=self.graph_cfg.vel_colors)
         
     def change_time_callback(self):
         self.solver.time_sign *= -1
     
     def vel_color(self):
-        vel_color = self.vars["vel_color"].get()
-        if vel_color == True:
-            self.main_graph.active_rings.custom_colors.add_colorbar(self.main_graph.ax)
+        vel_colors = self.vars["vel_colors"].get()
+        active_rings = self.main_graph.active_rings
+        if vel_colors == True:
+            active_rings.set_custom_colors("vel")
+            active_rings.custom_colors.add_colorbar(self.main_graph.ax)
         else:
-            self.main_graph.active_rings.custom_colors.remove_colorbar()
+            active_rings.custom_colors.remove_colorbar()
+            active_rings.set_custom_colors("random")
         
-        self.graph_cfg.vel_colors = vel_color
-        self.main_graph.active_rings.use_custom_colors = vel_color
-
-        # if vel_color:
-        #     self.vars["circles_color"].set(False)
+        self.graph_cfg.vel_colors = vel_colors
 
 class ControlReplay(ControlCore):
     control_mng: ControlMngReplay
@@ -274,7 +273,7 @@ class ControlReplay(ControlCore):
         others_widget = CbOption(others_frame, 4)
         others_widget.add("Circles Color", self.control_mng.vars["circles_color"], self.control_mng.circles_color)
         others_widget.add("Circles Fc", self.control_mng.vars["circles_facecolor"], self.control_mng.circles_facecolor)
-        others_widget.add("Vel Color", self.control_mng.vars["vel_color"], self.control_mng.vel_color)
+        others_widget.add("Vel Color", self.control_mng.vars["vel_colors"], self.control_mng.vel_color)
 
         change_time_button = ttk.Button(main_frame, command=self.control_mng.change_time_callback,
             text="Reverter Tempo", width=20)

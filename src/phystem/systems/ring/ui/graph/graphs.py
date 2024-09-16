@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
+import random
 
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
@@ -190,6 +191,28 @@ class VelocityColor(CustomColors):
         self.colors_rgb = self.cmap.to_rgba(self.colors_value)
         # return (np.zeros((self.solver.num_particles, vel_cm_dir.size), dtype=np.float32) + vel_cm_dir).T.flatten()
 
+class RandomColor(CustomColors):
+    def __init__(self, solver: SolverReplay, colorbar_kwargs=None) -> None:
+        super().__init__(cm.tab20, colorbar_kwargs)
+        self.solver = solver
+        self.uids_to_color = {}
+        self.possible_values = np.arange(len(self.cmap.colors)) / (len(self.cmap.colors) - 1)
+        self.update()
+
+    def update(self):
+        colors_values = np.empty((self.solver.pos.shape[0], self.solver.num_particles), dtype=float)
+
+        for idx, uid in enumerate(self.solver.common_ids):
+            color = self.uids_to_color.get(uid)
+            if color is None:
+                color = random.choice(self.possible_values)
+                self.uids_to_color[uid] = color
+
+            colors_values[idx] = color
+
+        self.colors_values = colors_values.flatten() 
+        self.colors_rgb = self.cmap(self.colors_values)
+
 class ReplayGraph(BaseGraph):
     def __init__(self, fig: Figure, ax: Axes, solver: SolverReplay, sim_configs: dict, graph_cfg: ReplayGraphCfg=None):
         if type(solver) != SolverReplay:
@@ -205,12 +228,20 @@ class ReplayGraph(BaseGraph):
 
         self.ax.set(**self.graph_cfg.ax_kwargs)
 
-        self.active_rings.custom_colors = VelocityColor(solver, graph_cfg.colorbar_kwargs)
+        self.active_rings.add_custom_colors(
+            "vel",
+            VelocityColor(solver, graph_cfg.colorbar_kwargs)
+        )
+        self.active_rings.add_custom_colors(
+            "random",
+            RandomColor(solver),
+        )
+        
         if self.graph_cfg.vel_colors:
-            self.active_rings.use_custom_colors = True
+            self.active_rings.set_custom_colors("vel")
             self.active_rings.custom_colors.add_colorbar(ax)
-
-        print(self.active_rings.use_custom_colors)
+        else:
+            self.active_rings.set_custom_colors("random")
 
         self.components: dict[str, GraphComponent] = {
             "scatter": ParticlesScatter(ax, self.active_rings, 

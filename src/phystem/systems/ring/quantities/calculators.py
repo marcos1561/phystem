@@ -3,10 +3,12 @@ import numpy as np
 from pathlib import Path
 from abc import ABC, abstractmethod
 from collections import namedtuple
+import yaml
 
 from phystem.core import settings
 from phystem.core.autosave import AutoSavable
 from phystem.systems.ring import utils
+from phystem.systems.ring.collectors import data_types
 from .datas import BaseData, DeltaData, DenVelData
 
 class CalcAutoSaveCfg:
@@ -280,3 +282,189 @@ class DenVelCalculator(Calculator):
         den_time = np.load(path / "den_time.npy")
 
         return DenResults(den_time, den_eq), VelResults(vel_time, vel_order_par)
+
+class VelocityCalculator(Calculator):
+    DataT = DenVelData
+    data: DenVelData
+
+    def __init__(self, data: DenVelData, root_path: Path, grid: utils.RegularGrid, autosave_cfg: CalcAutoSaveCfg = None, exist_ok=False) -> None:
+        super().__init__(data, root_path, autosave_cfg, exist_ok)
+        self.grid = grid
+
+        self.cell_vel_mean = np.zeros((*self.grid.shape_mpl, 2), dtype=float)
+        self.num_points = 0
+        self.next_file_id = 0
+
+        self.grid.save_configs(self.root_path / "grid_configs.yaml")
+
+    def crunch_numbers(self, to_save=False):
+        data = self.data
+        cms_vel_data = data.vel_data
+        while self.next_file_id < data.vel_num_files:
+            vels_cms = cms_vel_data.get_file(self.next_file_id)
+            vels_cms.strip()
+
+            cms1 = vels_cms.data[:,:,:2]
+            cms2 = vels_cms.data[:,:,2:]
+            vels = (cms2 - cms1)/data.vel_frame_dt
+            
+            coords = self.grid.coords(cms1)
+            cell_vel = self.grid.mean_by_cell(vels, coords)
+
+            self.cell_vel_mean += cell_vel.sum(axis=0)
+            self.num_points += cell_vel.shape[0]
+            self.next_file_id += 1
+
+        self.cell_vel_mean /= self.num_points
+        if to_save:
+            np.save(self.root_path / "vels.npy", self.cell_vel_mean)
+            with open(self.root_path / "metadata.yaml", "w") as f:
+                yaml.dump({
+                    "num_points": self.num_points,
+                }, f) 
+    
+    @staticmethod
+    def load_data(path):
+        path = Path(path)
+        
+        class VelResults:
+            def __init__(self, grid: utils.RegularGrid, cell_vel: np.ndarray, metadata: dict) -> None:
+                self.grid = grid
+                self.cell_vel = cell_vel
+                self.metadata = metadata  
+
+        grid = utils.RegularGrid.load(path / "grid_configs.yaml")
+        cell_vel = np.load(path / "vels.npy")
+        
+        with open(path / "metadata.yaml") as f:
+            metadata = yaml.unsafe_load(f)
+
+        return VelResults(grid, cell_vel, metadata)
+
+class DensityCalculator(Calculator):
+    DataT = DenVelData
+    data: DenVelData
+
+    def __init__(self, data: DenVelData, root_path: Path,
+        grid: utils.RegularGrid, den_eq: float=None,
+        autosave_cfg: CalcAutoSaveCfg = None, exist_ok=False) -> None:
+        super().__init__(data, root_path, autosave_cfg, exist_ok)
+        self.grid = grid
+        self.den_eq = den_eq
+
+        self.cell_den_mean = np.zeros(self.grid.shape_mpl, dtype=float)
+        self.num_points = 0
+        self.next_file_id = 0
+
+        self.grid.save_configs(self.root_path / "grid_configs.yaml")
+
+    def crunch_numbers(self, to_save=False):
+        data = self.data
+        cms_vel_data = data.vel_data
+        while self.next_file_id < data.vel_num_files:
+            vels_cms = cms_vel_data.get_file(self.next_file_id)
+            vels_cms.strip()
+
+            cms = vels_cms.data[:,:,:2]
+            coords = self.grid.coords(cms)
+            count = self.grid.count(coords)
+
+            self.cell_den_mean += count.sum(axis=0)
+            self.num_points += count.shape[0]
+            self.next_file_id += 1
+
+        self.cell_den_mean /= self.num_points
+
+        if self.den_eq is not None:
+            den_eq = self.grid.cell_area * self.den_eq 
+            self.cell_den_mean = self.cell_den_mean / den_eq - 1
+        
+        if to_save:
+            np.save(self.root_path / "den.npy", self.cell_den_mean)
+            with open(self.root_path / "metadata.yaml", "w") as f:
+                yaml.dump({
+                    "num_points": self.num_points,
+                    "den_eq": self.den_eq,
+                }, f) 
+    
+    @staticmethod
+    def load_data(path):
+        path = Path(path)
+        
+        class DenResults:
+            def __init__(self, grid: utils.RegularGrid, cell_den: np.ndarray, metadata: dict) -> None:
+                self.grid = grid
+                self.cell_den = cell_den
+                self.metadata = metadata  
+
+        grid = utils.RegularGrid.load(path / "grid_configs.yaml")
+        cell_vel = np.load(path / "den.npy")
+        
+        with open(path / "metadata.yaml") as f:
+            metadata = yaml.unsafe_load(f)
+
+        return DenResults(grid, cell_vel, metadata)
+    
+class TextureCalc(Calculator):
+    DataT = DenVelData
+    data: DenVelData
+
+    def __init__(self, data: DenVelData, root_path: Path, 
+        grid, ring_diameter: float, 
+        edge_k=1.4,
+        autosave_cfg: CalcAutoSaveCfg = None, exist_ok=False) -> None:
+        super().__init__(data, root_path, autosave_cfg, exist_ok)
+        self.grid = grid
+        self.ring_diameter = ring_diameter
+        self.edge_k = edge_k
+
+        self.cell_texture_sum = np.zeros(grid.shape+(3,), dtype=np.float64)
+        self.cell_count = np.zeros(grid.shape, np.int64)
+        self.num_points = 0
+        self.current_id = 0
+
+        self.grid.save_configs(self.root_path / "grid_configs.yaml")
+
+    def crunch_numbers(self, to_save=False):
+        import texture
+
+        data = self.data
+        cms_vel_data = data.vel_data
+        
+        for idx in range(self.current_id, len(cms_vel_data)):
+            cms = cms_vel_data[idx][:, :2]
+            edges = utils.calc_edges(cms, self.ring_diameter, self.edge_k)
+
+            sumw, count = texture.texture.bin_texture(cms, edges, self.grid)
+            self.cell_texture_sum += sumw
+            self.cell_count += count
+
+        cell_count_non_zero = np.maximum(1, self.cell_count)
+        texture_mean = self.cell_texture_sum / cell_count_non_zero[..., None]
+
+        if to_save:
+            np.save(self.root_path / "texture.npy", texture_mean)
+            with open(self.root_path / "metadata.yaml", "w") as f:
+                yaml.dump({
+                    "num_points": len(cms_vel_data),
+                }, f) 
+    
+    @staticmethod
+    def load_data(path):
+        path = Path(path)
+        
+        class TextureResults:
+            def __init__(self, grid: utils.RegularGrid, texture: np.ndarray, metadata: dict) -> None:
+                self.grid = grid
+                self.texture = texture
+                self.metadata = metadata  
+
+        import texture
+        grid = texture.grid.GridWrapper.load(path / "grid_configs.yaml")
+        texture = np.load(path / "texture.npy")
+        
+        with open(path / "metadata.yaml") as f:
+            metadata = yaml.unsafe_load(f)
+
+        return TextureResults(grid, texture, metadata)
+    

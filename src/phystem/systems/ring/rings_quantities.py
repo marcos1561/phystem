@@ -1,4 +1,5 @@
 import numpy as np
+from . import utils
 from .utils import RegularGrid
 
 def get_cm(rings: np.ndarray):
@@ -40,6 +41,31 @@ def get_vel_cm(vel: np.ndarray):
     '''
     return vel.sum(axis=1)/vel.shape[1]
 
+def get_vel_cm_from_pos(pos1, uid1, pos2, uid2, dt):
+    '''
+    Velocidade do centro de massa dado as posições das partículas
+    no tempo t (`pos1`) e no tempo t+dt (`pos2`).
+
+    Return
+    ------
+    vel_cm: np.array
+        Velocidades do centro de massa.
+    pos1, pos2: np.array
+        Posições organizadas para coincidirem entre os frames, ou seja,
+        pos1[i] e pos2[i] se referem ao mesmo anel.
+    '''
+    pos1, pos2 = utils.same_rings(pos1, uid1, pos2, uid2)
+    vel = (pos2 - pos1) / dt
+    vel_cm = get_vel_cm(vel)
+    return vel_cm, pos1, pos2
+
+def get_vel_angle(vel):
+    '''
+    Direção das velocidades em `vel`. `vel` é um array
+    (N, 2).
+    '''
+    return np.arctan2(vel[:, 1], vel[:, 0])
+
 def get_speed(vel_grid: np.array):
     return np.sqrt((np.square(vel_grid)).sum(axis=0))
 
@@ -58,14 +84,12 @@ def get_dist_pb(pos1: np.array, pos2: np.array, height, length):
     return diff
 
 class Density:
-    def __init__(self, length, height, num_cols, num_rows, center=(0, 0)):
+    def __init__(self, grid: RegularGrid):
         '''
-        Calculador de densidade dividindo o espaço (definido por `length`, `height` e `center`) em
-        uma grade retangular `num_rows` x `num_cols`.
-        A densidade é calculada em cada célula da grade, e a medida é a contagem
-        de anéis na célula em questão.
+        Calculador de densidade em cada célula da grade `grid`.
+        A densidade é a contagem de anéis na célula em questão.
         '''
-        self.grid = RegularGrid(length, height, num_cols, num_rows, center)
+        self.grid = grid
 
     def get_from_cm(self, cms):
         '''
@@ -74,7 +98,7 @@ class Density:
         Retorno:
             Array com shape (num_cols, num_rows), em que cada elemento
             representa uma célula da grade. O índice [0, 0] representa o canto
-            superior esquerdo. 
+            inferior esquerdo. 
         '''
         coords = self.grid.coords(cms)
         count = self.grid.count(coords)

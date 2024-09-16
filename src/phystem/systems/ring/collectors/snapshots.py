@@ -1,8 +1,9 @@
+import numpy as np
 from pathlib import Path
 from phystem.core.collectors import ColAutoSaveCfg
 from phystem.systems.ring.solvers import CppSolver
 from phystem.systems.ring.simulation import Simulation
-from phystem.systems.ring.state_saver import StateSaver
+from phystem.systems.ring.state_saver import StateSaver, StateData
 
 from .base import RingCol
 
@@ -100,6 +101,28 @@ class SnapshotsCol(RingCol):
             prog.update(solver.time)
         col.save()
         prog.update(solver.time)
+    
+    @staticmethod
+    def load_snaps(root_path):
+        "Carrega todas as snapshot no caminho raiz `root_path`."
+        data_path = Path(root_path) / "data"
+        
+        def value_path(name, id):
+            return Path(data_path / f"{name}_{count}.npy")
+
+        snaps: list[StateData] = []
+        count = 0
+        while value_path("pos", count).exists():
+            snaps.append(StateData(
+                pos=np.load(value_path("pos", count)),
+                angle=np.load(value_path("angle", count)),
+                uids=np.load(value_path("uids", count)),
+                ids=None,
+            ))
+
+            count += 1
+        
+        return snaps
 
 def pipeline(sim: Simulation, cfg: SnapshotsColCfg):
     SnapshotsCol.pipeline(sim, cfg)

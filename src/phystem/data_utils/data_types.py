@@ -32,22 +32,46 @@ class ArraySizeAware:
         self.data[id,:num_elements] = data
         self.point_num_elements[id] = num_elements
 
+    def add_multiple(self, data: np.ndarray, num_elements):
+        '''
+        Adiciona os múltiplos pontos em `data`.
+        
+        # Parâmetros
+        ------------
+        data:
+            Array com shape (num_points, max_num_els, num_dims) contendo
+            os pontes a serem salvos
+        num_elements:
+            Array com 1-D de tamanho num_points, contento quantos elementos
+            cada ponto possui.
+        '''
+        num_points = data.shape[0]
+        self.data[self.current_id:self.current_id + num_points] = data
+        self.point_num_elements[self.current_id:self.current_id + num_points] = num_elements
+        self.current_id += num_points
+
     def reset(self):
         self.current_id = 0
         self.point_num_elements[:] = 0
         self.data[:] = 0
 
     def strip(self):
-        '''Remove os pontos de dados ainda não preenchidos'''
+        "Remove os pontos de dados ainda não preenchidos."
         self.data = self.data[:self.num_points]
         self.point_num_elements = self.point_num_elements[:self.num_points]
 
     def __getitem__(self, key):
+        if key >= self.num_points:
+            raise IndexError(f"Id {key} fora das bordas [0, {self.num_points}-1].")
         return self.data[key][:self.point_num_elements[key]]
 
     @property
     def num_points(self):
         return self.current_id
+    
+    @property
+    def max_num_els(self):
+        return self.data.shape[1]
 
     def __len__(self):
         return self.num_points
@@ -60,7 +84,8 @@ ListT = TypeVar('ListT')
 ItemT = TypeVar('ItemT')
 class MultFileList(Generic[ListT, ItemT]):
     def __init__(self, root_path: Path, name: str, num_files, num_data_points_per_file) -> None:
-        '''Iterador e indexador de uma lista de dados que está distribuída em vários arquivos.
+        '''
+        Iterador e indexador de uma lista de dados que está distribuída em vários arquivos.
 
         Os arquivos devem estar no caminho `root_path` e o nome do i-ésimo arquivo 
         deve ser "{name}_{i}.pickle". Cada arquivo deve conter uma fatia da lista
@@ -70,9 +95,10 @@ class MultFileList(Generic[ListT, ItemT]):
         self.root_path = root_path
         self.name = name
         self.num_data_points_per_file = num_data_points_per_file
-        
+
         self._id = 0
         self._file_id = 0
+        self._num_total_points = (num_files - 1) * num_data_points_per_file + len(self._load_file(num_files-1))
         self.data = self._load_file(0)
 
     def _reset(self):
@@ -124,3 +150,6 @@ class MultFileList(Generic[ListT, ItemT]):
         item = self.data[pid]
         self._id += 1
         return item
+    
+    def __len__(self):
+        return self._num_total_points

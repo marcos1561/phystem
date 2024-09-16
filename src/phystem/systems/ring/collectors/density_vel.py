@@ -68,7 +68,6 @@ class DenVelCol(RingCol):
             memory_per_file:
                 Tamanho da memória em bytes que o array com os dados terá. Se a coleta
                 preencher esse array, o mesmo é salvo na memória e outro array é inicializado.
-                O nome utilizado nos salvamentos é
         '''
         super().__init__(solver, root_path, configs, autosave_cfg, exist_ok=exist_ok)
         # Configuration
@@ -81,7 +80,7 @@ class DenVelCol(RingCol):
         l = xlims[1] - xlims[0]
         h = configs["space_cfg"].height
         ring_r = utils.get_ring_radius(
-            configs["dynamic_cfg"].diameter, configs["creator_cfg"].num_p)
+            configs["dynamic_cfg"].diameter, configs["creator_cfg"].num_particles)
         
         num_max_rings = int(l * h / (np.pi * ring_r**2) * 2)
         self.density_eq = l * h / (np.pi * ring_r**2)

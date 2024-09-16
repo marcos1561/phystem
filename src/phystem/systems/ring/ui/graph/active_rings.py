@@ -34,9 +34,11 @@ class CustomColors(ABC):
             self.colorbar = None
 
 class ActiveRings:
-    def __init__(self, num_particles: int, solver: CppSolver, custom_colors:CustomColors=None, use_custom_colors=False):
+    def __init__(self, num_particles: int, solver: CppSolver, use_custom_colors=False):
         self.solver = solver
-        self.custom_colors = custom_colors
+        
+        self.custom_colors_list = {}
+        self.custom_colors: CustomColors = None
         
         self.use_custom_colors = use_custom_colors
 
@@ -54,6 +56,18 @@ class ActiveRings:
         self.has_updated_pos = False
         self.has_updated_cms = False
         self.has_updated_pos_continuos = False
+    
+
+    def add_custom_colors(self, name: str, custom_colors: CustomColors):
+        self.custom_colors_list[name] = custom_colors
+        
+    def set_custom_colors(self, name):
+        if name is None:
+            self.use_custom_colors = False
+            self.custom_colors = None
+        else:
+            self.use_custom_colors = True
+            self.custom_colors = self.custom_colors_list[name]
 
     def create_colors(self, num_rings, num_particles, cmap):
         c = np.zeros((num_rings, num_particles), dtype=int)

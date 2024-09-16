@@ -257,20 +257,20 @@ class SolverReplay:
 
         self.num_particles = self.pos.shape[1]
         if num_max_rings is None:
-            self.num_max_rings = self.pos.shape[0]
+            num_max_rings = self.pos.shape[0]
         self.num_max_rings = num_max_rings
 
-        self._ring_ids = np.arange(self.num_max_rings)
+        self.rings_ids = np.arange(self.num_max_rings)
 
     @property
     def num_active_rings(self):
         return self.pos.shape[0]
 
-    @property
-    def rings_ids(self):
-        if self.num_active_rings > self._ring_ids.size:
-            self._ring_ids = np.arange(self.num_active_rings)
-        return self._ring_ids
+    # @property
+    # def rings_ids(self):
+    #     if self.num_active_rings > self._ring_ids.size:
+    #         self._ring_ids = np.arange(self.num_active_rings)
+    #     return self._ring_ids
 
     @property
     def pos_continuos(self):
@@ -292,7 +292,7 @@ class SolverReplay:
         'Inicializa as posições para o frame `frame`'
         if not self.solver_cfg.vel_from_solver:
             self.pos2_original, self.ids2 = self.load(frame)
-    
+
     # def init_same_ids_pre_calc(self):
     #     ids_dir = os.path.join(self.root_path, "same_ids")
     #     self.all_ids = np.load(os.path.join(ids_dir, "ids.npy"))
@@ -346,7 +346,8 @@ class SolverReplay:
         else:
             self.pos, self.ids = self.pos2_original, self.ids2
             self.pos2_original, self.ids2 = self.load(self.frame+self.cfg.calc_vel_dframes) 
-            self.pos, self.pos2 = utils.same_rings(self.pos, self.ids, self.pos2_original, self.ids2)
+            self.pos, self.pos2, self.common_ids = utils.same_rings(self.pos, self.ids, self.pos2_original, self.ids2, return_common_ids=True)
+            # self.ids = self.ids2 = common_ids
 
     def update(self):
         'Avança para o próximo frame.'

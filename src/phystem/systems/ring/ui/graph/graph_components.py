@@ -271,7 +271,7 @@ class Density(ColorBarableComp):
 
         print(f"grid_shape: {num_rows}, {num_cols}")
         self.density_eq = cell_shape[0]*cell_shape[1]
-        self.density_calc = rings_quantities.Density(l, h, num_cols, num_rows)
+        self.density_calc = rings_quantities.Density(utils.RegularGrid(l, h, num_cols, num_rows))
         # self.grid = utils.RegularGrid(l, h, num_cols, num_rows)
 
         self.artist = ax.pcolormesh(*self.density_calc.grid.edges, self.get_density(), shading='flat',
