@@ -60,6 +60,11 @@ class AppCore:
         control_frame = ttk.Frame(left_frame)
         info_frame = ttk.Frame(left_frame)
 
+        try:
+            main_graph.root = self.root
+        except AttributeError as e:
+            pass
+
         self.control = ui_settings.ControlT(control_frame, main_graph, self.run_cfg, solver)
         self.info = ui_settings.InfoT(info_frame, cfgs, solver, timer)
         

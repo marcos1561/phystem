@@ -67,7 +67,7 @@ class RunType(Flag):
     REPLAY_DATA = auto()
 
 class SolverType(Enum):
-    '''Tipo do solver a ser utilizado.'''
+    "Tipo do solver a ser utilizado."
     PYTHON = auto()
     CPP = auto()
 
@@ -75,7 +75,8 @@ class CheckpointCfg:
     def __init__(self, root_path: Path, override_cfgs: bool = False,
                  override_func_cfg=True, ignore_autosave=False, set_time=False) -> None:
         '''
-        Parameters:
+        Parameters
+        ----------
             root_path:
                 Caminho da pasta que contém o checkpoint.
             
@@ -124,8 +125,8 @@ class CheckpointCfg:
 class IntegrationCfg:
     def __init__(self, dt: float, solver_type=SolverType.CPP) -> None:
         '''
-        Parameters:
-        -----------
+        Parameters
+        ----------
             dt:
                 Passo temporal
             
@@ -136,9 +137,10 @@ class IntegrationCfg:
         self.solver_type = solver_type
 
 class RunCfg:
-    '''Base para as configurações do mode de execução.
+    '''
+    Base para as configurações do mode de execução.
     
-    Attributes:
+    Attributes
     ----------
         id:
             Id identificando qual é o modo de execução .
@@ -146,8 +148,8 @@ class RunCfg:
     id: RunType
     def __init__(self, int_cfg: IntegrationCfg, checkpoint: CheckpointCfg = None) -> None:
         '''
-        Parameters:
-        -----------
+        Parameters
+        ----------
             int_cfg:
                 Configurações relacionadas a integração do sistema.
             
@@ -164,7 +166,8 @@ class CollectDataCfg(RunCfg):
     id = RunType.COLLECT_DATA
     def __init__(self, int_cfg: IntegrationCfg, tf: float, folder_path: str, func_cfg=None, func: callable=None,
         func_id=None, get_func: callable=None, checkpoint: CheckpointCfg = None) -> None:
-        '''Configurações da coleta de dados de acordo com um pipeline. A pipeline pode ser especificada de duas formas.
+        '''
+        Configurações da coleta de dados de acordo com um pipeline. A pipeline pode ser especificada de duas formas.
 
         * Diretamente especificando o parâmetro `func`.
 
@@ -172,7 +175,7 @@ class CollectDataCfg(RunCfg):
 
         A preferência é para pipelines passadas por id.
         
-        Parameters:
+        Parameters
         -----------
             int_cfg:
                 Configurações relacionadas a integração do sistema.
@@ -231,7 +234,7 @@ class RealTimeCfg(RunCfg):
     def __init__(self, int_cfg: IntegrationCfg, num_steps_frame: int, fps: int=60, graph_cfg=None,
         ui_settings: config_ui.UiSettings=None, checkpoint: CheckpointCfg=None) -> None:
         '''
-        Parameters:
+        Parameters
         -----------
             int_cfg:
                 Configurações relacionadas a integração do sistema.
@@ -252,7 +255,6 @@ class RealTimeCfg(RunCfg):
         super().__init__(int_cfg, checkpoint)
         if ui_settings is None:
             ui_settings = config_ui.UiSettings()
-
         
         if self.checkpoint is not None and not self.checkpoint.override_cfgs and self.int_cfg is None:
             self.int_cfg = self.checkpoint.configs["run_cfg"].int_cfg
@@ -263,14 +265,13 @@ class RealTimeCfg(RunCfg):
         self.graph_cfg = graph_cfg
 
 class ReplayDataCfg(RealTimeCfg):
-    '''Reproduz dados salvos utilizando a interface visual da renderização em tempo real.'''
+    "Reproduz dados salvos utilizando a interface visual da renderização em tempo real."
     id = RunType.REPLAY_DATA
-
     def __init__(self, root_path: Path, data_dirname="data", num_steps_frame=1, fps=30, 
         graph_cfg=None, solver_cfg=None,  ui_settings: config_ui.UiSettings=None) -> None:
         '''
-        Parameters:
-        -----------
+        Parameters
+        ----------
             directory:
                 Pasta que contém os dados salvos.
 
@@ -311,12 +312,13 @@ class ReplayDataCfg(RealTimeCfg):
         self.system_cfg["run_cfg"] = self
 
 class SaveCfg(RunCfg):
-    '''Salva um vídeo da simulação.'''
+    "Salva um vídeo da simulação."
     id = RunType.SAVE_VIDEO
     def __init__(self, int_cfg: IntegrationCfg, path:str, fps: int, speed: float=None, duration: float = None, 
         tf: float = None, ti=0, num_frames=None, graph_cfg=None, dt=None, 
         ui_settings: config_ui.UiSettings=None, checkpoint: CheckpointCfg=None, replay: ReplayDataCfg=None) -> None:  
-        '''Salva um vídeo da simulação em `path`. Ao menos um dos seguintes parâmetros deve ser 
+        '''
+        Salva um vídeo da simulação em `path`. Ao menos um dos seguintes parâmetros deve ser 
         especificado:
 
         * duration
@@ -325,8 +327,8 @@ class SaveCfg(RunCfg):
         Quando um é especificado o outro é calculado automaticamente.
         Caso os dois sejam especificados, a prioridade é para `duration`.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
             int_cfg:
                 Configurações relacionadas a integração do sistema.
         

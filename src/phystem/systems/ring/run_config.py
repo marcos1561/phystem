@@ -5,9 +5,10 @@ from phystem.core.run_config import (
     load_configs, save_configs,
     RunType,
     SolverType,
+    RealTimeCfg,
+    SaveCfg,
     CheckpointCfg,
     CollectDataCfg,
-    RealTimeCfg,
     ReplayDataCfg,
     SaveCfg,
 )

@@ -41,6 +41,7 @@ class SimpleGraphCfg(BaseGraphCfg):
         show_f_format=False, show_f_obs=False, show_f_invasion=False, figure_kwargs=None,
         force_color: dict[ForceName, str] = None, circles_cfg: ParticleCircleCfg=None,
         density_kwargs=None, scatter_kwargs=None, cbar_kwargs=None, ax_kwargs=None,
+        show_particle_info=False,
         cell_shape=None, cpp_is_debug=True) -> None:
         super().__init__(begin_paused, pause_on_high_vel, cpp_is_debug, ax_kwargs, figure_kwargs)
         if cell_shape is None:
@@ -67,6 +68,8 @@ class SimpleGraphCfg(BaseGraphCfg):
         self.show_f_obs = show_f_obs
         self.show_f_total = show_f_total
         self.show_f_invasion = show_f_invasion
+
+        self.show_particle_info = show_particle_info
 
         self.force_color = {
             ForceName.spring: "red",

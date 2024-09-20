@@ -2,6 +2,9 @@ from abc import ABC, abstractmethod
 import numpy as np
 import random
 
+import tkinter as tk
+from tkinter import ttk
+
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 from matplotlib.patches import Circle
@@ -37,6 +40,18 @@ class BaseGraph(ABC):
         num_particles = self.sim_configs["creator_cfg"].num_particles
         self.active_rings = ActiveRings(num_particles, solver)
 
+        self._root = None
+
+    @property
+    def root(self):
+        if self._root is None:
+            raise Exception("root ainda não foi setado!")
+        return self._root
+
+    @root.setter
+    def root(self, value):
+        self._root = value
+        
     def borders(self, r_scale=1):
         h = self.space_cfg.height/2
         l = self.space_cfg.length/2
@@ -59,65 +74,81 @@ class BaseGraph(ABC):
             to_show = getattr(self.graph_cfg, comp.show_cfg_name)
             comp.update(to_show)
 
+class ParticleInfoWindow(tk.Toplevel):
+    '''
+    Janela que contém informações sobre a partícula clicada
+    e o anel a qual ela pertence.
+    '''
+    def __init__(self, parent, solver: CppSolver, sim_configs):
+        super().__init__(parent)
+        self.title("Particle info")
+        self.solver = solver
+        self.sim_configs = sim_configs                
+
+        self.label_text: list[tk.StringVar] = [tk.StringVar() for _ in range(8)]
+
+        main_frame = ttk.Frame(self)
+
+        self.info_text = tk.Text(main_frame, state="disabled")
+
+        main_frame.grid(padx=10, pady=10)
+        self.info_text.grid()
+
+        self.is_active = True
+        self.bind("<Destroy>", self.on_destroy)
+
+    def update(self, ring_id, p_id):
+        ring_area = self.solver.area_debug.area[ring_id]
+        ring_rel_area = ring_area / self.sim_configs['dynamic_cfg'].area0
+        pos = self.solver.pos[ring_id][p_id]
+        area_force = self.solver.area_forces[ring_id][p_id]
+        spring_force = self.solver.spring_forces[ring_id][p_id]
+        vol_force = self.solver.vol_forces[ring_id][p_id]
+        self_prop_vel = self.solver.self_prop_vel[ring_id]
+        
+        def format_vec(vec, decimal_places=3):
+            return f"{round(vec[0], decimal_places)}, {round(vec[1], decimal_places)}"
+
+        info_text = (
+            f"Ring id: {ring_id} | Particle id: {p_id}\n"
+            f"Area: {round(ring_area, 3)}\n"
+            f"Relative area: {round(ring_rel_area, 3)}\n"
+            f"Pos: {format_vec(pos)}\n"
+            f"Area force: {format_vec(area_force)}\n"
+            f"Spring Force: {format_vec(spring_force)}\n"
+            f"Vol Force: {format_vec(vol_force)}\n"
+            f"Polarization: {format_vec(self_prop_vel)}\n"
+        )
+
+        self.info_text["state"] = "normal"
+        self.info_text.delete(1.0, "end")
+        self.info_text.insert(1.0, info_text)
+        self.info_text["state"] = "disabled"
+
+    def on_destroy(self, event):
+        if event.widget != self:
+            return
+        self.is_active = False
+
 class MainGraph(BaseGraph):
     def __init__(self, fig: Figure, ax: Axes, solver: CppSolver, sim_configs, graph_cfg: SimpleGraphCfg=None):
         super().__init__(fig, ax, solver, sim_configs, graph_cfg)
         if self.graph_cfg is None:
             self.graph_cfg = SimpleGraphCfg()
 
+        self.particle_window: ParticleInfoWindow = None
+
         def onclick(event):
+            print("show:", self.graph_cfg.show_particle_info)
+            if not self.graph_cfg.show_particle_info or event.xdata is None or event.ydata is None:
+                return
+
+            if self.particle_window is None or not self.particle_window.is_active:
+                self.particle_window = ParticleInfoWindow(self.root, self.solver, self.sim_configs)
+
             ids = solver.cpp_solver.get_particle_id(event.xdata, event.ydata)
             ring_id, p_id = ids
-            
-            pos = solver.pos[ring_id][p_id]
-            area_force = solver.area_forces[ring_id][p_id]
-            spring_force = solver.spring_forces[ring_id][p_id]
-            vol_force = solver.vol_forces[ring_id][p_id]
-            self_prop_vel = solver.self_prop_vel[ring_id]
-            area = solver.area_debug.area[ring_id]
-            
-            # print("pos", pos)
-            # print("area_force", area_force)
-            # print("spring_force", spring_force)
-            # print("vol_force", vol_force)
-            # print("self_prop_vel", self_prop_vel)
-            # print("area", area)
-            print("area:", area)
-            print("f_0:", area/sim_configs["dynamic_cfg"].area0)
-            # print("f_eq", area/sim_configs["dynamic_cfg"].get_equilibrium_area(sim_configs["creator_cfg"].num_particles))
-            # print("invs", self.solver.in_pol_checker.collisions)
-            # print("self_prop_vel: ", self.solver.self_prop_vel[2])
-            print(ids)
-
-            print("==========")
-
-        # row_id = 5
-        # col_id = 5
-
-        # windows_manager = self.solver.windows_manager
-
-        # w = windows_manager.window_length
-        # h = windows_manager.window_height
-
-        # sh = sim_configs["space_cfg"].height
-        # sw = sim_configs["space_cfg"].length
-
-        # x1 = -sw/2 + w * (col_id)
-        # x2 = x1 + w
-        
-        # y1 = -sh/2 + h * row_id
-        # y2 = y1 + h
-
-        # self.ax.plot(
-        #     [x1, x2, x2, x1, x1],
-        #     [y1, y1, y2, y2, y1],
-        # )
-
-        # def onclick(event):
-        #     clicked_id = solver.cpp_solver.get_particle_id(event.xdata, event.ydata)
-        #     ids = solver.windows_manager.get_window_elements(0, 10)
-        #     print(ids)
-        #     print("Clicada", clicked_id)
+            self.particle_window.update(ring_id, p_id)
 
         fig.canvas.mpl_connect('button_press_event', onclick)
 

@@ -60,6 +60,7 @@ class ControlMng(ControlManagerCore):
         self.vars["circles_color"] = BooleanVar(value=self.graph_cfg.circle_cfg.color is None)
         self.vars["circles_facecolor"] = BooleanVar(value=self.graph_cfg.circle_cfg.facecolor)
         self.vars["match_face_edge_color"] = BooleanVar(value=self.graph_cfg.circle_cfg.match_face_edge_color)
+        self.vars["show_particle_info"] = BooleanVar(value=self.graph_cfg.show_particle_info)
 
     def show_component(self, name):
         setattr(self.graph_cfg, name, self.vars[name].get())
@@ -149,6 +150,7 @@ class Control(ControlCore):
         others_widget.add("Circles Color", self.control_mng.vars["circles_color"], self.control_mng.circles_color)
         others_widget.add("Circles Fc", self.control_mng.vars["circles_facecolor"], self.control_mng.circles_facecolor)
         others_widget.add("Match Fc", self.control_mng.vars["match_face_edge_color"], self.control_mng.match_face_edge_color)
+        others_widget.add("Show Particle Info", self.control_mng.vars["show_particle_info"], lambda: self.control_mng.show_component("show_particle_info"))
 
         show_widget.grid()
         forces_widget.grid()
