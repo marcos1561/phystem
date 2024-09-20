@@ -5,7 +5,8 @@ from phystem.systems.ring import utils
 
 class InitData:
     def __init__(self, pos: np.ndarray, self_prop_angle: np.ndarray, uids: np.ndarray=None) -> None:
-        '''Dados da configuração inicial.
+        '''
+        Dados da configuração inicial.
 
         Parameters:
         -----------
@@ -37,8 +38,9 @@ def get_base_ring(num_particles, particle_diameter):
 class Creator(CreatorCore):
     def __init__(self, num_rings: int, num_particles: int, r: list[float], angle: list[float], center: list, 
         rng_seed: int = None) -> None:
-        '''Cria a configuração inicial do anel em formato de círculo com todas as 
-        velocidades auto propulsoras iguais.
+        '''
+        Cria anéis com `num_particles` partículas em formato de circular com raio `r`, posições do 
+        centro de massa em `center` e polarizações em `angle`. 
 
         OBS: A função `create` é responsável por gerar a configuração inicial. 
         
@@ -60,7 +62,7 @@ class Creator(CreatorCore):
                 Centro da posição inicial do anel.
             
             rng_seed:
-                Seed utilizada na geração de número aleatório. Se for `None` é
+                Seed utilizada na geração de números aleatórios. Se for `None` é
                 utilizado uma seed aleatória.
         '''
         super().__init__(rng_seed)
@@ -72,7 +74,8 @@ class Creator(CreatorCore):
         self.center = center
 
     def create(self) -> InitData:
-        '''Cria a configuração inicial.
+        '''
+        Cria a configuração inicial.
         
         Return:
         -------

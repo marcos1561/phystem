@@ -25,10 +25,11 @@ class Simulation(SimulationCore):
         int_cfg: IntegrationCfg = run_cfg.int_cfg
         if int_cfg.update_type is UpdateType.INVAGINATION and type(creator_cfg) != InvaginationCreatorCfg:
             raise ValueError(f"No mode 'INVAGINATION', a configuração de criação deve ser 'InvaginationCreatorCfg', mas é {type(creator_cfg)}.")
-
-        # pos = creator_cfg.CreatorType(**creator_cfg.get_pars(), rng_seed=rng_seed).create().pos
-        # if pos.shape[0] > 0:
-        #     creator_cfg.num_p = pos.shape[1]
+        
+        try:
+            n = creator_cfg.num_particles
+        except Exception as e:
+            raise AttributeError("'creator_cfg' deveria possuir o atributo `num_particles`, mas não tem.")
 
         # dynamic_cfg.adjust_area_pars(creator_cfg.num_p)
         super().__init__(creator_cfg, dynamic_cfg, space_cfg, run_cfg, other_cfgs, rng_seed)

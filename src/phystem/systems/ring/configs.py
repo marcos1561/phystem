@@ -1,13 +1,10 @@
 '''
 Configurações relacionadas ao sistema em questão.
 '''
-import numpy as np
-from scipy.optimize import fsolve 
-
 from phystem.systems.ring import creators, utils
 
 class RingCfg:
-    '''Variáveis relacionadas a dinâmica do sistema.'''
+    "Variáveis relacionadas a dinâmica do sistema."
     # args_names = ("spring_k", "spring_r", "k_bend", "mobility", "relax_time",
     #     "vo", "trans_diff", "rot_diff", "exclusion_vol", "diameter", "p0")
 
@@ -74,7 +71,7 @@ class RingCfg:
         area0 = self.area0
         if area0 is None:
             area0 = self.get_area0(num_particles)
-
+        
         return utils.get_equilibrium_relative_area(
             k_a=self.k_area, k_m=self.spring_k, a0=area0,
             spring_r=self.spring_r, num_particles=num_particles,
@@ -215,10 +212,14 @@ class InvaginationCfg:
         self.num_affected = num_affected 
 
 class CreatorCfg:
-    '''Configurações passadas ao construtor da configuração inicial.'''
+    "Configurações passadas ao construtor da configuração inicial."
     CreatorType = creators.Creator
     def __init__(self, num_rings: int,  num_particles: int, r: list[float], angle: list[float],
         center: list[list[float]]) -> None:
+        '''
+        Cria anéis com `num_particles` partículas em formato de circular com raio `r`, posições do 
+        centro de massa `center` e polarizações `angle`. 
+        '''
         self.num_rings = num_rings
         self.num_particles = num_particles
     
@@ -227,10 +228,21 @@ class CreatorCfg:
         
         self.center = center
 
+    @classmethod
+    def empty(cls, num_particle):
+        '''
+        Configurações de uma condição inicial nula. Útil para o
+        fluxo de stokes.
+        '''
+        return cls(
+            num_rings=0, num_particles=num_particle, 
+            r=[], angle=[], center=[],
+        )
+
     def process_scalar_input(self, input):
         try:
             _ = iter(input)
-        except TypeError as te:
+        except TypeError as e:
             return [input] * self.num_rings
         else:
             return input
@@ -256,14 +268,15 @@ class RectangularGridCfg:
     CreatorType = creators.RectangularGridCreator
     def __init__(self, num_x, num_y, space_x, space_y, num_particles, particle_diameter, ring_radius_k=1) -> None:
         '''
-        Anéis em grade retangular (centrada na origem) com `num_x` anéis no eixo x e `num_y` no eixo y.
+        Cria anéis em grade retangular (centrada na origem) com `num_x` anéis no eixo x e `num_y` no eixo y.
         O espaçamento entre anéis vizinhos no eixo x é `space_x` e no eixo y `space_y`.
         A direção das polarizações é aleatória com distribuição uniforme entre [0, 2*pi).
         
-        # Argumentos:
-            ring_radius_k:
-                Constante que multiplica o raio do anel. Dessa forma, é possível iniciar os anéis comprimidos (< 0)
-                ou expandidos (> 1).
+        Parameters
+        -----------
+        ring_radius_k:
+            Constante que multiplica o raio do anel. Dessa forma, é possível iniciar os anéis comprimidos (< 0)
+            ou expandidos (> 1).
         '''
         self.num_x = num_x 
         self.num_y = num_y 
@@ -335,9 +348,7 @@ class InvaginationCreatorCfg:
         }
 
 class SpaceCfg:
-    '''
-    Configurações do espaço na qual as partículas se encontram.
-    '''    
+    "Configurações do espaço na qual as partículas se encontram."
     def __init__(self, height: float, length: float) -> None:
         self.height = height
         self.length = length
