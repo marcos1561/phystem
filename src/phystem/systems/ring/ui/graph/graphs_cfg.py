@@ -32,14 +32,23 @@ class ForceName(Enum):
     obs = auto()
     format = auto()
     invasion = auto()
+    creation = auto()
+
+class RegionsCfg:
+    def __init__(self, alpha=0.4, create_color="green", remove_color="red"):
+        self.alpha = alpha
+        self.create_color = create_color
+        self.remove_color = remove_color
 
 class SimpleGraphCfg(BaseGraphCfg):
     def __init__(self, begin_paused=False, pause_on_high_vel=False, show_scatter=True, show_density=False,
         show_circles=False, show_springs=False, show_cms=False, show_invasion=False,
         show_ith_points=False, show_scatter_cont=False,
-        show_f_springs=False, show_f_vol = False, show_f_area = False, show_f_total = False,
-        show_f_format=False, show_f_obs=False, show_f_invasion=False, figure_kwargs=None,
-        force_color: dict[ForceName, str] = None, circles_cfg: ParticleCircleCfg=None,
+        show_f_springs=False, show_f_vol=False, show_f_area=False, show_f_total=False,
+        show_f_format=False, show_f_obs=False, show_f_invasion=False, show_f_creation=False,
+        show_regions=False, figure_kwargs=None,
+        force_color: dict[ForceName, str]=None, circles_cfg: ParticleCircleCfg=None,
+        regions_cfg: RegionsCfg=None,
         density_kwargs=None, scatter_kwargs=None, cbar_kwargs=None, ax_kwargs=None,
         show_particle_info=False,
         cell_shape=None, cpp_is_debug=True) -> None:
@@ -55,11 +64,16 @@ class SimpleGraphCfg(BaseGraphCfg):
         self.show_cms = show_cms
         self.show_invasion = show_invasion
         self.show_ith_points = show_ith_points
+        self.show_regions = show_regions
         self.cell_shape = cell_shape
 
         if circles_cfg is None:
             circles_cfg = ParticleCircleCfg()
         self.circle_cfg = circles_cfg
+        
+        if regions_cfg is None:
+            regions_cfg = RegionsCfg()
+        self.regions_cfg = regions_cfg
 
         self.show_f_springs = show_f_springs
         self.show_f_vol = show_f_vol
@@ -68,6 +82,7 @@ class SimpleGraphCfg(BaseGraphCfg):
         self.show_f_obs = show_f_obs
         self.show_f_total = show_f_total
         self.show_f_invasion = show_f_invasion
+        self.show_f_creation = show_f_creation
 
         self.show_particle_info = show_particle_info
 
@@ -78,6 +93,7 @@ class SimpleGraphCfg(BaseGraphCfg):
             ForceName.format: "purple",
             ForceName.obs: "gray",
             ForceName.invasion: "orange",
+            ForceName.creation: "gray",
             ForceName.total: "black",
         }
         if force_color:

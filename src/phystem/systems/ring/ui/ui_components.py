@@ -91,6 +91,9 @@ class ControlMng(ControlManagerCore):
         self.graph_cfg.circle_cfg.match_face_edge_color = self.vars["match_face_edge_color"].get()
 
     def save_state(self):
+        # save_fig(self.main_graph.fig, self.main_graph.ax)
+        # return
+
         path = askdirectory(mustexist=False)
         if path == ():
             return
@@ -108,6 +111,17 @@ class ControlMng(ControlManagerCore):
         path.mkdir(parents=True, exist_ok=True)
         StateSaver(self.solver, path, self.main_graph.sim_configs).save()
         messagebox.showinfo("Sucesso!", f"Estado salvo com sucesso!")
+
+def save_fig(fig, ax):
+    import os
+    numbers = [-1]
+    for fname in os.listdir():
+        if "quantity_vel" in fname:
+            numbers.append(int(fname.split("_")[-1].split(".")[0]))
+     
+    ax.axis('off')
+    fig.savefig(f"quantity_vel_{max(numbers)+1}.png", bbox_inches="tight", transparent=True)
+    ax.axis('on')
 
 
 class Control(ControlCore):

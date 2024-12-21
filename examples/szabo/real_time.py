@@ -25,11 +25,11 @@ space_cfg = SpaceCfg(
     # size = 18.2574185,
     # size = 57.73502691, # 0.3
     # size = 40.824829046, # 0.6
-    size = 40, # 0.6
+    size = 80, # 0.6
 )
 
 creator_cfg = CreatorCfg(
-    n = 50,
+    n = 576*2,
     r = space_cfg.size/2,
     type = CreateType.SQUARE,
 )
@@ -46,7 +46,7 @@ real_time_cfg = RealTimeCfg(
         solver_type = SolverType.CPP,
         update_type = UpdateType.NORMAL,
     ),
-    num_steps_frame = 10,
+    num_steps_frame = 40,
     fps = 60,
     graph_cfg = GraphCfg(
         show_circles=False),

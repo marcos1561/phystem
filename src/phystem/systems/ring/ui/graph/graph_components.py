@@ -5,15 +5,15 @@ from matplotlib import collections
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection, PatchCollection
-from matplotlib.patches import Circle
+from matplotlib.patches import Circle, Rectangle
 from matplotlib import colors, colorbar
 
 from phystem.systems.ring.solvers import CppSolver
-from phystem.systems.ring.configs import RingCfg
+from phystem.systems.ring.configs import RingCfg, SpaceCfg, StokesCfg
 from phystem.systems.ring import utils
 from phystem.systems.ring import rings_quantities
 from .active_rings import ActiveRings
-from .graphs_cfg import ParticleCircleCfg
+from .graphs_cfg import ParticleCircleCfg, RegionsCfg
 
 class ArtistList:
     def __init__(self):
@@ -69,7 +69,13 @@ class CollectionComp(GraphComponent):
         super().add()
         for artist in self.artist_list.items:
             self.ax.add_collection(artist)
-  
+
+class PatchComp(GraphComponent):
+    def add(self):
+        super().add()
+        for artist in self.artist_list.items:
+            self.ax.add_patch(artist)
+
 class ColorBarableComp(CollectionComp):
     def get_color_bar(self) -> colorbar.Colorbar:
         pass
@@ -181,7 +187,6 @@ class ParticlesScatter(CollectionComp):
         if not self.unique_ring_color:
             # self.artist.set_array(self.active_rings.colors_value)
             self.artist.set_color(self.active_rings.colors_rgb)
-
 
 class ParticlesScatterCont(CollectionComp):
     def __init__(self, ax: Axes, active_rings: ActiveRings, zorder, scatter_kwargs):
@@ -399,3 +404,27 @@ class IthPoints(CollectionComp):
         ith_pos = self.active_rings.pos[ith_ids]
         self.artist.set_offsets(ith_pos)
 
+class Regions(PatchComp):
+    def __init__(self, ax, space_cfg: SpaceCfg, stokes_cfg: StokesCfg,
+            configs: RegionsCfg=None,       
+        ):
+        super().__init__(ax, "show_regions")
+        if configs is None:
+            configs = RegionsCfg()
+
+        h, l = space_cfg.height, space_cfg.length
+        cl = stokes_cfg.create_length
+        rl = stokes_cfg.remove_length
+
+        self.create_rect = Rectangle(
+            xy=[-l/2, -h/2], width=cl, height=h,
+            color=configs.create_color, alpha=configs.alpha,
+        )
+
+        self.remove_rect = Rectangle(
+            xy=[l/2-rl, -h/2], width=rl, height=h,
+            color=configs.remove_color, alpha=configs.alpha,
+        )
+
+        self.artist_list.add("create", self.create_rect)
+        self.artist_list.add("remove", self.remove_rect)

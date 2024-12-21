@@ -33,6 +33,10 @@ class BaseGraph(ABC):
 
         self.ax.set_aspect(1)
 
+        # space_cfg = sim_configs["space_cfg"]
+        # h, l = space_cfg.height, space_cfg.length
+        # ax.add_patch(Rectangle((-l/2, -h/2), l, h, color="white", zorder=-10))
+
         self.borders()
         if sim_configs["other_cfgs"].get("stokes") is not None:
             self.stokes_obstacle(zorder=3)
@@ -193,6 +197,10 @@ class MainGraph(BaseGraph):
                 solver_forces = self.solver.invasion_forces,
                 color = self.graph_cfg.force_color[ForceName.invasion],
                 show_cfg_name = "show_f_invasion"),
+            "f_creation": RingForce(ax, self.active_rings,
+                solver_forces = self.solver.creation_forces,
+                color = self.graph_cfg.force_color[ForceName.creation],
+                show_cfg_name = "show_f_creation"),
             "f_total": RingForce(ax, self.active_rings,
                 solver_forces = self.solver.total_forces,
                 color = self.graph_cfg.force_color[ForceName.total],
@@ -202,6 +210,12 @@ class MainGraph(BaseGraph):
             "ith_points": IthPoints(ax, self.active_rings,
                 zorder = 3),
         }
+
+        if sim_configs["other_cfgs"].get("stokes"):
+            self.components["regions"] = Regions(
+                ax, sim_configs["space_cfg"], sim_configs["other_cfgs"]["stokes"],
+                self.graph_cfg.regions_cfg,
+            )
 
         self.update()
 

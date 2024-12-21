@@ -171,6 +171,10 @@ class CppSolver:
         return self.cpp_solver.invasion_forces
     
     @property
+    def creation_forces(self):
+        return self.cpp_solver.creation_forces
+    
+    @property
     def total_forces(self):
         return self.cpp_solver.total_forces
     

@@ -251,6 +251,7 @@ public:
     Vector3d obs_forces;
     Vector3d format_forces;
     Vector3d invasion_forces;
+    Vector3d creation_forces;
     Vector2d self_prop_vel;
 
     vector<vector<vector<double*>>> pos_t; // Transposta da posições das partículas
@@ -425,6 +426,7 @@ public:
         obs_forces = Vector3d(num_max_rings, zero_vector_2d);
         format_forces = Vector3d(num_max_rings, zero_vector_2d);
         invasion_forces = Vector3d(num_max_rings, zero_vector_2d);
+        creation_forces = Vector3d(num_max_rings, zero_vector_2d);
         self_prop_vel = Vector2d(num_max_rings);
 
         area_debug.area = vector<double>(num_max_rings);
@@ -1268,6 +1270,9 @@ public:
                 
                 invasion_forces[ring_id][i][0] = 0.;
                 invasion_forces[ring_id][i][1] = 0.;
+
+                creation_forces[ring_id][i][0] = 0.;
+                creation_forces[ring_id][i][1] = 0.;
             }
             #endif
         }
@@ -1331,6 +1336,10 @@ public:
                     // Flux force
                     if (p_pos[0] < max_create_border) {
                         sum_forces_matrix[ring_id][spring_id][0] += stokes_cfg.flux_force;
+
+                        #if DEBUG == 1
+                        creation_forces[ring_id][spring_id][0] = stokes_cfg.flux_force;
+                        #endif
                     }
                     
                     // Obstacle force

@@ -113,6 +113,8 @@ class Simulation(SimulationCore):
 
         fig = Figure(dpi=real_time_cfg.ui_settings.dpi, constrained_layout=True, **graph_cfg.figure_kwargs)
         ax = fig.add_subplot()
+        self.fig = fig
+        self.ax = ax
 
         # particles_graph = graph_cfg.GraphCls(
         #     ax=ax, solver=self.solver, space_cfg=self.space_cfg, dynamic_cfg=self.dynamic_cfg, 
