@@ -49,11 +49,20 @@ def get_equilibrium_p0(num_particles):
 
 def get_invasion_equilibrium_config(k_r, k_m, k_a, lo, ro, area0, relative_area_eq, vo, mu):
     '''
-    Considerando a situação de equilíbrio do pior cenário de invasão entre anéis, 
-    retorna duas quantidades:
-    * Metade do ângulo que a partícula invasora faz com as partículas
-        do anel sendo invadido.
-    * Distância entre as partículas do anel sendo invadido.
+    Retorna a configuração de equilíbrio no pior cenário de invasão entre anéis. 
+    
+    Retorno:
+    -------
+    r: np.ndarray
+        Array com a solução do equilíbrio:
+        r[0]: Metade do ângulo que a partícula invasora faz com as partículas
+            do anel sendo invadido.
+        r[1]: Distância entre as partículas do anel sendo invadido.
+
+    func(r): list
+        Valor da função avaliada na solução encontrada. Se o módulo da soma
+        desses valores não for perto de zero, significa que a solução não foi
+        encontrada ou não existe.
     '''
     def fp(theta, l):
         return k_r/ro * (ro - l / (2*np.sin(theta)))
@@ -99,9 +108,15 @@ def get_invasion_equilibrium_config(k_r, k_m, k_a, lo, ro, area0, relative_area_
     return r, func(r)
 
 def get_equilibrium_relative_area(k_a, k_m, a0, spring_r, num_particles):
-    "Retorna a área de equilíbrio em relação a `a0`."
+    "Retorna a área de equilíbrio em relação a `a0` (a_eq / a0)."
+    p0_lim = get_equilibrium_p0(num_particles)
+    a0_lim = (num_particles * spring_r / p0_lim)**2 
+
+    if a0 < a0_lim:
+        return 1
+
     theta = 2 * np.pi / num_particles
-    
+
     def get_r(f):
         return np.sqrt(f * 2 * a0 / (num_particles * np.sin(theta))) 
 
@@ -118,7 +133,7 @@ def get_equilibrium_relative_area(k_a, k_m, a0, spring_r, num_particles):
     def func(f):
         return get_fa(f) - get_fm_total(f)
 
-    return fsolve(func, 0.5)
+    return fsolve(func, 0.5)[0]
 
 def get_max_k_adh(adh_size, dt, k_a, area0, lo, relative_area, mu, vo, x=1):
     '''
@@ -147,8 +162,8 @@ def same_rings(pos1, ids1, pos2, ids2, return_common_ids=False):
     ordenadas pelos mesmos ids, ou seja, o i-ésimo elemento
     em ambos os arrays se referem ao mesmo id.
 
-    Return
-    ------
+    Retorno:
+    --------
     pos1, pos2:
         Array com as posições ordenadas pelos mesmos ids.
     
@@ -631,132 +646,20 @@ def roll_segmented_cmap(cmap, amount):
 
 
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-    from matplotlib.patches import Circle
+    spring_l = 0.8
+    num_particles = 10
 
-    # print(np.floor(np.array([[-0.1,2,3]])))
-    # exit()
-
-    grid = RegularGrid(1, 1, 5, 4)
-
-    points = (np.random.random((5, 2)) - 0.5)
-    # values = (np.random.random((2, 5, 2, 3)) - 0.5)
-    values = (np.random.random((5, 2)) - 0.5)
+    p0_eq = get_equilibrium_p0(num_particles)
     
-    class CustomValue:
-        def __init__(self, x) -> None:
-            self.x = x
+    p0 = p0_eq * 0.9
 
-        # def __iadd__(self, other):
-        #     self.x += other.x
-        #     return self
+    a0 = (num_particles * spring_l / p0)**2 
 
-        def __add__(self, other):
-            return CustomValue(self.x + other.x)
+    r = get_equilibrium_relative_area(
+        k_a=13, k_m=20, a0=a0, spring_r=spring_l,
+        num_particles=num_particles
+    )
 
-        def __str__(self):
-            return str(self.x)
-        
-        def __repr__(self):
-            return f"{self.x}"
-
-    # values = np.empty(points.shape[:2], dtype=CustomValue)
-    # letters = "abcdefghijklmnopqrtuvwxyz"
-    # for i in range(points.shape[1]):
-    #     values[0][i] = CustomValue(letters[i])
-    #     values[1][i] = CustomValue(letters[i])
-
-    c = grid.coords(points)
-
-    layer = 0
-    c[2] = [0, 3]
-    c[4] = [0, 3]
-
-
-    mean_values = grid.mean_by_cell(values, c)
-
-    a1 = mean_values[3, 0]
-    a2 = (values[2] + values[4])/2
-
-    print(c)
-
-    print(a1 == a2)
-    print(a1)
-    print(a2)
-
-
-    # ax = plt.gca()
-    # ax.set_xlim(-0.7, 0.7)
-    # ax.set_ylim(-0.7, 0.7)
-    # grid.plot_grid(ax)
-    # ax.scatter(*points[0].T, c="red")
-    # ax.scatter(*points[1].T, c="green")
-    # plt.show()
-
-    exit()
-
-    # print(points)
-    # print(c)
-    # print(grid.remove_out_of_bounds(c))
-
-    print(grid.count(c))
-    a = grid.sum_by_cell(points, c, zero_value=CustomValue(0))
-    print(a.shape)
-
-    # ax = plt.gca()
-    # ax.set_xlim(-0.7, 0.7)
-    # ax.set_ylim(-0.7, 0.7)
-    # grid.plot_grid(ax)
-    # ax.scatter(*points.T)
-
-    # plt.show()
-
-    # points1 = np.array([
-    #     [-0.45, -0.3],
-    #     [-0.35, -0.3],
-    #     [-0.45, -0.2],
-    # ])
-    # points2 = points1 + 0.5
-    # points_t = np.array([points1, points2])
+    print(r)
     
-    # plt.scatter(*points1.T, marker="x")
-    # plt.scatter(*points2.T, marker="x")
-
-    # ct = grid.coords(points_t)
-    # c1, c2 = grid.coords(points1), grid.coords(points2)
-
-    # print(np.all(c1 == ct[0]))
-    # print(np.all(c2 == ct[1]))
-
-    # # cell_size_mg = np.meshgrid
-
-    # x1 = grid.meshgrid[0] + grid.dim_cell_size[0]/2
-    # x2 = grid.meshgrid[0] - grid.dim_cell_size[0]/2
     
-    # y1 = (grid.meshgrid[1] + grid.dim_cell_size[1].reshape(-1, 1)/2)
-    # y2 = (grid.meshgrid[1] - grid.dim_cell_size[1].reshape(-1, 1)/2)
-
-    # center = (0, 0)
-    # r = 0.2
-
-    # ax = plt.gca()
-    # ax.add_patch(Circle(center, r, fill=False))
-    
-    # mask = grid.intersect_circle_mask(r, center)
-    # x1 = x1[mask]
-    # x2 = x2[mask]
-    # y1 = y1[mask]
-    # y2 = y2[mask]
-    
-    # print(mask.shape)
-    
-    # # plt.scatter(x1, y1, c="red")
-    # # plt.scatter(x1, y2, c="blue")
-    # # plt.scatter(x2, y1, c="green")
-    # # plt.scatter(x2, y2, c="orange")
-    # grid.plot_grid(ax)
-    # grid.plot_corners(ax)
-
-    # plt.scatter(grid.meshgrid[0][mask], grid.meshgrid[1][mask], c="black")
-    
-    # plt.show()

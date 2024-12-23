@@ -115,15 +115,36 @@ class SimulationCore(ABC):
         return cls(**cfgs)
 
     @classmethod
-    def configs_from_autosave(cls, path: Path):
+    def load_from_checkpoint(cls, path: Path, run_cfg: RunCfg=None):
+        '''
+        Carrega uma simulação a partir de um checkpoint em `path`. 
+        É possível passar uma `run_cfg` para ser utilizada ao invés
+        daquela salva no checkpoint.
+        '''
+        cfgs = load_configs(Path(path) / settings.system_config_fname)
+        if run_cfg is not None:
+            cfgs["run_cfg"] = run_cfg
+
+        checkpoint_cfg = CheckpointCfg(path)
+        cfgs["run_cfg"].checkpoint = checkpoint_cfg
+
+        return cls(**cfgs)
+
+    @classmethod
+    def configs_from_autosave(cls, path: Path, checkpoint_kwargs=None):
         autosave_path = AutoSavable.get_autosave_path(path)
         configs = load_configs(autosave_path / settings.system_config_fname)
-        configs["run_cfg"].checkpoint = CheckpointCfg(path)
+        
+        if checkpoint_kwargs is None:
+            checkpoint_kwargs = {}
+        configs["run_cfg"].checkpoint = CheckpointCfg(path, **checkpoint_kwargs)
+        
         return configs
 
     @staticmethod
     def configs_from_checkpoint(run_cfg: RunCfg):
-        '''Dado uma configuração de execução `run_cfg` que possui
+        '''
+        Dado uma configuração de execução `run_cfg` que possui
         `checkpoint` setado, faz o seguinte: 
         
         * Carrega as configurações do checkpoint.

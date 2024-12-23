@@ -112,6 +112,10 @@ class RingCfg:
         consideração `area0`.
         '''
         return num_particles * self.spring_r / self.area0**.5
+    
+    def set_p0(self, value, num_particles):
+        self.p0 = value
+        self.area0 = self.get_area0(num_particles)
 
     def will_invade(self, num_particles, relative_area, tol=1e-3):
         area0 = self.get_area0(num_particles)

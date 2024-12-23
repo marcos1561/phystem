@@ -47,7 +47,7 @@ def load_configs(path: Path, load_checkpoint_cfgs=False):
     checkpoint: CheckpointCfg = cfgs["run_cfg"].checkpoint 
     if load_checkpoint_cfgs and checkpoint:
         try:
-            checkpoint.configs = load_configs(Path(checkpoint.root_path) / "config.yaml")    
+            checkpoint.configs = load_configs(Path(checkpoint.root_path) / settings.system_config_fname)    
         except FileNotFoundError as e:
             checkpoint.configs = "configurações não encontradas" 
     return cfgs
@@ -102,7 +102,7 @@ class CheckpointCfg:
         self.ignore_autosave = ignore_autosave
         self.set_time = set_time
 
-        self.configs: dict = load_configs(self.root_path / "config")
+        self.configs: dict = load_configs(self.root_path / settings.system_config_fname)
     
     def get_sim_configs(self, run_cfg=None):
         configs = copy.deepcopy(self.configs)

@@ -16,8 +16,6 @@ from phystem.systems.ring.configs import SpaceCfg, StokesCfg
 from phystem.systems.ring import utils
 
 from .graphs_cfg import SimpleGraphCfg, ReplayGraphCfg, ForceName
-
-from matplotlib.figure import Figure
 from .graph_components import *
 from .active_rings import ActiveRings, CustomColors
 
