@@ -7,7 +7,7 @@ from phystem.systems.ring.creators import CreatorRD, Creator
 
 from phystem.systems.ring.configs import CreatorCfg, RingCfg, InvaginationCfg, InvaginationCreatorCfg
 from phystem.systems.ring.run_config import IntegrationCfg, UpdateType, RealTimeCfg, RunType, ReplayDataCfg
-from phystem.core.run_config import RunCfg
+from phystem.core.run_config import RunCfg, CollectDataCfg
 
 from phystem.systems.ring.ui.graph import graph_type
 from phystem.systems.ring.ui import ui_components
@@ -54,12 +54,24 @@ class Simulation(SimulationCore):
     def get_solver(self) -> SolverCore:
         self.creator: Creator
 
-        if self.run_cfg.id is RunType.REPLAY_DATA:
-            num_max_rings = None
-            if self.run_cfg.int_cfg.update_type is UpdateType.STOKES:
-                num_max_rings = self.run_cfg.system_cfg["other_cfgs"]["stokes"].num_max_rings
+        is_replay = self.run_cfg.id is RunType.REPLAY_DATA
+        
+        collect_has_replay = False
+        if self.run_cfg.id is RunType.COLLECT_DATA:
+            run_cfg: CollectDataCfg = self.run_cfg
+            collect_has_replay = run_cfg.replay_data_cfg is not None
 
-            return SolverReplay(self.run_cfg, num_max_rings, self.run_cfg.solver_cfg)
+        if is_replay or collect_has_replay:
+            if self.run_cfg.id is RunType.COLLECT_DATA:
+                run_cfg = self.run_cfg.replay_data_cfg
+            else:
+                run_cfg = self.run_cfg
+
+            num_max_rings = None
+            if run_cfg.int_cfg.update_type is UpdateType.STOKES:
+                num_max_rings = run_cfg.system_cfg["other_cfgs"]["stokes"].num_max_rings
+
+            return SolverReplay(run_cfg, num_max_rings, run_cfg.solver_cfg)
 
         if self.run_cfg.id is RunType.SAVE_VIDEO:
             if self.run_cfg.replay is not None:
@@ -68,6 +80,9 @@ class Simulation(SimulationCore):
                     num_max_rings = self.run_cfg.replay.system_cfg["other_cfgs"]["stokes"].num_max_rings
 
                 return SolverReplay(self.run_cfg.replay, num_max_rings, self.run_cfg.replay.solver_cfg)
+
+        if self.run_cfg.id is RunType.COLLECT_DATA:
+            run_cfg: CollectDataCfg = self.run_cfg
 
         if self.run_cfg.checkpoint:
             from phystem.systems.ring.state_saver import StateSaver

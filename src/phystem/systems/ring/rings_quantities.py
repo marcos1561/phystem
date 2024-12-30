@@ -83,6 +83,24 @@ def get_dist_pb(pos1: np.array, pos2: np.array, height, length):
     diff[y_filter, 1] -= np.copysign(height, diff[y_filter, 1]) 
     return diff
 
+def get_area(rings: np.array):
+    '''
+    Retorna as áreas dos anéis em `rings`.
+    Ver a doc de `get_cm` para informações sobre o tipo de `rings`.
+    '''
+    num_rings = rings.shape[0]
+    areas = np.empty(num_rings, dtype=float)
+
+    for ring_i in range(num_rings):
+        ring_pos = rings[ring_i]
+        cross_prod = np.cross(ring_pos[:-1], ring_pos[1:])
+        areas[ring_i] = cross_prod.sum()
+        
+        areas[ring_i] += np.cross(ring_pos[-1], ring_pos[0])
+    
+    areas /= 2
+    return areas
+
 class Density:
     def __init__(self, grid: RegularGrid):
         '''

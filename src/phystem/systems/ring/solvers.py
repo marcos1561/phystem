@@ -252,6 +252,8 @@ class SolverReplay:
 
         self.times = np.load(self.root_path / "times.npy") 
         
+        self.area_debug = AreaDebug(self)
+
         #state
         self.frame = -1
         self.time_sign = 1
@@ -297,22 +299,6 @@ class SolverReplay:
         if not self.solver_cfg.vel_from_solver:
             self.pos2_original, self.ids2 = self.load(frame)
 
-    # def init_same_ids_pre_calc(self):
-    #     ids_dir = os.path.join(self.root_path, "same_ids")
-    #     self.all_ids = np.load(os.path.join(ids_dir, "ids.npy"))
-    #     self.all_ids_size = np.load(os.path.join(ids_dir, "ids_size.npy"))
-        
-    #     self.pos2_original = np.load(os.path.join(self.data_dir, f"pos_{0}.npy"))
-    #     self.update_pos_same_ids_pre_calc(0)
-    #     self.calc_vel_cm(0)
-
-    # def update_pos_same_ids_pre_calc(self, frame):
-    #     self.pos = self.pos2_original
-    #     self.pos2_original = np.load(self.root_path / f"pos_{frame+1}.npy")
-
-    #     self.pos = self.pos[self.all_ids[frame, 0, :self.all_ids_size[frame]]]
-    #     self.pos2 = self.pos2_original[self.all_ids[frame, 1, :self.all_ids_size[frame]]]
-
     def load(self, frame):
         '''
         Carrega e retorna as posições e uids do frame
@@ -338,7 +324,6 @@ class SolverReplay:
         vel_cm = vel.sum(axis=1)/vel.shape[1]
         vel_cm_dir = np.arctan2(vel_cm[:, 1], vel_cm[:, 0])
         return vel_cm, vel_cm_dir
-
 
     def update_pos(self):
         "Atualiza as posições para o frame atual"
@@ -367,3 +352,18 @@ class SolverReplay:
         self.update_pos()
         
         self.time = self.times[self.frame]
+
+
+class AreaDebug:
+    def __init__(self, solver: SolverReplay):
+        self.solver = solver
+        self._area: np.ndarray = None
+        self.last_frame = None
+
+    @property
+    def area(self):
+        if self.last_frame is None or self.last_frame != self.solver.frame:
+            self.last_frame = self.solver.frame
+            self._area = rings_quantities.get_area(self.solver.pos)
+        
+        return self._area

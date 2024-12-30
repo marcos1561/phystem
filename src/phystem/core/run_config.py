@@ -165,7 +165,7 @@ class CollectDataCfg(RunCfg):
     '''
     id = RunType.COLLECT_DATA
     def __init__(self, int_cfg: IntegrationCfg, tf: float, folder_path: str, func_cfg=None, func: callable=None,
-        func_id=None, get_func: callable=None, checkpoint: CheckpointCfg = None) -> None:
+        replay_data_cfg=None, func_id=None, get_func: callable=None, checkpoint: CheckpointCfg = None) -> None:
         '''
         Configurações da coleta de dados de acordo com um pipeline. A pipeline pode ser especificada de duas formas.
 
@@ -214,6 +214,8 @@ class CollectDataCfg(RunCfg):
         self.func = func
         self.func_id = func_id
         self.func_cfg = func_cfg 
+
+        self.replay_data_cfg = replay_data_cfg
 
         if func_id is not None:
             self.func = get_func(func_id) 
@@ -272,28 +274,23 @@ class ReplayDataCfg(RealTimeCfg):
         '''
         Parameters
         ----------
-            directory:
+            root_path:
                 Pasta que contém os dados salvos.
 
-            system_cfg:
-                Lista das configurações relativas ao sistema que vão ser atualizadas com as 
-                configurações utilizadas nos dados salvos. As configurações são as seguintes:\n
-            
-                -> creator_cfg\n
-                -> dynamic_cfg\n
-                -> space_cfg
-                
+            data_dirname:
+                Nome da pasta que contém as trajetórias.
+
             num_steps_frame:
                 Número de passos temporais por frame.
             
-            frequency:
-                Número de frames entre atualização dos passos temporais.
-
             fps:
                 Determina o intervalo de tempo entre os frames.
                             
             graph_cfg:
                 Configurações passadas para o gerenciador do gráfico da simulação.
+
+            solver_cfg:
+                Configurações passados ao solver.
         '''
         self.root_path = Path(root_path)
         self.solver_cfg = solver_cfg

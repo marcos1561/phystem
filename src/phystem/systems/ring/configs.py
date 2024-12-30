@@ -5,8 +5,6 @@ from phystem.systems.ring import creators, utils
 
 class RingCfg:
     "Variáveis relacionadas a dinâmica do sistema."
-    # args_names = ("spring_k", "spring_r", "k_bend", "mobility", "relax_time",
-    #     "vo", "trans_diff", "rot_diff", "exclusion_vol", "diameter", "p0")
 
     def __init__(self,  spring_k, spring_r, area_potencial, mobility, relax_time,
         vo, trans_diff, rot_diff, diameter, max_dist, rep_force, adh_force, k_invasion,
@@ -125,7 +123,6 @@ class RingCfg:
             relative_area_eq=relative_area, vo=self.vo, mu=self.mobility,
         )
         return abs(est_value[0]) + abs(est_value[1]) > tol
-
 
     def adjust_area_pars(self, num_particles: int):
         print("adjust:", num_particles)

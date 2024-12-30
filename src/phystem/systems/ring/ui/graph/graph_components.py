@@ -115,7 +115,9 @@ class ParticleCircles(CollectionComp):
         kwargs = {}
         if cfg.color is not None:
             kwargs["edgecolor"] = cfg.color
-        
+        if cfg.linewidth is not None:
+            kwargs["lw"] = cfg.linewidth
+
         self.artist = PatchCollection([],
             facecolors="none",
             **kwargs,

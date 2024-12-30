@@ -19,9 +19,10 @@ class BaseGraphCfg:
 class ParticleCircleCfg:
     DEFAULT_COLOR = "#1f77b4"
 
-    def __init__(self, color=None, facecolor=True, match_face_edge_color=False) -> None:
+    def __init__(self, color=None, facecolor=True, linewidth=0.2, match_face_edge_color=False) -> None:
         self.color = color
         self.facecolor = facecolor
+        self.linewidth = linewidth
         self.match_face_edge_color = match_face_edge_color
 
 class ForceName(Enum):
