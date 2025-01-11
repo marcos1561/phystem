@@ -160,7 +160,7 @@ class StateSaver:
         return init_data, metadata
 
 class RingCol(collectors.Collector):
-    '''Base para os coletores dos anéis.'''
+    "Base para os coletores dos anéis."
     def __init__(self, solver: CppSolver, root_path: Path, configs: dict, 
         autosave_cfg: ColAutoSaveCfg = None, exist_ok=False, **kwargs) -> None:
         super().__init__(solver, root_path, configs, autosave_cfg, exist_ok=exist_ok, **kwargs)
@@ -169,6 +169,40 @@ class RingCol(collectors.Collector):
             for path in self.autosave_paths:
                 collectors.Collector.save_cfg(configs, path / settings.system_config_fname)
             self.state_col = StateSaver(self.solver, self.autosave_root_path, self.configs)
+
+    @classmethod
+    def get_pipeline(Cls):
+        '''
+        Retorna uma pipeline de coleta de dados padrão, que pode
+        ser utilizada no parâmetro `func` de `CollectDataCfg`.
+        '''
+        from phystem.systems.ring import Simulation
+        from phystem.core.run_config import CollectDataCfg
+        from phystem.utils import progress
+
+        def pipeline(sim: Simulation, cfg):
+            solver = sim.solver
+            collect_cfg: CollectDataCfg = sim.run_cfg
+
+            collector = Cls(**cfg,
+                solver=solver, root_path=collect_cfg.folder_path, configs=sim.configs,
+            )
+
+            if collect_cfg.is_autosave:
+                collector.load_autosave()
+
+            prog = progress.Continuos(collect_cfg.tf)
+            while solver.time < collect_cfg.tf:
+                prog.update(solver.time)
+                solver.update()
+                collector.collect()
+
+            if collector.autosave_cfg is not None:
+                collector.exec_autosave()
+            collector.save()
+            prog.update(solver.time)
+        
+        return pipeline
 
     def autosave(self):
         super().autosave()

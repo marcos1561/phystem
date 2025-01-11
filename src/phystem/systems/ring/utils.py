@@ -7,18 +7,14 @@ from pathlib import Path
 from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection
 
-def get_real_ring_radius(p_diameter: float, num_particles: int):
-    'Raio do centro do anel até a ponta da partícula.'
-    r = get_ring_radius(p_diameter, num_particles)
-    return r + p_diameter/2
-
-def get_ring_radius(p_diameter: float, num_particles: int):
+def get_ring_radius(diameter, k_a, k_m, a0, spring_r, num_particles):
     '''
-    Raio de equilíbrio do anel dado o diâmetro das partículas (p_diameter)
-    e quantas partículas compõem o anel (num_particles).
-    Esse raio é do centro do anel até o centro da partícula.
+    Raio de equilíbrio do anel. É calculado assumindo sua área de equilíbrio
+    e estendendo seu raio até a borda das partículas ((A_eq / pi)**.5 + diameter/2).
     '''
-    return p_diameter / (2 * (1 - cos(2*pi/(num_particles))))**.5
+    # return p_diameter / (2 * (1 - cos(2*pi/(num_particles))))**.5
+    area_eq = get_equilibrium_area(k_a, k_m, a0, spring_r, num_particles)
+    return (area_eq / np.pi)**(.5) + diameter/2
 
 def get_second_order_neighbors_dist(num_particles, lo):
     '''
@@ -135,6 +131,9 @@ def get_equilibrium_relative_area(k_a, k_m, a0, spring_r, num_particles):
 
     return fsolve(func, 0.5)[0]
 
+def get_equilibrium_area(k_a, k_m, a0, spring_r, num_particles):
+    return get_equilibrium_relative_area(k_a, k_m, a0, spring_r, num_particles) * a0
+
 def get_max_k_adh(adh_size, dt, k_a, area0, lo, relative_area, mu, vo, x=1):
     '''
     Retorna o valor máximo de `k_adh` em relação a problemas numéricos. `x` deve
@@ -184,6 +183,21 @@ def same_rings(pos1, ids1, pos2, ids2, return_common_ids=False):
         return pos1[argsort1[id_mask1]], pos2[argsort2[id_mask2]], common_ids
     else:
         return pos1[argsort1[id_mask1]], pos2[argsort2[id_mask2]]
+
+def ring_spawn_pos(diameter, k_a, k_m, a0, spring_r, num_particles):
+    '''
+    Posições de um anel centrado em x=(0, 0) com área igual
+    a sua área de equilíbrio no formato de um polígono regular.
+
+    Retorno:
+    --------
+    pos: ndarray com shape (num_particles, 2)
+        Posições das partículas do anel.
+    '''
+    ring_radius = get_ring_radius(diameter, k_a, k_m, a0, spring_r, num_particles)
+    angles = np.arange(0, np.pi*2, np.pi*2/num_particles)
+    ring_pos = np.array([np.cos(angles), np.sin(angles)]) * ring_radius
+    return ring_pos.T
 
 class RetangularGrid:
     def __init__(self, edges: tuple[np.ndarray]) -> None:
@@ -274,10 +288,15 @@ class RetangularGrid:
         '''
         return coords[np.logical_not(self.get_out_mask(coords))]
 
-    def count(self, coords: np.ndarray):
+    def count(self, coords: np.ndarray, end_id: np.ndarray=None):
         '''
         Contagem da quantidade de pontos em cada célula da grade, dado as coordenadas dos pontos
         na grade `coords`.
+
+        Parâmetros:
+        -----------
+        end_id:
+            Array 1-D com os elementos a serem considerados em coords. Ver doc de `self.sum_by_cell`.
 
         Retorno:
         --------
@@ -290,6 +309,9 @@ class RetangularGrid:
 
         count_grid = np.zeros((coords.shape[0], *self.shape), dtype=int)
         for idx, coords_i in enumerate(coords):
+            if end_id is not None:
+                coords_i = coords_i[:end_id[idx]]
+
             unique_coords, count = np.unique(coords_i, axis=0, return_counts=True)
             count_grid[idx, unique_coords[:, 0], unique_coords[:, 1]] = count 
 
@@ -297,7 +319,7 @@ class RetangularGrid:
 
         return self.simplify_shape(count_grid)
 
-    def sum_by_cell(self, values: np.array, coords: np.array, zero_value=0):
+    def sum_by_cell(self, values: np.array, coords: np.array, end_id: np.ndarray=None, zero_value=0):
         '''
         Soma dos valores que estão na mesma célula (possuem a mesma coordenada) da grade. 
         Cada elemento em `values` possui uma coordenada na grade associada em `coords`.
@@ -313,12 +335,35 @@ class RetangularGrid:
         coords:
             Coordenadas na grade que cada elemento em `values` possui.
             
+        end_id:
+            Array 1-D com o número de elementos a ser considerado em `coords`. Apenas os
+            seguintes elementos são considerados:
+            
+            >>> coords[layer_id, :end_id[layer_id]]
+
         Retorno:
         --------
         values_sum: ndarray
             Array com a soma dos valores que estão na mesma célula. 
             Seu shape é (N_l, N_c, [shape dos elementos em `values`]), em que N_l é o número de linhas 
             da grade e N_c o número de colunas.
+        '''
+        
+        '''
+        TODO: Existem problemas quando `coords` possui coordenadas fora da grade.
+        O índice -1 refere-se a coluna/linha antes da primeira e num_cols/num_rows 
+        refere-se a coluna/linha após a última. O problema existe pois `values_sum`
+        tem um shape de acordo com o shape da grade, sem considerar as linhas/colunas
+        que estão fora dos limites.
+
+        Possível solução:
+            Primeiramente concertar o shape de `values_sum`
+
+            v_shape[1:1+len(self.shape)] += 2
+
+            Como -1 é um dos índices das coordenadas fora da grape, o último
+            elemento de `values_sum[layer_id, ..., -1, ...]` se refere à célula fora da grade
+            que se encontra antes da primeira linha/coluna.
         '''
         if len(coords.shape) == 2:
             coords = self.adjust_shape(coords, arr_name="coords")
@@ -329,24 +374,27 @@ class RetangularGrid:
         values_sum = np.full(v_shape, fill_value=zero_value, dtype=values.dtype)
 
         layer_ids = list(range(coords.shape[0]))
-        for idx in range(coords.shape[1]):
-            values_sum[layer_ids, coords[:, idx, 1], coords[:, idx, 0]] += values[:, idx]
+        
 
-        # values_sum = np.zeros((values.shape[1], *reversed(self.shape[:2]), *self.shape[2:]), dtype=float)
-        # for idx, coord in enumerate(coords):
-        #     values_sum[:, coord[1], coord[0]] += values[idx]
+        if end_id is None:
+            for idx in range(coords.shape[1]):
+                values_sum[layer_ids, coords[:, idx, 1], coords[:, idx, 0]] += values[:, idx]
+        else:
+            for layer_id in layer_ids:
+                for idx, c in enumerate(coords[layer_id,:end_id[layer_id]]):
+                    values_sum[layer_id, c[1], c[0]] += values[layer_id, idx]
 
         return self.simplify_shape(values_sum)
 
-    def mean_by_cell(self, values: np.array, coords: np.array, count: np.array=None):
+    def mean_by_cell(self, values: np.array, coords: np.array, end_id=None, count: np.array=None):
         '''
         Mesma função de `self.sum_by_cell`, mas divide o resultado pela
         contagem de pontos em cada célula, assim realizando a média por célula.
         '''
-        values_mean = self.sum_by_cell(values, coords)
+        values_mean = self.sum_by_cell(values, coords, end_id=end_id)
         
         if count is None:
-            count = self.count(coords)
+            count = self.count(coords, end_id=end_id)
 
         non_zero_mask = count > 0
 

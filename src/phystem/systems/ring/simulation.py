@@ -42,7 +42,13 @@ class Simulation(SimulationCore):
         if pos.shape[0] > 0:
             creator_cfg.num_particles = pos.shape[1]
 
-        dynamic_cfg.adjust_area_pars(creator_cfg.num_particles)
+        if creator_cfg.num_particles != dynamic_cfg.num_particles:
+            raise ValueError((
+                f"O nº de partículas em dynamic_cfg ({dynamic_cfg.num_particles}) "
+                f"está diferente do nº de partículas em creator_cfg ({creator_cfg.num_particles})"
+            ))
+
+        # dynamic_cfg.adjust_area_pars(creator_cfg.num_particles)
 
     def get_creator(self) -> Creator:
         if self.run_cfg.id is RunType.REPLAY_DATA:

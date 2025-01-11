@@ -272,7 +272,8 @@ class Density(ColorBarableComp):
         self.active_rings = active_rings
 
         l, h = sim_configs["space_cfg"].length, sim_configs["space_cfg"].height
-        ring_d = utils.get_ring_radius(sim_configs["dynamic_cfg"].diameter, sim_configs["creator_cfg"].num_particles) * 2
+        ring_d = sim_configs["dynamic_cfg"].get_ring_radius() * 2
+        # ring_d = utils.get_ring_radius(sim_configs["dynamic_cfg"].diameter, sim_configs["creator_cfg"].num_particles) * 2
         num_rows = int(h/(ring_d * cell_shape[0]))
         num_cols = int(l/(ring_d * cell_shape[1]))
 

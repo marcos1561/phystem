@@ -1,4 +1,5 @@
 import numpy as np
+from math import atan
 from . import utils
 from .utils import RegularGrid
 
@@ -100,6 +101,19 @@ def get_area(rings: np.array):
     
     areas /= 2
     return areas
+
+def area_correct_term(n, spring_r, diameter):
+    '''
+    Termo de correção da área dos anéis. A área de um anel
+    é a área do polígono formado pelos centros de suas partículas (A_p)
+    mais a área das partículas que está fora desse polígono (A_c), essa
+    função retorna A_c.
+    '''
+    root_term = (diameter**2 - spring_r**2)**.5
+    t = np.pi/2 - atan(spring_r/root_term)
+    area_intersect = 1/4 * (diameter**2 * t - spring_r * root_term)
+
+    return n * np.pi / 4 * diameter**2 * (1 - (n-2)/(2*n)) - n * area_intersect
 
 class Density:
     def __init__(self, grid: RegularGrid):

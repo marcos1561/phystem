@@ -55,6 +55,7 @@ class ControlMng(ControlManagerCore):
         self.vars["show_f_obs"] = BooleanVar(value=self.graph_cfg.show_f_obs)
         self.vars["show_f_total"] = BooleanVar(value=self.graph_cfg.show_f_total)
         self.vars["show_f_invasion"] = BooleanVar(value=self.graph_cfg.show_f_invasion)
+        self.vars["show_f_creation"] = BooleanVar(value=self.graph_cfg.show_f_creation)
 
         # Other
         self.vars["circles_color"] = BooleanVar(value=self.graph_cfg.circle_cfg.color is None)
@@ -156,6 +157,7 @@ class Control(ControlCore):
             ("Obs", "show_f_obs"),
             ("Invasion", "show_f_invasion"),
             ("Total", "show_f_total"),
+            ("Flux", "show_f_creation"),
         ]:
             forces_widget.add(external_name, self.control_mng.vars[cfg_name],  lambda x=cfg_name: self.control_mng.show_component(x))
 

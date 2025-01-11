@@ -121,3 +121,14 @@ class DenVelData(BaseData):
 
         self.num_vel_points = self.num_data_points_per_file * (self.vel_num_files - 1) + self.vel_data.get_file(self.vel_num_files-1).num_points
         self.num_den_points = self.num_data_points_per_file * (self.den_num_files - 1) + self.den_data.get_file(self.den_num_files-1).num_points
+
+class AreaData(BaseData):
+    def __init__(self, root_path: Path, data_dirname="data") -> None:
+        super().__init__(root_path, data_dirname)
+
+        with open(self.data_path / "data.pickle", "rb") as f:
+            data = pickle.load(f)
+        
+        self.times = data["times"]
+        self.areas = data["areas"]
+        self.pos = data["pos"]

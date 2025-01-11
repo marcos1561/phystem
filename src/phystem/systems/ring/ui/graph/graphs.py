@@ -13,7 +13,7 @@ from matplotlib.colors import Normalize
 
 from phystem.systems.ring.solvers import CppSolver, SolverReplay
 from phystem.systems.ring.configs import SpaceCfg, StokesCfg
-from phystem.systems.ring import utils
+from phystem.systems.ring import utils, rings_quantities
 
 from .graphs_cfg import SimpleGraphCfg, ReplayGraphCfg, ForceName
 from .graph_components import *
@@ -100,14 +100,18 @@ class ParticleInfoWindow(tk.Toplevel):
         self.bind("<Destroy>", self.on_destroy)
 
     def update(self, ring_id, p_id):
+        dynamic_cfg: RingCfg = self.sim_configs['dynamic_cfg']
+
         ring_area = self.solver.area_debug.area[ring_id]
-        ring_rel_area = ring_area / self.sim_configs['dynamic_cfg'].area0
+        ring_rel_area = ring_area / dynamic_cfg.area0
         pos = self.solver.pos[ring_id][p_id]
         area_force = self.solver.area_forces[ring_id][p_id]
         spring_force = self.solver.spring_forces[ring_id][p_id]
         vol_force = self.solver.vol_forces[ring_id][p_id]
         self_prop_vel = self.solver.self_prop_vel[ring_id]
         
+        ring_area += rings_quantities.area_correct_term(dynamic_cfg.num_particles, dynamic_cfg.spring_r, dynamic_cfg.diameter)  
+
         def format_vec(vec, decimal_places=3):
             return f"{round(vec[0], decimal_places)}, {round(vec[1], decimal_places)}"
 

@@ -16,7 +16,7 @@ class DenVelCol(RingCol):
         velocity = auto()
         density = auto()
     
-    def __init__(self, xlims, vel_dt, density_dt, vel_frame_dt, 
+    def __init__(self, xlims, vel_dt, density_dt, vel_frame_dt,
         solver: CppSolver, root_path: Path, configs: dict, 
         transient_time=0, memory_per_file=10*1e6,
         autosave_cfg: ColAutoSaveCfg = None, to_load_autosave=False, exist_ok=False) -> None:
@@ -79,8 +79,7 @@ class DenVelCol(RingCol):
 
         l = xlims[1] - xlims[0]
         h = configs["space_cfg"].height
-        ring_r = utils.get_ring_radius(
-            configs["dynamic_cfg"].diameter, configs["creator_cfg"].num_particles)
+        ring_r = configs["dynamic_cfg"].get_ring_radius() 
         
         num_max_rings = int(l * h / (np.pi * ring_r**2) * 2)
         self.density_eq = l * h / (np.pi * ring_r**2)

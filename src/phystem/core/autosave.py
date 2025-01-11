@@ -27,12 +27,9 @@ class AutoSavable():
         state_name=settings.autosave_state_name) -> None:
         '''
         Parâmetros:
-            root_dir:
-                Pasta raiz que contém a pasta raiz do auto-salvamento.
-            
-            automatic_load:
-                Carregar o auto-save nesse inicializador quando
-                configurado.
+        -----------
+        root_path:
+            Caminho onde será salvo o autosave.
         '''
         root_path = Path(root_path)
         

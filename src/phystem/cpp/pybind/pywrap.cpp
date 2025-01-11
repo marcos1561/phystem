@@ -206,6 +206,7 @@ PYBIND11_MODULE(cpp_lib, m) {
         .def("get_particle_id", &Ring::get_particle_id, py::call_guard<py::gil_scoped_release>())
         .def_readwrite("sim_time", &Ring::sim_time, byref)
         .def_readwrite("num_time_steps", &Ring::num_time_steps, byref)
+        // .def_readwrite("stokes_spawn_pos", &Ring::stokes_spawn_pos, byref)
         .def_readonly("num_max_rings", &Ring::num_max_rings, byref)
         .def_readonly("num_particles", &Ring::num_particles, byref)
         .def_readonly("num_active_rings", &Ring::num_active_rings, byref)

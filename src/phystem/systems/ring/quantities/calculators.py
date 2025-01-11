@@ -9,7 +9,7 @@ from phystem.core import settings
 from phystem.core.autosave import AutoSavable
 from phystem.systems.ring import utils
 from phystem.systems.ring.collectors import data_types
-from .datas import BaseData, DeltaData, DenVelData
+from .datas import BaseData, DeltaData, DenVelData, AreaData
 
 class CalcAutoSaveCfg:
     def __init__(self, freq: int) -> None:
@@ -19,6 +19,23 @@ class Calculator(AutoSavable, ABC):
     DataT: BaseData
 
     def __init__(self, data: BaseData, root_path: Path, autosave_cfg: CalcAutoSaveCfg=None, exist_ok=False) -> None:
+        '''
+        Base dos calculadores de quantidades.
+
+        Parâmetros:
+        -----------
+        data:
+            Objeto contendo os dados do cálculo ou o caminho onde esses dados estão.
+        
+        root_path:
+            Caminho onde os resultados serão salvos.
+        
+        autosave_cfg:
+            Configurações de auto-salvamento. Se for `None` não será feito auto-salvamentos.
+
+        exist_ok:
+            Parâmetro passado para as chamadas de `Path.mkdir()`.
+        '''
         self.root_path = Path(root_path)
         if settings.IS_TESTING:
             self.root_path.mkdir(parents=True, exist_ok=True)
@@ -309,7 +326,7 @@ class VelocityCalculator(Calculator):
             vels = (cms2 - cms1)/data.vel_frame_dt
             
             coords = self.grid.coords(cms1)
-            cell_vel = self.grid.mean_by_cell(vels, coords)
+            cell_vel = self.grid.mean_by_cell(vels, coords, end_id=vels_cms.point_num_elements)
 
             self.cell_vel_mean += cell_vel.sum(axis=0)
             self.num_points += cell_vel.shape[0]
@@ -367,7 +384,7 @@ class DensityCalculator(Calculator):
 
             cms = vels_cms.data[:,:,:2]
             coords = self.grid.coords(cms)
-            count = self.grid.count(coords)
+            count = self.grid.count(coords, end_id=vels_cms.point_num_elements)
 
             self.cell_den_mean += count.sum(axis=0)
             self.num_points += count.shape[0]
@@ -378,6 +395,8 @@ class DensityCalculator(Calculator):
         if self.den_eq is not None:
             den_eq = self.grid.cell_area * self.den_eq 
             self.cell_den_mean = self.cell_den_mean / den_eq - 1
+        else:
+            self.cell_den_mean /= self.grid.cell_area
         
         if to_save:
             np.save(self.root_path / "den.npy", self.cell_den_mean)
@@ -467,4 +486,59 @@ class TextureCalc(Calculator):
             metadata = yaml.unsafe_load(f)
 
         return TextureResults(grid, texture, metadata)
+
+class AreaCalculator(Calculator):
+    DataT = AreaData
+    data: AreaData
+
+    def __init__(self, data: AreaData, root_path: Path,
+        grid: utils.RegularGrid,
+        autosave_cfg: CalcAutoSaveCfg = None, exist_ok=False) -> None:
+        "Calcula a área média dos anéis dentro das células da grade `grid`."
+        super().__init__(data, root_path, autosave_cfg, exist_ok)
+        self.grid = grid
+
+        self.num_points = 0
+        self.next_frame_id = 0
+        self.num_points = 0
+        self.cell_area_mean = np.zeros(self.grid.shape_mpl, dtype=float)
+        
+        self.grid.save_configs(self.root_path / "grid_configs.yaml")
+
+    def crunch_numbers(self, to_save=False):
+        for idx in range(self.num_points, len(self.data.areas)):
+            areas = self.data.areas[idx]
+            cms = self.data.pos[idx]
+            
+            coords = self.grid.coords(cms)
+            cell_area = self.grid.mean_by_cell(areas, coords)
+
+            self.cell_area_mean += cell_area
+            self.num_points += 1
+            self.next_frame_id += 1
+
+        self.cell_area_mean /= self.num_points
+        if to_save:
+            np.save(self.root_path / "areas.npy", self.cell_area_mean)
+            with open(self.root_path / "metadata.yaml", "w") as f:
+                yaml.dump({
+                    "num_points": self.num_points,
+                }, f) 
     
+    @staticmethod
+    def load_data(path):
+        path = Path(path)
+        
+        class AreaResults:
+            def __init__(self, grid: utils.RegularGrid, cell_area: np.ndarray, metadata: dict) -> None:
+                self.grid = grid
+                self.cell_area = cell_area
+                self.metadata = metadata  
+
+        grid = utils.RegularGrid.load(path / "grid_configs.yaml")
+        cell_area = np.load(path / "areas.npy")
+        
+        with open(path / "metadata.yaml") as f:
+            metadata = yaml.unsafe_load(f)
+
+        return AreaResults(grid, cell_area, metadata)

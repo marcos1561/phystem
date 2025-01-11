@@ -221,6 +221,7 @@ public:
     vector<vector<array<int, 2>>> create_rings_win_ids;
     vector<bool> to_create_new_ring;
     vector<array<int, 2>> begin_windows_ids;
+    // Vector2d stokes_spawn_pos;
     vector<Vector2d> stokes_init_pos;
     double stokes_init_self_angle;
     int num_created_rings;

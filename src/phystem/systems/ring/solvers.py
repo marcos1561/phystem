@@ -22,7 +22,7 @@ class CppSolver:
         if int_cfg.in_pol_checker is None:
             int_cfg.in_pol_checker = InPolCheckerCfg(3, 3, 1, 1, True)
 
-        dynamic_cfg = cpp_lib.configs.RingCfg(dynamic_cfg.cpp_constructor_args())
+        dynamic_cfg_cpp = cpp_lib.configs.RingCfg(dynamic_cfg.cpp_constructor_args())
         
         if stokes_cfg is not None:
             stokes_cfg = cpp_lib.configs.StokesCfgPy(stokes_cfg.cpp_constructor_args())
@@ -58,7 +58,7 @@ class CppSolver:
         self.cpp_solver = cpp_lib.solvers.Ring(
             pos, self_prop_angle, 
             num_particles,
-            dynamic_cfg, 
+            dynamic_cfg_cpp, 
             space_cfg.height, 
             space_cfg.length, 
             int_cfg.dt, 
@@ -70,6 +70,10 @@ class CppSolver:
             rng_seed, 
         )
         
+        # self.cpp_solver.stokes_spawn_pos = cpp_lib.data_types.PosVec(
+        #     dynamic_cfg.ring_spawn_pos()
+        # )
+
         update_type_to_func = {
             UpdateType.PERIODIC_NORMAL: self.cpp_solver.update_normal,
             UpdateType.PERIODIC_WINDOWS: self.cpp_solver.update_windows,
