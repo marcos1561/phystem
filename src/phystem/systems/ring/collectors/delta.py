@@ -87,7 +87,7 @@ class DeltaCol(collectors.RingCol):
         self.xtol = xtol
         self.save_final_close = save_final_close
 
-        self.ring_diameter = utils.get_ring_radius(
+        self.ring_diameter = utils.ring_radius(
             configs["dynamic_cfg"].diameter, configs["creator_cfg"].num_particles) * 2
         self.xlims_extended = (xlims[0] - xtol*self.ring_diameter, xlims[1] + xtol*self.ring_diameter)
         
@@ -293,7 +293,7 @@ class DeltaColTime(collectors.RingCol):
         self.xtol = xtol
         self.save_final_close = save_final_close
 
-        self.ring_diameter = utils.get_ring_radius(
+        self.ring_diameter = utils.ring_radius(
             configs["dynamic_cfg"].diameter, configs["creator_cfg"].num_particles) * 2
         self.xlims_extended = (xlims[0] - xtol*self.ring_diameter, xlims[1] + xtol*self.ring_diameter)
         

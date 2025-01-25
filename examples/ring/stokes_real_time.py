@@ -14,7 +14,7 @@ dynamic_cfg = RingCfg(
     
     area_potencial="target_area",
     k_area=4,
-    p0=ring.utils.get_equilibrium_p0(creator_cfg.num_particles),
+    p0=ring.utils.equilibrium_p0(creator_cfg.num_particles),
 
     k_invasion = 11,
     
@@ -31,7 +31,7 @@ dynamic_cfg = RingCfg(
     rot_diff=0.3,
 )
 
-radius = ring.utils.get_ring_radius(dynamic_cfg.diameter, creator_cfg.num_particles)
+radius = ring.utils.ring_radius(dynamic_cfg.diameter, creator_cfg.num_particles)
 
 space_cfg = SpaceCfg(
     height=4 * 2*radius,

@@ -277,6 +277,11 @@ class Density(ColorBarableComp):
         num_rows = int(h/(ring_d * cell_shape[0]))
         num_cols = int(l/(ring_d * cell_shape[1]))
 
+        if num_rows == 0:
+            num_rows = 1
+        if num_cols == 0:
+            num_cols = 1
+
         print(f"grid_shape: {num_rows}, {num_cols}")
         self.density_eq = cell_shape[0]*cell_shape[1]
         self.density_calc = rings_quantities.Density(utils.RegularGrid(l, h, num_cols, num_rows))

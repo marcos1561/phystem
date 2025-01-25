@@ -98,29 +98,51 @@ class CreationRateData(BaseData):
         self.num_created = np.load(self.data_path / "num_created.npy")[:num_points]
         self.num_active = np.load(self.data_path / "num_active.npy")[:num_points]
 
+class PolData(BaseData):
+    def __init__(self, root_path: Path) -> None:
+        '''
+        Carrega os dados da polarização coletados pelo coletor `DensityVelCol`. 
+        Para mais informações sobre o formato dos dados, leia a 
+        documentação do respectivo coletor.
+        '''
+        super().__init__(root_path)
+        self.pol_time = np.load(self.data_path / "pol_time.npy")
+        self.pol_data = MultFileList[ArraySizeAware, np.ndarray](self.data_path, "pol") 
+        self.cms_data = MultFileList[ArraySizeAware, np.ndarray](self.data_path, "den_cms") 
+
 class DenVelData(BaseData):
     def __init__(self, root_path: Path) -> None:
-        '''Carrega os dados coletados pelo coletor `DensityVelCol`. Para mais informações
+        '''
+        Carrega os dados coletados pelo coletor `DensityVelCol`. Para mais informações
         sobre o formato dos dados, leia a documentação do respectivo coletor.
         '''
         super().__init__(root_path)
 
         self.vel_time = np.load(self.data_path / "vel_time.npy")
+        try:
+            self.vel2_time = np.load(self.data_path / "vel2_time.npy")
+        except FileNotFoundError as e:
+            self.vel2_time = None
+        
         self.den_time = np.load(self.data_path / "den_time.npy")
+        # self.pol_time = np.load(self.data_path / "pol_time.npy")
 
+        self.den_data = MultFileList[ArraySizeAware, np.ndarray](self.data_path, "den_cms") 
+        self.vel_data = MultFileList[ArraySizeAware, np.ndarray](self.data_path, "vel_cms")
+        
         with open(self.data_path / "den_vel_metadata.yaml", "r") as f:
             metadata = yaml.unsafe_load(f)
-            self.vel_num_files = metadata["vel_num_files"]
-            self.den_num_files = metadata["den_num_files"]
-            self.num_data_points_per_file = metadata["num_data_points_per_file"]
+            self.total_num_data_points_per_file = metadata["num_data_points_per_file"]
             self.vel_frame_dt = metadata["vel_frame_dt"]    
             self.density_eq = metadata["density_eq"]    
 
-        self.den_data = MultFileList[ArraySizeAware, np.ndarray](self.data_path, "den_cms", self.den_num_files, self.num_data_points_per_file) 
-        self.vel_data = MultFileList[ArraySizeAware, np.ndarray](self.data_path, "vel_cms", self.vel_num_files, self.num_data_points_per_file)
+        self.vel_num_files = self.vel_data.num_files
+        self.den_num_files = self.den_data.num_files
+        self.num_vel_points = len(self.vel_data)
+        self.num_den_points = len(self.den_data)
 
-        self.num_vel_points = self.num_data_points_per_file * (self.vel_num_files - 1) + self.vel_data.get_file(self.vel_num_files-1).num_points
-        self.num_den_points = self.num_data_points_per_file * (self.den_num_files - 1) + self.den_data.get_file(self.den_num_files-1).num_points
+        # self.num_vel_points = self.total_num_data_points_per_file * (self.vel_num_files - 1) + self.vel_data.get_file(self.vel_num_files-1).num_points
+        # self.num_den_points = self.total_num_data_points_per_file * (self.den_num_files - 1) + self.den_data.get_file(self.den_num_files-1).num_points
 
 class AreaData(BaseData):
     def __init__(self, root_path: Path, data_dirname="data") -> None:

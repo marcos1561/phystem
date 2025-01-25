@@ -229,6 +229,13 @@ public:
     double create_border;
     double remove_border;
 
+    vector<double> stokes_flux_force_y;
+
+    std::mt19937 stokes_gen;
+    std::uniform_real_distribution<> stokes_vel_dist;
+
+
+
     // Invagination
     std::map<int, double> inv_spring_k;
     std::map<int, bool> inv_is_rfix;
@@ -356,7 +363,7 @@ public:
         steps_after_resolved = in_pol_checker_cfg.steps_after;
 
         if (update_type == RingUpdateType::stokes) {
-            init_stokes();
+            init_stokes(seed);
         }
         
         #if DEBUG == 1
@@ -447,7 +454,7 @@ public:
         #endif
     }
 
-    void init_stokes() {
+    void init_stokes(int seed) {
         /** Inicializa os dados relacionados ao fluxo de stokes */
         
         // Limite no eixo x da região de criação/remoção de novos anéis.
@@ -498,6 +505,8 @@ public:
 
         // Cálculo da posição e do ângulo da velocidade autopropulsora
         // utilizados na criação dos anéis.
+        stokes_flux_force_y = vector<double>(num_max_rings);
+
         Vector2d stokes_init_pos_i(num_particles);
         double angle = M_PI * 2. / num_particles;
         for (int ring_i = 0; ring_i < n; ring_i++)
@@ -517,18 +526,11 @@ public:
             stokes_init_pos.push_back(stokes_init_pos_i);
         }
         
-        
-        // int num_angles = 10;
-        // std::random_device dev;
-        // std::mt19937 rng(dev());
-        // std::uniform_int_distribution<std::mt19937::result_type> int_dist(1, num_angles); // distribution in range [1, 6]
-
-        // for (int i = 0; i < num_angles; i++)
-        // {
-        //     double angle = -M_PI/2. + (double)i/(double)(num_angles-1) * M_PI;
-        //     stokes_init_self_angle.push_back(angle);
-        // }
-        stokes_init_self_angle = 0.0;
+        if (seed == -1) {
+            seed = std::random_device{}();
+        }
+        stokes_gen = std::mt19937(seed);
+        stokes_vel_dist = std::uniform_real_distribution<>(-stokes_cfg.vel_dispersion, stokes_cfg.vel_dispersion);
 
         /**
          * Cálculo das janelas que contém a região onde os anéis são criados.
@@ -651,7 +653,10 @@ public:
                 unique_rings_ids[i] = unique_id_mng.new_id();
                 pos[i] = stokes_init_pos[add_ring_id];
                 
-                self_prop_angle[i] = stokes_init_self_angle;
+                // self_prop_angle[i] = stokes_init_self_angle;
+                float angle = stokes_vel_dist(stokes_gen);
+                self_prop_angle[i] = angle;
+                stokes_flux_force_y[i] = stokes_cfg.flux_force * tan(angle);
 
                 mask[i] = true;
                 num_active_rings += 1;
@@ -1337,9 +1342,11 @@ public:
                     // Flux force
                     if (p_pos[0] < max_create_border) {
                         sum_forces_matrix[ring_id][spring_id][0] += stokes_cfg.flux_force;
+                        sum_forces_matrix[ring_id][spring_id][1] += stokes_flux_force_y[ring_id];
 
                         #if DEBUG == 1
                         creation_forces[ring_id][spring_id][0] = stokes_cfg.flux_force;
+                        creation_forces[ring_id][spring_id][1] = stokes_flux_force_y[ring_id];
                         #endif
                     }
                     

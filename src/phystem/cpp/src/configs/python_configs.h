@@ -74,6 +74,7 @@ public:
         
         create_length = py::float_(values["create_length"]);
         remove_length = py::float_(values["remove_length"]);
+        vel_dispersion = py::float_(values["vel_dispersion"]);
         
         flux_force = py::float_(values["flux_force"]);
         obs_force = py::float_(values["obs_force"]);

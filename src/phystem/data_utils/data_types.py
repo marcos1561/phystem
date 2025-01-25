@@ -5,7 +5,8 @@ from typing import TypeVar, Generic
 
 class ArraySizeAware:
     def __init__(self, num_data_points: int, max_num_els: int, num_dims: int, dtype=np.float32) -> None:
-        '''Array com shape (num_data_points, max_num_els, num_dims) que está ciente do 
+        '''
+        Array com shape (num_data_points, max_num_els, num_dims) que está ciente do 
         seu tamanho na segunda dimensão (max_num_els). 
         O valor `x = self.data[i]` é considerado o i-ésimo ponto de dados e o valor 
         `n = self.point_num_elements[i]` informa quantos elementos exitem nesse ponto, 
@@ -21,7 +22,8 @@ class ArraySizeAware:
         self.current_id = 0
 
     def add(self, data: np.array):
-        '''Adiciona um novo ponto de dados no array. `data` deve
+        '''
+        Adiciona um novo ponto de dados no array. `data` deve
         ter o shape (max_num_els, num_dims).
         '''
         self.update(self.current_id, data)
@@ -80,26 +82,32 @@ class ArraySizeAware:
     def is_full(self):
         return self.current_id >= self.data.shape[0]
 
+    @classmethod
+    def empty(Cls):
+        return Cls(0, 0, 0)
+
 ListT = TypeVar('ListT')
 ItemT = TypeVar('ItemT')
 class MultFileList(Generic[ListT, ItemT]):
-    def __init__(self, root_path: Path, name: str, num_files, num_data_points_per_file) -> None:
+    def __init__(self, root_path: Path, name: str) -> None:
         '''
         Iterador e indexador de uma lista de dados que está distribuída em vários arquivos.
 
         Os arquivos devem estar no caminho `root_path` e o nome do i-ésimo arquivo 
         deve ser "{name}_{i}.pickle". Cada arquivo deve conter uma fatia da lista
-        com `num_data_points_per_file` elementos.
+        com um número fixo de elementos.
         '''
-        self.num_files = num_files
-        self.root_path = root_path
+        self.root_path = Path(root_path)
         self.name = name
-        self.num_data_points_per_file = num_data_points_per_file
+        self.num_files = len(list(self.root_path.glob(f"{self.name}_[0-9]*")))
+        
+        self.data = self._load_file(0)
+        self.num_data_points_per_file = len(self.data)
+        # self.num_data_points_per_file = self.data.data.shape[0]
 
         self._id = 0
         self._file_id = 0
-        self._num_total_points = (num_files - 1) * num_data_points_per_file + len(self._load_file(num_files-1))
-        self.data = self._load_file(0)
+        self._num_total_points = (self.num_files - 1) * self.num_data_points_per_file + len(self._load_file(self.num_files-1))
 
     def _reset(self):
         self._id = 0
@@ -141,7 +149,12 @@ class MultFileList(Generic[ListT, ItemT]):
 
     def __next__(self) -> ItemT:
         fid, pid = self._get_ids(self._id)
-        self.file_id = fid
+        
+        if fid < self.num_files:
+            self.file_id = fid
+        else:
+            self._reset()
+            raise StopIteration
 
         if self.file_id == (self.num_files - 1) and pid >= len(self.data):
             self._reset()
@@ -153,3 +166,11 @@ class MultFileList(Generic[ListT, ItemT]):
     
     def __len__(self):
         return self._num_total_points
+    
+if __name__ == "__main__":
+    a = MultFileList[ArraySizeAware, np.ndarray](
+        "/home/marcos/Documents/Programacao/IC/phystem/experiments/ring/density_profile/data/den_vel_test/den_vel/data",
+        "den_cms")
+    
+    for idx, i in enumerate(a):
+        print(idx, i.shape)

@@ -58,7 +58,7 @@ class ControlCore():
                         length=150)
 
         advance_button = ttk.Button(main_frame, command=self.control_mng.advance_once_callback,
-            text="Próximo Frame", width=20)
+            text="Next Frame", width=20)
 
         div = ttk.Separator(main_frame)
 

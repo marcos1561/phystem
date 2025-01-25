@@ -36,7 +36,7 @@ creator_cfg = CreatorCfg(
     r = None, angle = [], center = [],
 )
 
-radius = utils.get_ring_radius(dynamic_cfg.diameter, creator_cfg.num_particles) 
+radius = utils.ring_radius(dynamic_cfg.diameter, creator_cfg.num_particles) 
 
 space_cfg = SpaceCfg(
     height = 7 * 2*radius,

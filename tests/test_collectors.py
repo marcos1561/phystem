@@ -75,7 +75,7 @@ class TestRingCols(unittest.TestCase):
         configs = load_configs(configs_path)
         run_cfg: CollectDataCfg = configs["run_cfg"]
         dynamic_cfg = configs["dynamic_cfg"]
-        radius = utils.get_ring_radius(
+        radius = utils.ring_radius(
             p_diameter = dynamic_cfg.diameter,
             num_particles = configs["creator_cfg"].num_p,
         )

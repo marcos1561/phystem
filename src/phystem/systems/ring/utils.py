@@ -2,21 +2,22 @@ from scipy.spatial import Voronoi
 from scipy.optimize import fsolve
 import numpy as np
 import yaml
-from math import cos, pi
+from math import atan, sin, cos, pi
 from pathlib import Path
 from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection
 
-def get_ring_radius(diameter, k_a, k_m, a0, spring_r, num_particles):
+def ring_radius(diameter, k_a, k_m, a0, spring_r, num_particles):
     '''
-    Raio de equilíbrio do anel. É calculado assumindo sua área de equilíbrio
-    e estendendo seu raio até a borda das partículas ((A_eq / pi)**.5 + diameter/2).
+    Raio de equilíbrio do anel, indo do centro até a borda externa das partículas. 
+    É calculado assumindo sua área de equilíbrio.
     '''
     # return p_diameter / (2 * (1 - cos(2*pi/(num_particles))))**.5
-    area_eq = get_equilibrium_area(k_a, k_m, a0, spring_r, num_particles)
-    return (area_eq / np.pi)**(.5) + diameter/2
+    area_eq = equilibrium_area(k_a, k_m, a0, spring_r, num_particles)
+    particle_radius = (2 * area_eq / (num_particles * sin(2 * pi / num_particles)))**.5
+    return particle_radius + diameter/2
 
-def get_second_order_neighbors_dist(num_particles, lo):
+def second_order_neighbors_dist(num_particles, lo):
     '''
     Dado um anel com `num_particles` partículas, cujas molas possuem
     comprimento `lo`, retorna a distância entre partículas que estão
@@ -26,7 +27,7 @@ def get_second_order_neighbors_dist(num_particles, lo):
     theta = np.pi * (1- 2/num_particles)
     return lo * (2*(1-np.cos(theta)))**.5    
 
-def get_equilibrium_spring_l(num_particles, area0):
+def equilibrium_spring_l(num_particles, area0):
     '''
     Retorna o comprimento que as molas devem ter para que a área de equilíbrio
     de um anel com `num_particles`, apenas considerando as molas, seja a mesma
@@ -35,7 +36,7 @@ def get_equilibrium_spring_l(num_particles, area0):
     theta = np.pi * 2 / num_particles
     return 2 * (area0 / num_particles * (1 - np.cos(theta)) / np.sin(theta))**.5
 
-def get_equilibrium_p0(num_particles):
+def equilibrium_p0(num_particles):
     '''
     Retorna o p0 em que `area0` é igual a área de equilíbrio
     apenas considerando as molas.
@@ -43,7 +44,7 @@ def get_equilibrium_p0(num_particles):
     theta = 2 * np.pi / num_particles
     return 2 * (num_particles * (1 - np.cos(theta))/np.sin(theta))**.5
 
-def get_invasion_equilibrium_config(k_r, k_m, k_a, lo, ro, area0, relative_area_eq, vo, mu):
+def invasion_equilibrium_config(k_r, k_m, k_a, lo, ro, area0, relative_area_eq, vo, mu):
     '''
     Retorna a configuração de equilíbrio no pior cenário de invasão entre anéis. 
     
@@ -103,9 +104,13 @@ def get_invasion_equilibrium_config(k_r, k_m, k_a, lo, ro, area0, relative_area_
     r =  fsolve(func, [10/180 * np.pi, lo], maxfev=500)
     return r, func(r)
 
-def get_equilibrium_relative_area(k_a, k_m, a0, spring_r, num_particles):
-    "Retorna a área de equilíbrio em relação a `a0` (a_eq / a0)."
-    p0_lim = get_equilibrium_p0(num_particles)
+def equilibrium_relative_area(k_a, k_m, a0, spring_r, num_particles):
+    '''
+    Retorna a área de equilíbrio em relação a `a0` (a_eq / a0).
+    Essa área é apenas a área do polígono formado pelos centros das
+    partículas do anel.
+    '''
+    p0_lim = equilibrium_p0(num_particles)
     a0_lim = (num_particles * spring_r / p0_lim)**2 
 
     if a0 < a0_lim:
@@ -131,10 +136,24 @@ def get_equilibrium_relative_area(k_a, k_m, a0, spring_r, num_particles):
 
     return fsolve(func, 0.5)[0]
 
-def get_equilibrium_area(k_a, k_m, a0, spring_r, num_particles):
-    return get_equilibrium_relative_area(k_a, k_m, a0, spring_r, num_particles) * a0
+def equilibrium_area(k_a, k_m, a0, spring_r, num_particles):
+    "Área de equilíbrio do polígono formado pelos centros das partículas do anel."
+    return equilibrium_relative_area(k_a, k_m, a0, spring_r, num_particles) * a0
 
-def get_max_k_adh(adh_size, dt, k_a, area0, lo, relative_area, mu, vo, x=1):
+def particles_area(n, spring_r, diameter):
+    '''
+    Contribuição das partículas na área dos anéis.
+    A área de um anel é a área do polígono formado pelos centros de suas partículas (A_p),
+    mais a área das partículas que está fora desse polígono (A_c), essa
+    função retorna A_c.
+    '''
+    root_term = (diameter**2 - spring_r**2)**.5
+    t = np.pi/2 - atan(spring_r/root_term)
+    area_intersect = 1/4 * (diameter**2 * t - spring_r * root_term)
+
+    return n * np.pi / 4 * diameter**2 * (1 - (n-2)/(2*n)) - n * area_intersect
+
+def max_k_adh(adh_size, dt, k_a, area0, lo, relative_area, mu, vo, x=1):
     '''
     Retorna o valor máximo de `k_adh` em relação a problemas numéricos. `x` deve
     ser um valor entre 0 e 1 utilizada para definir em qual ponto da região de
@@ -150,9 +169,6 @@ def pos_to_mpl_scatter(pos):
     pelo `scatter` do matplotlib.
     '''
     return pos.reshape(pos.shape[0] * pos.shape[1], pos.shape[2]).T
-
-def num_rings_in_rect(ring_diameter: float, space_cfg):
-    raise Exception("Use o método em SpaceCfg para isso.")
 
 def same_rings(pos1, ids1, pos2, ids2, return_common_ids=False):
     '''
@@ -194,10 +210,21 @@ def ring_spawn_pos(diameter, k_a, k_m, a0, spring_r, num_particles):
     pos: ndarray com shape (num_particles, 2)
         Posições das partículas do anel.
     '''
-    ring_radius = get_ring_radius(diameter, k_a, k_m, a0, spring_r, num_particles)
+    ring_radius = ring_radius(diameter, k_a, k_m, a0, spring_r, num_particles)
     angles = np.arange(0, np.pi*2, np.pi*2/num_particles)
     ring_pos = np.array([np.cos(angles), np.sin(angles)]) * ring_radius
     return ring_pos.T
+
+def time_to_num_dt(time, dt):
+    '''
+    Dado um intervalo de tempo `time`, retorna o menor `num_dt` tal que
+    `num_dt * dt >= time` 
+    '''
+    num_dt = time // dt
+    if dt * num_dt < time:
+        num_dt += 1
+
+    return int(num_dt)
 
 class RetangularGrid:
     def __init__(self, edges: tuple[np.ndarray]) -> None:
@@ -230,12 +257,15 @@ class RetangularGrid:
             self.dim_cell_center.append((self.edges[dim][1:] + self.edges[dim][:-1])/2)
             self.dim_cell_size.append(self.edges[dim][1:] - self.edges[dim][:-1])
 
-        # Quantidade de células em cada dimensão
+        # Quantidade de células em cada dimensão.
+        # `shape_t` é o shape considerando as células fora da grade.
         self.shape = (self.edges[0].size-1, self.edges[1].size-1) 
-        
+        self.shape_t = tuple(s + 2 for s in self.shape)
+
         # Quantidade de células em cada dimensão, ordenados
         # na forma geralmente utilizada pelo matplotlib
         self.shape_mpl = (self.shape[1], self.shape[0])
+        self.shape_mpl_t = tuple(s + 2 for s in self.shape_mpl)
 
         # Centro das células em cada dimensão
         self.dim_cell_center = []
@@ -288,7 +318,18 @@ class RetangularGrid:
         '''
         return coords[np.logical_not(self.get_out_mask(coords))]
 
-    def count(self, coords: np.ndarray, end_id: np.ndarray=None):
+    def remove_cells_out_of_bounds(self, data, many_layers=False):
+        '''
+        Dado o array `data` de dados da grade, ou seja, com shape (num_lines, num_cols, ...),
+        retira as células que estão fora da grade. Se `data` possui várias camadas, o parâmetro
+        `many_layers` dever ser `True`.
+        '''
+        if many_layers:
+            return  data[:, :-2, :-2]
+        else:
+            return  data[:-2, :-2]
+
+    def count(self, coords: np.ndarray, end_id: np.ndarray=None, remove_out_of_bounds=False, simplify_shape=False):
         '''
         Contagem da quantidade de pontos em cada célula da grade, dado as coordenadas dos pontos
         na grade `coords`.
@@ -307,7 +348,8 @@ class RetangularGrid:
         '''
         coords = self.adjust_shape(coords, arr_name="coords")
 
-        count_grid = np.zeros((coords.shape[0], *self.shape), dtype=int)
+        count_grid_shape = [coords.shape[0], *[i+2 for i in self.shape]]
+        count_grid = np.zeros(count_grid_shape, dtype=int)
         for idx, coords_i in enumerate(coords):
             if end_id is not None:
                 coords_i = coords_i[:end_id[idx]]
@@ -317,9 +359,16 @@ class RetangularGrid:
 
         count_grid = np.transpose(count_grid, axes=(0, 2, 1))
 
-        return self.simplify_shape(count_grid)
+        if remove_out_of_bounds:
+            count_grid = self.remove_cells_out_of_bounds(count_grid, many_layers=True)
 
-    def sum_by_cell(self, values: np.array, coords: np.array, end_id: np.ndarray=None, zero_value=0):
+        if simplify_shape:
+            count_grid = self.simplify_shape(count_grid)
+        
+        return count_grid
+
+    def sum_by_cell(self, values: np.array, coords: np.array, end_id: np.ndarray=None, zero_value=0, 
+        remove_out_of_bounds=False, simplify_shape=False):
         '''
         Soma dos valores que estão na mesma célula (possuem a mesma coordenada) da grade. 
         Cada elemento em `values` possui uma coordenada na grade associada em `coords`.
@@ -341,12 +390,28 @@ class RetangularGrid:
             
             >>> coords[layer_id, :end_id[layer_id]]
 
+        remove_out_of_bounds:
+            Se for `True`, remove as células fora da grade antes de retornar o resultado.
+
+        simplify_shape:
+            Se for `True`, simplifica o shape do resultado. O shape é simplificado se ele apenas
+            possui uma única camada.
+
         Retorno:
         --------
         values_sum: ndarray
             Array com a soma dos valores que estão na mesma célula. 
-            Seu shape é (N_l, N_c, [shape dos elementos em `values`]), em que N_l é o número de linhas 
-            da grade e N_c o número de colunas.
+            Se `remove_out_of=True`, seu shape é:
+            
+            (N_l, N_c, [shape dos elementos em `values`])
+            
+            em que N_l é o número de linhas da grade e N_c o número de colunas.
+            Caso `remove_out_of=False`, seu shape é:
+            
+            (N_l + 2, N_c + 2, [shape dos elementos em `values`])
+
+            nesse caso o índice -1 se refere a linha/coluna antes da primeira linha/coluna,
+            e o índice N_l/N_c se refere a linha/coluna logo depois da última linha/coluna.
         '''
         
         '''
@@ -370,11 +435,13 @@ class RetangularGrid:
             order = len(values.shape)
             values = self.adjust_shape(values, expected_order=order)
 
-        v_shape = (values.shape[0], *reversed(self.shape[:2]), *self.shape[2:], *values.shape[2:])
+        v_shape = [values.shape[0], *reversed(self.shape[:2]), *self.shape[2:], *values.shape[2:]]
+        for idx in range(1, 1+len(self.shape)):
+            v_shape[idx] += 2
+
         values_sum = np.full(v_shape, fill_value=zero_value, dtype=values.dtype)
 
         layer_ids = list(range(coords.shape[0]))
-        
 
         if end_id is None:
             for idx in range(coords.shape[1]):
@@ -384,33 +451,56 @@ class RetangularGrid:
                 for idx, c in enumerate(coords[layer_id,:end_id[layer_id]]):
                     values_sum[layer_id, c[1], c[0]] += values[layer_id, idx]
 
-        return self.simplify_shape(values_sum)
+        if remove_out_of_bounds:
+            values_sum = self.remove_cells_out_of_bounds(values_sum, many_layers=True)
 
-    def mean_by_cell(self, values: np.array, coords: np.array, end_id=None, count: np.array=None):
+        if simplify_shape:
+            values_sum = self.simplify_shape(values_sum)
+        
+        return values_sum
+
+    def mean_by_cell(self, values: np.array, coords: np.array, end_id=None, count: np.array=None,
+        simplify_shape=False):
         '''
         Mesma função de `self.sum_by_cell`, mas divide o resultado pela
         contagem de pontos em cada célula, assim realizando a média por célula.
         '''
         values_mean = self.sum_by_cell(values, coords, end_id=end_id)
         
+        if len(coords.shape) == 2:
+            coords = self.adjust_shape(coords, arr_name="coords")
+        
         if count is None:
             count = self.count(coords, end_id=end_id)
 
         non_zero_mask = count > 0
 
-        if len(coords.shape) == 3:
-            num_new_axis = len(values.shape) - 2
-        else:
-            num_new_axis = len(values.shape) - 1
+        # if len(coords.shape) == 3:
+        #     num_new_axis = len(values.shape) - 2
+        # else:
+        #     num_new_axis = len(values.shape) - 1
+        num_new_axis = len(values.shape) - 2
 
         values_mean[non_zero_mask] /= count[non_zero_mask].reshape(-1, *[1 for _ in range(num_new_axis)])
+        
+        if simplify_shape:
+            values_mean = self.simplify_shape(values_mean)
+
         return values_mean
 
-    def intersect_circle_mask(self, radius, center=(0, 0)):
+    def circle_mask(self, radius, center=(0, 0), mode="outside"):
         '''
-        Máscara das células que não intersectam o círculo de
-        centro `center` e raio `radius`;
+        Máscara das células para o círculo de centro `center` e raio `radius`. 
+        A máscara em questão depende de `mode`, quu pode assumir os seguintes valores:
+
+        outsise: Células fora do círculo. 
+        inside: Células dentro do círculo. 
+        intersect: Células intersectando o perímetro do círculo. 
         '''
+        valid_modes = ["outside", "inside", "intersect"]
+        if mode not in valid_modes:
+            raise ValueError(f"Valor inválido de `mode`: {mode}. Os valores válidos são: {valid_modes}.")
+
         x_max = self.meshgrid[0] + self.dim_cell_size[0]/2
         x_min = self.meshgrid[0] - self.dim_cell_size[0]/2
         
@@ -428,7 +518,15 @@ class RetangularGrid:
         d3 = np.sqrt(x_min_sqr + y_max_sqr)
         d4 = np.sqrt(x_min_sqr + y_min_sqr)
 
-        return np.logical_not((d1 < radius) | (d2 < radius) | (d3 < radius) | (d4 < radius))
+        if mode == "outside":
+            return np.logical_not((d1 < radius) | (d2 < radius) | (d3 < radius) | (d4 < radius))
+        if mode == "inside":
+            return (d1 < radius) & (d2 < radius) & (d3 < radius) & (d4 < radius)
+        if mode == "intersect":
+            inside = (d1 < radius) & (d2 < radius) & (d3 < radius) & (d4 < radius)
+            outside = np.logical_not((d1 < radius) | (d2 < radius) | (d3 < radius) | (d4 < radius))
+            return (~outside) & (~inside)
+
 
     def plot_grid(self, ax: Axes, adjust_lims=True):
         x1 = self.dim_cell_center[0] - self.dim_cell_size[0]/2
@@ -494,8 +592,19 @@ class RegularGrid(RetangularGrid):
             self.edges[0][1] - self.edges[0][0],
             self.edges[1][1] - self.edges[1][0],
         )
+    
+    @classmethod
+    def from_edges(Cls, edges):
+        x_max, x_min = edges[0][-1], edges[0][0] 
+        y_max, y_min = edges[1][-1], edges[1][0] 
+        return Cls(
+            length = x_max - x_min,
+            height = y_max - y_min,
+            num_cols = len(edges[0])-1, num_rows = len(edges[1])-1,
+            center = ((x_max + x_min)/2, (y_max + y_min)/2),
+        )
 
-    def coords(self, points: np.ndarray, check_out_of_bounds=True):
+    def coords(self, points: np.ndarray, check_out_of_bounds=True, simplify_shape=False):
         '''
         Calcula as coordenadas dos pontos em `points` na grade.
 
@@ -545,18 +654,22 @@ class RegularGrid(RetangularGrid):
         coords[:, :, 0] = col_pos
         coords[:, :, 1] = row_pos
 
-        if coords.shape[0] == 1:
+        if simplify_shape and coords.shape[0] == 1:
             coords = coords.reshape(*coords.shape[1:])
 
         return coords
 
+    @property
+    def configs(self):
+        return {
+            "length": self.length, "height": self.height,
+            "num_cols": self.num_cols, "num_rows": self.num_rows,
+            "center": self.center,
+        }
+
     def save_configs(self, path):
         with open(path, "w") as f:
-            yaml.dump({
-                "length": self.length, "height": self.height,
-                "num_cols": self.num_cols, "num_rows": self.num_rows,
-                "center": self.center,
-            }, f)
+            yaml.dump(self.configs, f)
 
     @classmethod
     def load(cls, path):
@@ -647,13 +760,6 @@ def neighbors_list(links, pos_list):
         neighs.append(neighs_ids)
     return neighs
 
-def particle_grid_shape(space_cfg, max_dist, frac=0.6):
-    raise Exception("Use o método em SpaceCfg para isso.")
-
-def rings_grid_shape(space_cfg, radius, frac=0.5):
-    raise Exception("Use o método em SpaceCfg para isso.")
-
-
 def roll_segmented_cmap(cmap, amount):
     '''
     Translada o `cmap`  por `amount` unidades, considerando 
@@ -692,22 +798,19 @@ def roll_segmented_cmap(cmap, amount):
     from matplotlib.colors import LinearSegmentedColormap        
     return LinearSegmentedColormap("rolled", segmentdata)
 
+#
+# Deprecated
+# 
+def particle_grid_shape(space_cfg, max_dist, frac=0.6):
+    raise Exception("Use o método em SpaceCfg para isso.")
+
+def rings_grid_shape(space_cfg, radius, frac=0.5):
+    raise Exception("Use o método em SpaceCfg para isso.")
+
+def num_rings_in_rect(ring_diameter: float, space_cfg):
+    raise Exception("Use o método em SpaceCfg para isso.")
+
 
 if __name__ == "__main__":
-    spring_l = 0.8
-    num_particles = 10
-
-    p0_eq = get_equilibrium_p0(num_particles)
-    
-    p0 = p0_eq * 0.9
-
-    a0 = (num_particles * spring_l / p0)**2 
-
-    r = get_equilibrium_relative_area(
-        k_a=13, k_m=20, a0=a0, spring_r=spring_l,
-        num_particles=num_particles
-    )
-
-    print(r)
-    
+    print(time_to_num_dt(0.01 * 10.1, 0.01))
     

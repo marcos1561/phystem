@@ -1,5 +1,10 @@
 import numpy as np
 from math import atan
+
+from scipy import interpolate
+from scipy.ndimage import gaussian_filter
+
+from phystem.systems.ring.configs import *
 from . import utils
 from .utils import RegularGrid
 
@@ -102,18 +107,89 @@ def get_area(rings: np.array):
     areas /= 2
     return areas
 
-def area_correct_term(n, spring_r, diameter):
-    '''
-    Termo de correção da área dos anéis. A área de um anel
-    é a área do polígono formado pelos centros de suas partículas (A_p)
-    mais a área das partículas que está fora desse polígono (A_c), essa
-    função retorna A_c.
-    '''
-    root_term = (diameter**2 - spring_r**2)**.5
-    t = np.pi/2 - atan(spring_r/root_term)
-    area_intersect = 1/4 * (diameter**2 * t - spring_r * root_term)
+def get_in_obstacle_mask(grid: utils.RegularGrid, stokes_cfg: StokesCfg):
+    "Determines whether points in a grid are within a circular obstacle."
+    x, y = grid.meshgrid[0] - stokes_cfg.obstacle_x, grid.meshgrid[1] - stokes_cfg.obstacle_y
+    return x**2 + y**2 < stokes_cfg.obstacle_r**2
 
-    return n * np.pi / 4 * diameter**2 * (1 - (n-2)/(2*n)) - n * area_intersect
+def interpolate_obstacle(data, grid: utils.RegularGrid, stokes_cfg: StokesCfg):
+    '''Interpola os dados do campo escalar `data` na região do obstáculo.'''
+    in_obstacle_mask = get_in_obstacle_mask(grid, stokes_cfg)
+    # in_obstacle_mask = grid.circle_mask(
+    #     stokes_cfg.obstacle_r, 
+    #     (stokes_cfg.obstacle_x, stokes_cfg.obstacle_y), 
+    #     mode="inside"
+    # )
+
+    valid_points = np.array([
+        grid.meshgrid[0][~in_obstacle_mask],
+        grid.meshgrid[1][~in_obstacle_mask],
+    ]).T
+    
+    inter_points = np.array([
+        grid.meshgrid[0][in_obstacle_mask],
+        grid.meshgrid[1][in_obstacle_mask],
+    ]).T
+
+    values = data[~in_obstacle_mask]
+
+    new_values = interpolate.griddata(valid_points, values, inter_points, method="cubic")
+
+    data[in_obstacle_mask] = new_values
+
+def smooth_data(data, grid:utils.RegularGrid, new_cell_size, filter_sigma, skip_start_cols=0, skip_end_cols=0):
+    '''
+    Dado o campo escalar `data` na grade `grid`, faz o seguinte:
+
+    - Interpola o campo para as células dentro do obstáculo.
+    - Aplica um filtro gaussiano com sigma igual a `filter_sigma`.
+    - Interpola os dados para uma nova grade com células de lado `new_cell_size`.
+    
+    Retorno:
+    --------
+    smooth_data:
+        Campo suavizado e interpolado para uma grade mais detalhada.
+    
+    bigger_grid:
+        Grade na qual os dados foram interpolados.
+    '''
+    start_id = skip_start_cols
+    end_id = skip_end_cols
+
+    edge_end_id = end_id
+    if end_id == 0:
+        edge_end_id = grid.shape[0] + 1
+        end_id = grid.shape[0]
+
+    data = data[:, start_id:end_id]
+    grid = utils.RegularGrid.from_edges((
+        grid.edges[0][start_id:edge_end_id], grid.edges[1]
+    ))
+
+    num_cols = round(grid.length / new_cell_size)
+    num_rows = round(grid.height / new_cell_size)
+
+    bigger_grid = utils.RegularGrid(
+        grid.length, grid.height, num_cols, num_rows, grid.center
+    )
+
+    dx, dy = grid.cell_size
+
+    sigma_x = filter_sigma / dx
+    sigma_y = filter_sigma / dy
+
+    data_smooth = gaussian_filter(data, sigma=(sigma_y, sigma_x)) 
+
+    grid_points = np.vstack([grid.meshgrid[0].ravel(), grid.meshgrid[1].ravel()]).T
+    data_smooth = interpolate.griddata(grid_points, data_smooth.ravel(), (bigger_grid.meshgrid[0], bigger_grid.meshgrid[1]), method="cubic")
+
+    # Remove NaN
+    nan_mask = np.isnan(data_smooth)
+    bigger_grid_points = np.vstack([bigger_grid.meshgrid[0][~nan_mask].ravel(), bigger_grid.meshgrid[1][~nan_mask].ravel()]).T
+    data_nearest = interpolate.griddata(bigger_grid_points, data_smooth[~nan_mask].ravel(), (bigger_grid.meshgrid[0], bigger_grid.meshgrid[1]), method="nearest")
+    data_smooth = np.where(nan_mask, data_nearest, data_smooth)
+
+    return data_smooth, bigger_grid
 
 class Density:
     def __init__(self, grid: RegularGrid):

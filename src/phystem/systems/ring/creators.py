@@ -30,7 +30,7 @@ class InitData:
         }
 
 def get_base_ring(num_particles, particle_diameter):
-    ring_radius = utils.get_ring_radius(particle_diameter, num_particles)
+    ring_radius = utils.ring_radius(particle_diameter, num_particles)
     angles = np.arange(0, np.pi*2, np.pi*2/num_particles)
     ring_pos = np.array([np.cos(angles), np.sin(angles)]) * ring_radius
     return ring_pos.T
@@ -115,7 +115,7 @@ class RectangularGridCreator(CreatorCore):
         self.ring_radius_k = ring_radius_k
     
     def create(self) -> InitData:
-        ring_radius = utils.get_ring_radius(self.particle_diameter, self.num_particles)
+        ring_radius = utils.ring_radius(self.particle_diameter, self.num_particles)
         real_ring_d = 2 * (ring_radius + self.particle_diameter/2)
         num_rings = self.num_rings_x * self.num_rings_y
 

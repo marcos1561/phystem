@@ -2,7 +2,7 @@
 Configurações relacionadas ao sistema em questão.
 '''
 import math
-from phystem.systems.ring import creators, utils, rings_quantities
+from phystem.systems.ring import creators, utils
 
 class RingCfg:
     "Variáveis relacionadas a dinâmica do sistema."
@@ -64,8 +64,9 @@ class RingCfg:
             deve ser informado.
 
         area0:
-            Área alvo dos anéis. Se for `None`, o parâmetro `p0`
-            deve ser informado.
+            Área alvo dos anéis. Essa área é relativa a área do polígono formado 
+            pelos centros das partículas do anel (a área das partículas não é considerada).
+            Se for `None`, o parâmetro `p0` deve ser informado.
         
         k_area:
             Constante da força da área.
@@ -151,7 +152,7 @@ class RingCfg:
     def num_particles(self):
         return self._num_particles
 
-    def change_num_particles(self, value, fix="p0"):
+    def change_num_particles(self, value: int, fix="p0"):
         '''
         Muda o número de partículas setado. É possível escolher
         qual quantidade fica fixa com o parâmetro `fix`, cujos
@@ -169,22 +170,30 @@ class RingCfg:
 
     def get_equilibrium_relative_area(self):
         '''
-        Retorna a área de equilíbrio relativa a `area0`. A área de
-        equilíbrio ocorre quando a força da área se balança com a
-        força das molas.
+        Área de equilíbrio do anel relativa a `area0`. Essa área
+        é apenas a área do polígono formado pelos centros das partículas do anel.
         '''
-        return utils.get_equilibrium_relative_area(
+        return utils.equilibrium_relative_area(
             k_a=self.k_area, k_m=self.spring_k, a0=self.area0,
             spring_r=self.spring_r, num_particles=self.num_particles,
         )
     
-    def get_equilibrium_area(self):
+    def get_equilibrium_area(self, consider_particles=True):
         '''
-        Retorna a área de equilíbrio do anel. A área de
-        equilíbrio ocorre quando a força da área se balança com a
-        força das molas.
+        Área de equilíbrio do anel.
+        
+        Parâmetros:
+        ----------
+        consider_particles:
+            Se for `True`, leva em consideração a área das partículas do anel,
+            caso contrário, a área retornada é a área do polígono formado pelos
+            centros das partículas do anel.
         '''
-        return self.get_equilibrium_relative_area(self.num_particles) * self.area0
+        area_add = 0
+        if consider_particles:
+            area_add = self.get_particles_area()
+
+        return self.get_equilibrium_relative_area() * self.area0 + area_add
 
     def get_max_k_adh(self, dt, relative_area, x=1):
         '''
@@ -194,7 +203,7 @@ class RingCfg:
         '''
         area0 = self.area0
         adh_size = self.max_dist - self.diameter
-        return utils.get_max_k_adh(adh_size, dt, self.k_area, area0, self.spring_r, relative_area,
+        return utils.max_k_adh(adh_size, dt, self.k_area, area0, self.spring_r, relative_area,
             self.mobility, self.vo, x)
 
     def get_min_inv_force(self):
@@ -220,19 +229,14 @@ class RingCfg:
         return num_particles * self.spring_r / self.area0**.5
     
     def get_ring_radius(self):
-        return utils.get_ring_radius(
+        return utils.ring_radius(
             self.diameter, self.k_area, self.spring_k,
             self.area0, self.spring_r, self.num_particles,
         )
     
-    def area_correct_term(self):
-        '''
-        Termo de correção da área dos anéis. A área de um anel
-        é a área do polígono formado pelos centros de suas partículas (A_p)
-        mais a área das partículas que está fora desse polígono (A_c), essa
-        função retorna A_c.
-        '''
-        return rings_quantities.area_correct_term(
+    def get_particles_area(self):
+        "Contribuição das partículas na área dos anéis."
+        return utils.particles_area(
             self.num_particles, self.spring_r, self.diameter,
         )
     
@@ -254,7 +258,7 @@ class RingCfg:
 
     def will_invade(self, relative_area, tol=1e-3):
         area0 = self.area0
-        _, est_value = utils.get_invasion_equilibrium_config(
+        _, est_value = utils.invasion_equilibrium_config(
             k_r=self.rep_force, k_m=self.spring_k, k_a=self.k_area,
             lo=self.spring_r, ro=self.diameter, area0=area0,
             relative_area_eq=relative_area, vo=self.vo, mu=self.mobility,
@@ -297,13 +301,14 @@ class RingCfg:
 class StokesCfg:
     def __init__(self, obstacle_r: float, obstacle_x: float, obstacle_y: float,
         create_length: float, remove_length: float, flux_force: float, 
-        obs_force: float, num_max_rings: int
+        obs_force: float, num_max_rings: int, vel_dispersion: float=0,
     ) -> None:
         self.obstacle_r = obstacle_r
         self.obstacle_x = obstacle_x
         self.obstacle_y = obstacle_y
         self.create_length = create_length
         self.remove_length = remove_length
+        self.vel_dispersion = vel_dispersion
         self.flux_force = flux_force
         self.obs_force = obs_force
         self.num_max_rings = num_max_rings
@@ -316,6 +321,7 @@ class StokesCfg:
             "obstacle_y": 0,
             "create_length": 0,
             "remove_length": 0,
+            "vel_dispersion": 0,
             "flux_force": 0,
             "obs_force": 0,
             "num_max_rings": -1,
@@ -328,6 +334,7 @@ class StokesCfg:
             "obstacle_y": self.obstacle_y,
             "create_length": self.create_length,
             "remove_length": self.remove_length,
+            "vel_dispersion": self.vel_dispersion,
             "flux_force": self.flux_force,
             "obs_force": self.obs_force,
             "num_max_rings": self.num_max_rings,

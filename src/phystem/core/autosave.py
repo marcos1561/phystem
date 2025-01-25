@@ -84,7 +84,7 @@ class AutoSavable():
     @staticmethod
     def get_autosave_path(autosave_container_path: Path):
         '''
-        Retorno o caminho de uma pasta que contém um
+        Retorna o caminho de uma pasta que contém um
         auto-salvamento válido, dodo o caminho que contém
         todos os auto-salvamentos.
         '''

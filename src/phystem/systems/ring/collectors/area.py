@@ -10,6 +10,7 @@ class AreaCol(collectors.RingCol):
         solver: CppSolver, root_path: Path, configs: dict, 
         wait_time=0,
         autosave_cfg: collectors.ColAutoSaveCfg = None, exist_ok=False, **kwargs) -> None:
+        "Coletor da área formada pelos centros das partículas do anel."
         super().__init__(solver, root_path, configs, autosave_cfg, exist_ok, **kwargs)
 
         self.freq_dt = freq_dt

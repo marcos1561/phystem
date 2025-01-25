@@ -13,7 +13,10 @@ class CppSolver:
     def __init__(self, pos: np.ndarray, self_prop_angle: np.ndarray, num_particles: int,
         dynamic_cfg: RingCfg, space_cfg: SpaceCfg, int_cfg: IntegrationCfg, stokes_cfg: StokesCfg=None, rng_seed=None) -> None:
         if stokes_cfg is None and int_cfg.update_type is UpdateType.STOKES:
-            raise Exception("Informe a configuração do fluxo de stokes")
+            raise Exception((
+                "`int_cfg.update_type` é `STOKES`, mas as configurações do fluxo de stokes "
+                "não foram passadas."
+            ))
         
         if rng_seed is None:
             rng_seed = -1
@@ -86,6 +89,17 @@ class CppSolver:
         self.dt = int_cfg.dt
         self.n = len(self_prop_angle)
 
+        # Cache variables
+        self.last_access = {
+            "center_mass": -1,
+            "self_prop_angle": -1,
+            "rings_ids": -1,
+        }
+        
+        self._center_mass: np.ndarray = None
+        self._self_prop_angle: np.ndarray = None
+        self._rings_ids: np.ndarray = None
+
     @property
     def num_max_rings(self):
         return self.cpp_solver.num_max_rings
@@ -112,7 +126,11 @@ class CppSolver:
     
     @property
     def rings_ids(self):
-        return self.cpp_solver.rings_ids
+        if self.last_access["rings_ids"] != self.num_time_steps:
+            self.last_access["rings_ids"] = self.num_time_steps
+            self._rings_ids = np.array(self.cpp_solver.rings_ids)
+
+        return self._rings_ids
     
     @property
     def unique_rings_ids(self):
@@ -140,7 +158,11 @@ class CppSolver:
     
     @property
     def self_prop_angle(self):
-        return self.cpp_solver.self_prop_angle
+        if self.last_access["self_prop_angle"] != self.num_time_steps:
+            self.last_access["self_prop_angle"] = self.num_time_steps
+            self._self_prop_angle = np.array(self.cpp_solver.self_prop_angle)
+
+        return self._self_prop_angle
     
     @property
     def pos_continuos(self):
@@ -188,7 +210,11 @@ class CppSolver:
     
     @property
     def center_mass(self):
-        return self.cpp_solver.center_mass
+        if self.last_access["center_mass"] != self.num_time_steps:
+            self.last_access["center_mass"] = self.num_time_steps
+            self._center_mass = np.array(self.cpp_solver.center_mass)
+
+        return self._center_mass
     
     @property
     def in_pol_checker(self):

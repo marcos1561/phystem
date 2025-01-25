@@ -23,6 +23,7 @@ dependencies = [
     "numpy",
     "scipy",
     "pybind11",
+    "shapely",
 ]
 
 [tool.setuptools.packages.find]

@@ -15,7 +15,7 @@ dynamic_cfg = RingCfg(
     
     area_potencial="target_area",
     k_area=5,
-    p0=ring.utils.get_equilibrium_p0(num_particles) * 1.1,
+    p0=ring.utils.equilibrium_p0(num_particles) * 1.1,
 
     k_invasion = 12,
     
@@ -42,7 +42,7 @@ creator_cfg = RectangularGridCfg.from_relative_density(
 )
 space_cfg = creator_cfg.get_space_cfg()
 
-radius = ring.utils.get_ring_radius(dynamic_cfg.diameter, creator_cfg.num_particles) 
+radius = ring.utils.ring_radius(dynamic_cfg.diameter, creator_cfg.num_particles) 
 num_cols, num_rows = space_cfg.particle_grid_shape(dynamic_cfg.max_dist)
 num_cols_cm, num_rows_cm = space_cfg.rings_grid_shape(radius)
 

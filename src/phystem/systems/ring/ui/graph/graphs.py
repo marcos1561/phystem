@@ -110,7 +110,7 @@ class ParticleInfoWindow(tk.Toplevel):
         vol_force = self.solver.vol_forces[ring_id][p_id]
         self_prop_vel = self.solver.self_prop_vel[ring_id]
         
-        ring_area += rings_quantities.area_correct_term(dynamic_cfg.num_particles, dynamic_cfg.spring_r, dynamic_cfg.diameter)  
+        ring_area += dynamic_cfg.get_particles_area()
 
         def format_vec(vec, decimal_places=3):
             return f"{round(vec[0], decimal_places)}, {round(vec[1], decimal_places)}"

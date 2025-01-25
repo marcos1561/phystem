@@ -17,7 +17,7 @@ from phystem.core.run_config import (
 from phystem.core.creators import CreatorCore
 from phystem.core.solvers import SolverCore
 from phystem.core.autosave import AutoSavable
-from phystem.core import settings
+from phystem.core import settings, autosave
 
 from phystem.gui_phystem.application import AppCore
 from phystem.gui_phystem import config_ui
@@ -121,7 +121,12 @@ class SimulationCore(ABC):
         É possível passar uma `run_cfg` para ser utilizada ao invés
         daquela salva no checkpoint.
         '''
-        cfgs = load_configs(Path(path) / settings.system_config_fname)
+        path = Path(path)
+        config_path = path
+        if path.stem == settings.autosave_container_name:
+            config_path = autosave.AutoSavable.get_autosave_path(path)
+
+        cfgs = load_configs(config_path / settings.system_config_fname)
         if run_cfg is not None:
             cfgs["run_cfg"] = run_cfg
 
