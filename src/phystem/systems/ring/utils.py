@@ -200,7 +200,7 @@ def same_rings(pos1, ids1, pos2, ids2, return_common_ids=False):
     else:
         return pos1[argsort1[id_mask1]], pos2[argsort2[id_mask2]]
 
-def ring_spawn_pos(diameter, k_a, k_m, a0, spring_r, num_particles):
+def ring_spawn_pos(k_a, k_m, a0, spring_r, num_particles) -> np.ndarray:
     '''
     Posições de um anel centrado em x=(0, 0) com área igual
     a sua área de equilíbrio no formato de um polígono regular.
@@ -210,9 +210,12 @@ def ring_spawn_pos(diameter, k_a, k_m, a0, spring_r, num_particles):
     pos: ndarray com shape (num_particles, 2)
         Posições das partículas do anel.
     '''
-    ring_radius = ring_radius(diameter, k_a, k_m, a0, spring_r, num_particles)
+    area = equilibrium_area(k_a, k_m, a0, spring_r, num_particles)
+    theta = 2 * np.pi / num_particles
+    p_radius = (2 * area / (num_particles * np.sin(theta)))**0.5
+    
     angles = np.arange(0, np.pi*2, np.pi*2/num_particles)
-    ring_pos = np.array([np.cos(angles), np.sin(angles)]) * ring_radius
+    ring_pos = np.array([np.cos(angles), np.sin(angles)]) * p_radius
     return ring_pos.T
 
 def time_to_num_dt(time, dt):
@@ -738,6 +741,14 @@ def calc_edges(cm, ring_diameter, k=1, return_dist=False):
         return edges
 
 def neighbors_all(links, n):
+    """
+    Generate a list of neighbors for each node in a graph.
+    Args:
+        links (list of tuple): A list of tuples where each tuple represents a link between two nodes.
+        n (int): The total number of nodes in the graph.
+    Returns:
+        list of list: A list where the i-th element is a list of neighbors for the i-th node.
+    """
     neighs = [[] for _ in range(n)]
     for l in links:
         neighs[l[0]].append(l[1])
@@ -745,6 +756,14 @@ def neighbors_all(links, n):
     return neighs
 
 def links_ids(links, n):
+    """
+    Generate a list of lists containing the indices of links connected to each node.
+    Args:
+        links (list of tuples): A list of tuples where each tuple represents a link between two nodes.
+        n (int): The number of nodes.
+    Returns:
+        list of lists: A list where each element is a list of indices of links connected to the corresponding node.
+    """
     ids = [[] for _ in range(n)]
     for i, l in enumerate(links):
         ids[l[0]].append(i)
@@ -752,6 +771,14 @@ def links_ids(links, n):
     return ids
 
 def neighbors_list(links, pos_list):
+    """
+    Generate a list of neighbors for each position in pos_list based on the given links.
+    Parameters:
+        links (numpy.ndarray): A 2D array where each row represents a link between two positions.
+        pos_list (list): A list of positions for which neighbors need to be found.
+    Returns:
+        list: A list of numpy arrays, where each array contains the neighbors of the corresponding position in pos_list.
+    """
     neighs = []
     for pid in pos_list:
         neighs_ids_1 = links[links[:, 0] == pid][:,1]

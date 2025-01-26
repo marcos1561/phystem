@@ -4,7 +4,6 @@ from pathlib import Path
 from enum import Enum, auto
 
 from phystem.core.collectors import ColAutoSaveCfg
-from phystem.systems.ring import utils 
 from phystem.systems.ring.collectors import RingCol
 from phystem.data_utils.data_types import ArraySizeAware
 from phystem.systems.ring.solvers import CppSolver
@@ -99,9 +98,9 @@ class DenVelCol(RingCol):
         self.num_data_points_per_file = int(memory_per_file / (num_max_rings * 2 * 4))
 
         # State
-        self.last_time_den = self.solver.time
-        self.last_time_vel = self.solver.time
-        self.last_time_pol = self.solver.time
+        self.last_time_den = self.solver.num_time_steps
+        self.last_time_vel = self.solver.num_time_steps
+        self.last_time_pol = self.solver.num_time_steps
         self.vel_frame = 0
         self.vel_point_data: np.array = None
         self.vel_point_ids: np.array = None 

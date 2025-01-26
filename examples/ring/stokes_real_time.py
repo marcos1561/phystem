@@ -9,6 +9,8 @@ from phystem.systems.ring.run_config import *
 creator_cfg = CreatorCfg.empty(10)
 
 dynamic_cfg = RingCfg(
+    num_particles=10,
+
     spring_k=20,
     spring_r=1*0.7,
     
@@ -31,7 +33,7 @@ dynamic_cfg = RingCfg(
     rot_diff=0.3,
 )
 
-radius = ring.utils.ring_radius(dynamic_cfg.diameter, creator_cfg.num_particles)
+radius = dynamic_cfg.get_ring_radius()
 
 space_cfg = SpaceCfg(
     height=4 * 2*radius,

@@ -1,4 +1,4 @@
-from phystem.core.run_config import RealTimeCfg, SaveCfg, IntegrationCfg
+from phystem.core.run_config import RealTimeCfg, IntegrationCfg
 
 from phystem.systems.random_walker.configs import *
 from phystem.systems.random_walker.simulation import Simulation

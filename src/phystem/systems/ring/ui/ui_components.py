@@ -189,8 +189,7 @@ class Info(InfoCore):
         super().__init__(main_frame, cfgs, solver, timer)
 
         dynamic_cfg: RingCfg = self.cfgs["dynamic_cfg"]
-        creator_cfg: CreatorCfg = self.cfgs["creator_cfg"]
-        self.cfg_info = dynamic_cfg.info() + f"N = {creator_cfg.num_particles}\n" 
+        self.cfg_info = dynamic_cfg.info() + f"N = {dynamic_cfg.num_particles}\n" 
 
     def get_info(self) -> str:
         if self.cfgs["run_cfg"].id is RunType.REPLAY_DATA:

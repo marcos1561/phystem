@@ -11,7 +11,7 @@ from phystem.core import settings
 from phystem.core.autosave import AutoSavable
 from phystem.systems import ring
 from phystem.systems.ring import utils
-from .datas import BaseData, DeltaData, DenVelData, AreaData, PolData
+from .datas import *
 
 class CalcAutoSaveCfg:
     def __init__(self, freq: int) -> None:
@@ -348,11 +348,12 @@ class DenVelCalculator(Calculator):
 
         return DenResults(den_time, den_eq), VelResults(vel_time, vel_order_par)
 
-class VelocityCalculator(Calculator):
-    DataT = DenVelData
-    data: DenVelData
 
-    def __init__(self, data: DenVelData, root_path: Path, grid: utils.RegularGrid, autosave_cfg: CalcAutoSaveCfg = None, exist_ok=False) -> None:
+class VelocityCalculator(Calculator):
+    DataT = VelData
+    data: VelData
+
+    def __init__(self, data: VelData, root_path: Path, grid: utils.RegularGrid, autosave_cfg: CalcAutoSaveCfg = None, exist_ok=False) -> None:
         super().__init__(data, root_path, autosave_cfg, exist_ok)
         self.grid = grid
 
@@ -366,14 +367,14 @@ class VelocityCalculator(Calculator):
 
     def calc_quantity(self):
         data = self.data
-        cms_vel_data = data.vel_data
-        while self.next_file_id < data.vel_num_files:
+        cms_vel_data = data.vel
+        while self.next_file_id < cms_vel_data.num_files:
             vels_cms = cms_vel_data.get_file(self.next_file_id)
             vels_cms.strip()
 
             cms1 = vels_cms.data[:,:,:2]
             cms2 = vels_cms.data[:,:,2:]
-            vels = (cms2 - cms1)/data.vel_frame_dt
+            vels = (cms2 - cms1)/data.frame_dt
             
             coords = self.grid.coords(cms1)
             
@@ -411,11 +412,75 @@ class VelocityCalculator(Calculator):
 
         return VelResults(grid, cell_vel, metadata)
 
-class DensityCalculator(Calculator):
-    DataT = DenVelData
-    data: DenVelData
+# class VelocityCalculator(Calculator):
+#     DataT = DenVelData
+#     data: DenVelData
 
-    def __init__(self, data: DenVelData, root_path: Path,
+#     def __init__(self, data: DenVelData, root_path: Path, grid: utils.RegularGrid, autosave_cfg: CalcAutoSaveCfg = None, exist_ok=False) -> None:
+#         super().__init__(data, root_path, autosave_cfg, exist_ok)
+#         self.grid = grid
+
+#         self.cell_vel_mean = np.zeros((*self.grid.shape_mpl_t, 2), dtype=float)
+#         self.num_points = 0
+#         self.next_file_id = 0
+
+#         self.grid.save_configs(self.root_path / "grid_configs.yaml")
+
+#         self.init_kwargs["grid"] = grid
+
+#     def calc_quantity(self):
+#         data = self.data
+#         cms_vel_data = data.vel_data
+#         while self.next_file_id < data.vel_num_files:
+#             vels_cms = cms_vel_data.get_file(self.next_file_id)
+#             vels_cms.strip()
+
+#             cms1 = vels_cms.data[:,:,:2]
+#             cms2 = vels_cms.data[:,:,2:]
+#             vels = (cms2 - cms1)/data.vel_frame_dt
+            
+#             coords = self.grid.coords(cms1)
+            
+#             if vels.shape[0] == 1:
+#                 vels = self.grid.simplify_shape(vels)
+            
+#             cell_vel = self.grid.mean_by_cell(vels, coords, end_id=vels_cms.point_num_elements)
+
+#             self.cell_vel_mean += cell_vel.sum(axis=0)
+#             self.num_points += cell_vel.shape[0]
+#             self.next_file_id += 1
+
+#         self.cell_vel_mean = self.grid.remove_cells_out_of_bounds(self.cell_vel_mean)
+#         self.cell_vel_mean /= self.num_points
+#         self.metadata["num_points"] = self.num_points
+
+#     def save_data(self):
+#         np.save(self.root_path / "vels.npy", self.cell_vel_mean)
+
+#     @staticmethod
+#     def load_data(path):
+#         path = Path(path)
+        
+#         class VelResults:
+#             def __init__(self, grid: utils.RegularGrid, cell_vel: np.ndarray, metadata: dict) -> None:
+#                 self.grid = grid
+#                 self.cell_vel = cell_vel
+#                 self.metadata = metadata  
+
+#         grid = utils.RegularGrid.load(path / "grid_configs.yaml")
+#         cell_vel = np.load(path / "vels.npy")
+        
+#         with open(path / "metadata.yaml") as f:
+#             metadata = yaml.unsafe_load(f)
+
+#         return VelResults(grid, cell_vel, metadata)
+
+
+class DensityCalculator(Calculator):
+    DataT = CmsData
+    data: CmsData
+
+    def __init__(self, data: CmsData, root_path: Path,
         grid: utils.RegularGrid, den_eq: float=None,
         autosave_cfg: CalcAutoSaveCfg = None, exist_ok=False) -> None:
         super().__init__(data, root_path, autosave_cfg, exist_ok)
@@ -435,15 +500,12 @@ class DensityCalculator(Calculator):
         self.init_kwargs["den_eq"] = self.den_eq
 
     def calc_quantity(self):
-        data = self.data
-        cms_vel_data = data.vel_data
-        while self.next_file_id < data.vel_num_files:
-            vels_cms = cms_vel_data.get_file(self.next_file_id)
-            vels_cms.strip()
+        while self.next_file_id < self.data.cms.num_files:
+            cms = self.data.cms.get_file(self.next_file_id)
+            cms.strip()
 
-            cms = vels_cms.data[:,:,:2]
-            coords = self.grid.coords(cms)
-            count = self.grid.count(coords, end_id=vels_cms.point_num_elements)
+            coords = self.grid.coords(cms.data)
+            count = self.grid.count(coords, end_id=cms.point_num_elements)
 
             self.cell_den_mean += count.sum(axis=0)
             self.num_points += count.shape[0]
@@ -490,8 +552,8 @@ class DensityCalculator(Calculator):
 
                 self.cell_den_mean /= cell_areas
 
-        self.metadata["num_points"] = self.num_points,
-        self.metadata["den_eq"] = self.den_eq,
+        self.metadata["num_points"] = self.num_points
+        self.metadata["den_eq"] = self.den_eq
     
     def save_data(self):
         np.save(self.root_path / "den.npy", self.cell_den_mean)
@@ -513,7 +575,111 @@ class DensityCalculator(Calculator):
             metadata = yaml.unsafe_load(f)
 
         return DenResults(grid, cell_vel, metadata)
+
+# class DensityCalculator(Calculator):
+#     DataT = DenVelData
+#     data: DenVelData
+
+#     def __init__(self, data: DenVelData, root_path: Path,
+#         grid: utils.RegularGrid, den_eq: float=None,
+#         autosave_cfg: CalcAutoSaveCfg = None, exist_ok=False) -> None:
+#         super().__init__(data, root_path, autosave_cfg, exist_ok)
+#         self.grid = grid
+#         self.den_eq = den_eq
+
+#         self.sim_configs = ring.run_config.load_configs(self.data.root_path / settings.system_config_fname)
+#         self.stokes_cfg: ring.configs.StokesCfg = self.sim_configs["other_cfgs"].get("stokes", None)
+
+#         self.cell_den_mean = np.zeros(self.grid.shape_mpl_t, dtype=float)
+#         self.num_points = 0
+#         self.next_file_id = 0
+
+#         self.grid.save_configs(self.root_path / "grid_configs.yaml")
+        
+#         self.init_kwargs["grid"] = self.grid
+#         self.init_kwargs["den_eq"] = self.den_eq
+
+#     def calc_quantity(self):
+#         data = self.data
+#         cms_vel_data = data.vel_data
+#         while self.next_file_id < data.vel_num_files:
+#             vels_cms = cms_vel_data.get_file(self.next_file_id)
+#             vels_cms.strip()
+
+#             cms = vels_cms.data[:,:,:2]
+#             coords = self.grid.coords(cms)
+#             count = self.grid.count(coords, end_id=vels_cms.point_num_elements)
+
+#             self.cell_den_mean += count.sum(axis=0)
+#             self.num_points += count.shape[0]
+#             self.next_file_id += 1
+
+#         self.cell_den_mean = self.grid.remove_cells_out_of_bounds(self.cell_den_mean)
+#         self.cell_den_mean /= self.num_points
+
+#         if self.den_eq is not None:
+#             den_eq = self.grid.cell_area * self.den_eq 
+#             self.cell_den_mean = self.cell_den_mean / den_eq - 1
+#         else:
+#             if self.stokes_cfg is None:
+#                 self.cell_den_mean /= self.grid.cell_area
+#             else:
+#                 obs_center = (self.stokes_cfg.obstacle_x, self.stokes_cfg.obstacle_x)
+#                 obs_r = self.stokes_cfg.obstacle_r
+#                 intersect_mask = self.grid.circle_mask(
+#                     radius=self.stokes_cfg.obstacle_r,
+#                     center=obs_center,
+#                     mode="intersect",
+#                 )
+
+#                 x = self.grid.meshgrid[0][intersect_mask] 
+#                 y = self.grid.meshgrid[1][intersect_mask] 
+                
+#                 dx = self.grid.cell_size[0]/2
+#                 dy = self.grid.cell_size[1]/2
+
+#                 p1 = np.array([x + dx, y - dy]).T
+#                 p2 = np.array([x + dx, y + dy]).T
+#                 p3 = np.array([x - dx, y + dy]).T
+#                 p4 = np.array([x - dx, y - dy]).T
+
+#                 intersect_areas = []
+#                 for idx in range(p1.shape[0]):
+#                     square = Polygon([p1[idx], p2[idx], p3[idx], p4[idx]])
+#                     circle = Point(obs_center).buffer(obs_r, resolution=100)
+#                     area = square.difference(circle).area
+#                     intersect_areas.append(area)
+
+#                 cell_areas = np.full_like(self.cell_den_mean, self.grid.cell_area)
+#                 cell_areas[intersect_mask] = intersect_areas
+
+#                 self.cell_den_mean /= cell_areas
+
+#         self.metadata["num_points"] = self.num_points,
+#         self.metadata["den_eq"] = self.den_eq,
     
+#     def save_data(self):
+#         np.save(self.root_path / "den.npy", self.cell_den_mean)
+
+#     @staticmethod
+#     def load_data(path):
+#         path = Path(path)
+        
+#         class DenResults:
+#             def __init__(self, grid: utils.RegularGrid, cell_den: np.ndarray, metadata: dict) -> None:
+#                 self.grid = grid
+#                 self.cell_den = cell_den
+#                 self.metadata = metadata  
+
+#         grid = utils.RegularGrid.load(path / "grid_configs.yaml")
+#         cell_vel = np.load(path / "den.npy")
+        
+#         with open(path / "metadata.yaml") as f:
+#             metadata = yaml.unsafe_load(f)
+
+#         return DenResults(grid, cell_vel, metadata)
+    
+
 class PolarityCalculator(Calculator):
     DataT = PolData
     data: PolData

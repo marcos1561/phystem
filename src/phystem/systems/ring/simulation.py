@@ -3,7 +3,7 @@ from matplotlib.figure import Figure
 from phystem.core.simulation import SimulationCore
 from phystem.core.solvers import SolverCore
 from phystem.systems.ring.solvers import CppSolver, SolverReplay
-from phystem.systems.ring.creators import CreatorRD, Creator
+from phystem.systems.ring.creators import CreatorRD, Creator, config_to_creator
 
 from phystem.systems.ring.configs import CreatorCfg, RingCfg, InvaginationCfg, InvaginationCreatorCfg
 from phystem.systems.ring.run_config import IntegrationCfg, UpdateType, RealTimeCfg, RunType, ReplayDataCfg
@@ -26,36 +26,22 @@ class Simulation(SimulationCore):
         if int_cfg.update_type is UpdateType.INVAGINATION and type(creator_cfg) != InvaginationCreatorCfg:
             raise ValueError(f"No mode 'INVAGINATION', a configuração de criação deve ser 'InvaginationCreatorCfg', mas é {type(creator_cfg)}.")
         
-        try:
-            n = creator_cfg.num_particles
-        except Exception as e:
-            raise AttributeError("'creator_cfg' deveria possuir o atributo `num_particles`, mas não tem.")
-
-        # dynamic_cfg.adjust_area_pars(creator_cfg.num_p)
         super().__init__(creator_cfg, dynamic_cfg, space_cfg, run_cfg, other_cfgs, rng_seed)
 
     def adjust_configs(self):
         creator_cfg = self.creator_cfg
         dynamic_cfg = self.dynamic_cfg
 
-        pos = creator_cfg.CreatorType(**creator_cfg.get_pars(), rng_seed=self.rng_seed).create().pos
-        if pos.shape[0] > 0:
-            creator_cfg.num_particles = pos.shape[1]
-
-        if creator_cfg.num_particles != dynamic_cfg.num_particles:
-            raise ValueError((
-                f"O nº de partículas em dynamic_cfg ({dynamic_cfg.num_particles}) "
-                f"está diferente do nº de partículas em creator_cfg ({creator_cfg.num_particles})"
-            ))
-
-        # dynamic_cfg.adjust_area_pars(creator_cfg.num_particles)
+        # pos = creator_cfg.CreatorType(**creator_cfg.get_pars(), rng_seed=self.rng_seed).create().pos
+        pos = config_to_creator[type(creator_cfg)](creator_cfg, rng_seed=self.rng_seed).create().pos
 
     def get_creator(self) -> Creator:
         if self.run_cfg.id is RunType.REPLAY_DATA:
             return CreatorRD()
 
         # return Creator(**self.creator_cfg.get_pars(), rng_seed=self.rng_seed)
-        return self.creator_cfg.CreatorType(**self.creator_cfg.get_pars(), rng_seed=self.rng_seed)
+        # return self.creator_cfg.CreatorType(**self.creator_cfg.get_pars(), rng_seed=self.rng_seed)
+        return config_to_creator[type(self.creator_cfg)](self.creator_cfg, rng_seed=self.rng_seed)
     
     def get_solver(self) -> SolverCore:
         self.creator: Creator
@@ -101,7 +87,7 @@ class Simulation(SimulationCore):
         if self.other_cfgs is not None:
             stokes_cfg = self.other_cfgs.get("stokes", None)
 
-        solver = CppSolver(**init_data.get_data(), num_particles=self.creator_cfg.num_particles, 
+        solver = CppSolver(**init_data.get_data(), num_particles=self.dynamic_cfg.num_particles, 
             dynamic_cfg=self.dynamic_cfg, stokes_cfg=stokes_cfg, space_cfg=self.space_cfg,
             int_cfg=self.run_cfg.int_cfg, rng_seed=self.rng_seed)
         

@@ -1,5 +1,7 @@
+'''
+Utilidades para calcular quantidades do sistema de anéis.
+'''
 import numpy as np
-from math import atan
 
 from scipy import interpolate
 from scipy.ndimage import gaussian_filter
@@ -209,7 +211,7 @@ class Density:
             inferior esquerdo. 
         '''
         coords = self.grid.coords(cms)
-        count = self.grid.count(coords)
+        count = self.grid.count(coords, remove_out_of_bounds=True, simplify_shape=True)
         return count
 
     def get_from_pos(self, pos):

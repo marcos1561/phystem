@@ -39,7 +39,7 @@ class BaseGraph(ABC):
         if sim_configs["other_cfgs"].get("stokes") is not None:
             self.stokes_obstacle(zorder=3)
 
-        num_particles = self.sim_configs["creator_cfg"].num_particles
+        num_particles = self.sim_configs["dynamic_cfg"].num_particles
         self.active_rings = ActiveRings(num_particles, solver)
 
         self._root = None

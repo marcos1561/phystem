@@ -162,13 +162,23 @@ class StateSaver:
 class RingCol(collectors.Collector):
     "Base para os coletores dos anéis."
     def __init__(self, solver: CppSolver, root_path: Path, configs: dict, 
-        autosave_cfg: ColAutoSaveCfg = None, exist_ok=False, **kwargs) -> None:
+        autosave_cfg: ColAutoSaveCfg=None, exist_ok=False, **kwargs) -> None:
         super().__init__(solver, root_path, configs, autosave_cfg, exist_ok=exist_ok, **kwargs)
 
         if autosave_cfg is not None:
             for path in self.autosave_paths:
                 collectors.Collector.save_cfg(configs, path / settings.system_config_fname)
             self.state_col = StateSaver(self.solver, self.autosave_root_path, self.configs)
+
+    @staticmethod
+    def get_kwargs_configs(cfg):
+        '''
+        Dado as configurações setadas nas configurações de execução (`CollectDataCfg`) `cfg`,
+        retorna o dicionário de configurações que será utiliza para instanciar o coletor.
+
+        >>> col = ThisCollector(**ThisCollector.get_configs(cfg), ...)
+        '''
+        return cfg
 
     @classmethod
     def get_pipeline(Cls):
@@ -184,7 +194,7 @@ class RingCol(collectors.Collector):
             solver = sim.solver
             collect_cfg: CollectDataCfg = sim.run_cfg
 
-            collector = Cls(**cfg,
+            collector = Cls(**Cls.get_kwargs_configs(cfg),
                 solver=solver, root_path=collect_cfg.folder_path, configs=sim.configs,
             )
 

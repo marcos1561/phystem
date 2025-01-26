@@ -3,9 +3,11 @@ import pickle, yaml
 import numpy as np
 from enum import Flag, auto
 from pathlib import Path
-from collections import namedtuple
 
 from phystem.data_utils.data_types import ArraySizeAware, MultFileList
+from phystem.systems.ring.collectors.quantity_pos.collectors import (
+    VelocityCfg, CmsCfg
+)
 
 class BaseData(ABC):
     @abstractmethod
@@ -109,6 +111,35 @@ class PolData(BaseData):
         self.pol_time = np.load(self.data_path / "pol_time.npy")
         self.pol_data = MultFileList[ArraySizeAware, np.ndarray](self.data_path, "pol") 
         self.cms_data = MultFileList[ArraySizeAware, np.ndarray](self.data_path, "den_cms") 
+
+
+class VelData(BaseData):
+    def __init__(self, root_path: Path) -> None:
+        '''
+        Carrega os dados das velocidades coletados pelo coletor `QuantityPos`. 
+        Para mais informações sobre o formato dos dados, leia a 
+        documentação do respectivo coletor.
+        '''
+        super().__init__(root_path)
+        self.time = np.load(self.data_path / "times.npy")
+        self.vel = MultFileList[ArraySizeAware, np.ndarray](self.data_path, VelocityCfg.name) 
+        self.cms = MultFileList[ArraySizeAware, np.ndarray](self.data_path, CmsCfg.name) 
+
+        with open(self.data_path / f"{VelocityCfg.name}_metadata.yaml", "r") as f:
+            metadata = yaml.unsafe_load(f)
+            self.frame_dt = metadata["frame_dt"]    
+            self.last_point_completed = metadata["last_point_completed"]    
+
+class CmsData(BaseData):
+    def __init__(self, root_path: Path) -> None:
+        '''
+        Carrega os dados dos centros de massa coletados pelo coletor `QuantityPos`. 
+        Para mais informações sobre o formato dos dados, leia a 
+        documentação do respectivo coletor.
+        '''
+        super().__init__(root_path)
+        self.time = np.load(self.data_path / "times.npy")
+        self.cms = MultFileList[ArraySizeAware, np.ndarray](self.data_path, CmsCfg.name) 
 
 class DenVelData(BaseData):
     def __init__(self, root_path: Path) -> None:
