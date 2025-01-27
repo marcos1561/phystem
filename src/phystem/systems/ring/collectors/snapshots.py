@@ -5,22 +5,20 @@ from phystem.systems.ring.solvers import CppSolver
 from phystem.systems.ring.simulation import Simulation
 from phystem.systems.ring.state_saver import StateSaver, StateData
 
-from .base import RingCol
+from .base import RingCol, ColCfg
+from .config_to_col import Configs2Collector
 
-class SnapshotsColCfg:
+class SnapshotsColCfg(ColCfg):
     def __init__(self, snaps_dt: float, xlims=(-1, -1), wait_time: float = 0, autosave_cfg: ColAutoSaveCfg = None) -> None:
+        super().__init__(autosave_cfg)
         self.snaps_dt = snaps_dt
         self.xlims = xlims
         self.wait_time = wait_time
         self.autosave_cfg = autosave_cfg
 
 class SnapshotsCol(RingCol):
-    def __init__(self, col_cfg: SnapshotsColCfg,
-        solver: CppSolver, root_path: Path, configs: dict, 
-        exist_ok=False, to_load_autosave=False, **kwargs) -> None:
-        super().__init__(solver, root_path, configs, col_cfg.autosave_cfg, exist_ok, **kwargs)
-
-        self.cfgs = col_cfg
+    def setup(self):
+        self.cfgs = self.col_cfg
 
         # State
         self.snaps_last_time = self.solver.time
@@ -29,11 +27,8 @@ class SnapshotsCol(RingCol):
         self.times = []
 
         self.snaps_saver = StateSaver(
-            solver=solver, root_path=self.data_path, configs=configs, xlims=col_cfg.xlims,
+            solver=self.solver, root_path=self.data_path, configs=self.configs, xlims=self.col_cfg.xlims,
         )
-
-        if to_load_autosave:
-            self.load_autosave()
 
     @property
     def vars_to_save(self):
@@ -91,8 +86,10 @@ class SnapshotsCol(RingCol):
 
         col = SnapshotsCol(cfg,
             root_path=collect_cfg.folder_path, solver=sim.solver, configs=sim.configs, 
-            to_load_autosave=collect_cfg.is_autosave,
         )
+
+        if collect_cfg.is_autosave:
+            col.load_autosave()
 
         prog = progress.Continuos(collect_cfg.tf, start=col.init_time)
         while solver.time < collect_cfg.tf:
@@ -126,3 +123,5 @@ class SnapshotsCol(RingCol):
 
 def pipeline(sim: Simulation, cfg: SnapshotsColCfg):
     SnapshotsCol.pipeline(sim, cfg)
+
+Configs2Collector.add(SnapshotsColCfg, SnapshotsCol)

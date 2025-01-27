@@ -4,17 +4,22 @@ from pathlib import Path
 
 from phystem.systems.ring import solvers
 from phystem.core.collectors import ColAutoSaveCfg
-from .base import RingCol
+from .base import RingCol, ColCfg
+from .config_to_col import Configs2Collector
+
+class CreationRateColCfg(ColCfg):
+    def __init__(self, wait_time, collect_time, collect_dt, autosave_cfg = None):
+        super().__init__(autosave_cfg)
+        self.wait_time = wait_time
+        self.collect_dt = collect_dt
+        self.collect_time = collect_time
 
 class CreationRateCol(RingCol):
-    def __init__(self, wait_time, collect_time, collect_dt, 
-        solver: solvers.CppSolver, root_path: Path, configs: dict, 
-        autosave_cfg: ColAutoSaveCfg=None, to_load_autosave=False, exist_ok=False) -> None:
-        super().__init__(solver, root_path, configs, autosave_cfg, exist_ok=exist_ok)
-        # Configuration
-        self.wait_time = wait_time
-        self.collect_time = collect_time
-        self.collect_dt = collect_dt
+    def setup(self):
+        #  Configuration
+        self.wait_time = self.col_cfg.wait_time
+        self.collect_time = self.col_cfg.collect_time
+        self.collect_dt = self.col_cfg.collect_dt
 
         # State        
         self.wait_time_done = False
@@ -25,8 +30,8 @@ class CreationRateCol(RingCol):
         self.num_points = int(self.collect_time/self.collect_dt)
         self.init_data_arrays()
 
-        if to_load_autosave:
-            self.load_autosave()
+        # if to_load_autosave:
+        #     self.load_autosave()
 
     def init_data_arrays(self):
         self.time_arr = np.zeros(self.num_points, dtype=np.float32)
@@ -97,3 +102,5 @@ class CreationRateCol(RingCol):
         np.save(data_path / f"time.npy", self.time_arr)
         np.save(data_path / f"num_created.npy", self.num_created_arr)
         np.save(data_path / f"num_active.npy", self.num_active_arr)
+
+Configs2Collector.add(CreationRateColCfg, CreationRateCol)

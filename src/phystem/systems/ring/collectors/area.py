@@ -4,17 +4,21 @@ import yaml, pickle
 
 from phystem.systems.ring.solvers import CppSolver
 from phystem.systems.ring import collectors
+from .config_to_col import Configs2Collector
 
-class AreaCol(collectors.RingCol):
-    def __init__(self, freq_dt, 
-        solver: CppSolver, root_path: Path, configs: dict, 
-        wait_time=0,
-        autosave_cfg: collectors.ColAutoSaveCfg = None, exist_ok=False, **kwargs) -> None:
-        "Coletor da área formada pelos centros das partículas do anel."
-        super().__init__(solver, root_path, configs, autosave_cfg, exist_ok, **kwargs)
-
+class AreaColCfg(collectors.ColCfg):
+    def __init__(self, freq_dt, wait_time=0, autosave_cfg = None):
         self.freq_dt = freq_dt
         self.wait_time = wait_time
+        super().__init__(autosave_cfg)
+
+class AreaCol(collectors.RingCol):
+    "Coletor da área formada pelos centros das partículas do anel."
+    col_cfg: AreaColCfg
+
+    def setup(self):
+        self.fre_dt = self.col_cfg.freq_dt
+        self.wait_time = self.col_cfg.wait_time
 
         # State
         self.last_col_time = self.solver.time
@@ -62,3 +66,5 @@ class AreaCol(collectors.RingCol):
             yaml.dump({
                 "num_points": len(self.times),
             }, f)
+
+Configs2Collector.add(AreaColCfg, AreaCol)

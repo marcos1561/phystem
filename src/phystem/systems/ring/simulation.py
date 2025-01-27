@@ -29,11 +29,15 @@ class Simulation(SimulationCore):
         super().__init__(creator_cfg, dynamic_cfg, space_cfg, run_cfg, other_cfgs, rng_seed)
 
     def adjust_configs(self):
-        creator_cfg = self.creator_cfg
-        dynamic_cfg = self.dynamic_cfg
+        from phystem.systems.ring.collectors.config_to_col import Configs2Collector, RingCol
 
-        # pos = creator_cfg.CreatorType(**creator_cfg.get_pars(), rng_seed=self.rng_seed).create().pos
-        pos = config_to_creator[type(creator_cfg)](creator_cfg, rng_seed=self.rng_seed).create().pos
+        if self.run_cfg.id != RunType.COLLECT_DATA:
+            return
+        
+        run_cfg: CollectDataCfg = self.run_cfg
+        if run_cfg.func is None or type(run_cfg.func) is str:
+            ColT: RingCol = Configs2Collector.get(type(run_cfg.func_cfg)) 
+            run_cfg.func = ColT.get_pipeline()
 
     def get_creator(self) -> Creator:
         if self.run_cfg.id is RunType.REPLAY_DATA:

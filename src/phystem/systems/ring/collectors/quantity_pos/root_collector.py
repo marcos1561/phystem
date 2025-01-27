@@ -8,18 +8,12 @@ from phystem.systems.ring.configs import SpaceCfg
 from .base import QuantityPosState, QuantityPosCfg, QuantityCol
 from .collectors import CmsCfg, quantity_cfg_to_col
 
+from phystem.systems.ring.collectors.config_to_col import Configs2Collector
+
 class QuantityPosCol(RingCol):
     solver: CppSolver
 
-    def __init__(self, col_cfg: QuantityPosCfg, solver: CppSolver, root_path, configs, 
-        exist_ok=False, **kwargs):
-        '''
-        Gerenciador de coletores de quantidades associadas às posições dos anéis.
-        Para mais informações ver doc de `QuantityPosCfg`.
-        '''
-        super().__init__(solver, root_path, configs, col_cfg.autosave_cfg, exist_ok, **kwargs)
-        self.col_cfg = col_cfg
-        
+    def setup(self):
         has_cms_cfg = False
         for q in self.col_cfg.quantities_cfg:
             if type(q) is CmsCfg:
@@ -29,12 +23,12 @@ class QuantityPosCol(RingCol):
         if not has_cms_cfg:
             self.col_cfg.quantities_cfg.append(CmsCfg())
 
-        dynamic_cfg: RingCfg = configs["dynamic_cfg"]
-        space_cfg: SpaceCfg = configs["space_cfg"]
+        dynamic_cfg: RingCfg = self.configs["dynamic_cfg"]
+        space_cfg: SpaceCfg = self.configs["space_cfg"]
         
         area_eq = dynamic_cfg.get_equilibrium_area()
         
-        xlims, ylims = col_cfg.xlims, col_cfg.ylims
+        xlims, ylims = self.col_cfg.xlims, self.col_cfg.ylims
         l = xlims[1] - xlims[0]
         h = ylims[1] - ylims[0]
         
@@ -55,7 +49,7 @@ class QuantityPosCol(RingCol):
         ]
 
         self.quantities_states = [q.state for q in self.quantities]
-        
+
     @property
     def vars_to_save(self):
         v = super().vars_to_save
@@ -150,3 +144,4 @@ class QuantityPosCol(RingCol):
 
         return r
 
+Configs2Collector.add(QuantityPosCfg, QuantityPosCol)

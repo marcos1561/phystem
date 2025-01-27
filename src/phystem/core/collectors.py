@@ -12,33 +12,38 @@ class ColAutoSaveCfg:
         self.to_save_state = to_save_state
         self.save_data_freq_dt = save_data_freq_dt
     
+class ColCfg:
+    def __init__(self, autosave_cfg: ColAutoSaveCfg=None):
+        self.autosave_cfg = autosave_cfg
+
 class Collector(AutoSavable, ABC):
-    '''Responsável pela coleta de dados gerados pelo solver.'''
-    def __init__(self, solver: SolverCore, root_path: Path, configs: dict, 
-        autosave_cfg: ColAutoSaveCfg=None, 
+    "Responsável pela coleta de dados gerados pelo solver."
+    def __init__(self, col_cfg: ColCfg, solver: SolverCore, root_path: Path, configs: dict, 
         data_dirname="data", exist_ok=False) -> None:
         '''
         Parameters:
         -----------
-            solver:
-                Solver do sistema em que será coletado os dados.
+        solver:
+            Solver do sistema em que será coletado os dados.
+        
+        path:
+            Caminho da pasta raiz que irá conter todos os dados relativos
+            a esse coletor. 
             
-            path:
-                Caminho da pasta raiz que irá conter todos os dados relativos
-                a esse coletor. 
-                
-            config:
-                Dicionário com todas as configurações da simulação.
+        config:
+            Dicionário com todas as configurações da simulação.
 
-            autosave_cfg:
-                Configurações do auto-salvamento:
-                
-                * freq_dt:
-                    Frequência temporal em que é feito o auto-salvamento.
-                
-                * to_save_state:
-                    Se é para salvar o estado do sistema.
+        autosave_cfg:
+            Configurações do auto-salvamento:
+            
+            * freq_dt:
+                Frequência temporal em que é feito o auto-salvamento.
+            
+            * to_save_state:
+                Se é para salvar o estado do sistema.
         '''
+        self.col_cfg = col_cfg
+
         self.root_path = Path(root_path)
         if settings.IS_TESTING:
             self.root_path.mkdir(parents=True, exist_ok=True)
@@ -56,7 +61,7 @@ class Collector(AutoSavable, ABC):
         if data_dirname:
             self.data_path = self.root_path / data_dirname
 
-        self.autosave_cfg = autosave_cfg
+        self.autosave_cfg = col_cfg.autosave_cfg
         self.autosave_last_time = self.solver.time
         self.autosave_data_last_time = self.solver.time
         
@@ -69,6 +74,16 @@ class Collector(AutoSavable, ABC):
         
         self.save_cfg(self.configs, self.configs_path)
 
+        self.before_setup()
+        self.setup()
+
+    def before_setup(self):
+        pass
+
+    def setup(self):
+        "Realiza a inicialização do coletor."
+        pass
+
     @property
     def vars_to_save(self):
         return [
@@ -78,7 +93,7 @@ class Collector(AutoSavable, ABC):
 
     @abstractmethod
     def collect(self) -> None:
-        '''Realiza a coleta dos dados no instante atual.'''
+        "Realiza a coleta dos dados no instante atual."
         pass
 
     @abstractmethod
@@ -94,7 +109,7 @@ class Collector(AutoSavable, ABC):
         self.save()
 
     def check_autosave(self):
-        '''Realiza o auto-salvamento de acordo com a frequência definida.'''
+        "Realiza o auto-salvamento de acordo com a frequência definida."
         if self.autosave_cfg.save_data_freq_dt:
             if self.solver.time - self.autosave_data_last_time > self.autosave_cfg.save_data_freq_dt:
                 # self.autosave_data_last_time = self.solver.time
@@ -107,7 +122,7 @@ class Collector(AutoSavable, ABC):
 
     @staticmethod
     def save_cfg(configs: dict[str], configs_path: Path) -> None:
-        '''Salva as configurações da simulação.'''
+        "Salva as configurações da simulação."
         configs = copy.deepcopy(configs)
         configs["run_cfg"].func = "nao salvo"
         

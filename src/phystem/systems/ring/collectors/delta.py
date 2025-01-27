@@ -5,6 +5,9 @@ from enum import Flag, auto
 from phystem.core.collectors import ColAutoSaveCfg
 from phystem.systems.ring import collectors, utils
 
+from .base import RingCol, ColCfg
+from .config_to_col import Configs2Collector
+
 class State(Flag):
     starting = auto()
     waiting = auto()
@@ -45,11 +48,9 @@ class TrackingList:
     def size(self):
         return len(self.ids)
 
-class DeltaCol(collectors.RingCol):
+class DeltaColCfg(ColCfg):
     def __init__(self, wait_dist, xlims, start_dt, check_dt, min_num_rings,
-        solver, root_path: str, configs: dict,
-        autosave_cfg: ColAutoSaveCfg=None,  
-        xtol=1, save_final_close=False, to_load_autosave=False, exist_ok=False) -> None:
+        xtol=1, save_final_close=False, autosave_cfg = None):
         '''
         Coletor da quantidade delta (sólido/líquido).
         
@@ -74,11 +75,7 @@ class DeltaCol(collectors.RingCol):
                 Comprimento (em unidades de diâmetro do anel) em que `xlims` é
                 expandido.
         '''
-        super().__init__(solver, root_path, configs, autosave_cfg, exist_ok=exist_ok)
-
-        ##
-        # Configuration
-        ##
+        super().__init__(autosave_cfg)
         self.wait_dist = wait_dist
         self.xlims = xlims
         self.start_dt = start_dt
@@ -87,7 +84,25 @@ class DeltaCol(collectors.RingCol):
         self.xtol = xtol
         self.save_final_close = save_final_close
 
-        self.ring_diameter = configs["dynamic_cfg"].get_ring_radius() * 2
+class DeltaCol(RingCol):
+    col_cfg: DeltaColCfg
+
+    def setup(self):
+        ##
+        # Configuration
+        ##
+        self.wait_dist = self.col_cfg.wait_dist
+        self.xlims = self.col_cfg.xlims
+        self.start_dt = self.col_cfg.start_dt
+        self.check_dt = self.col_cfg.check_dt
+        self.min_num_rings = self.col_cfg.min_num_rings
+        self.xtol = self.col_cfg.xtol
+        self.save_final_close = self.col_cfg.save_final_close
+
+        xlims = self.col_cfg.xlims
+        xtol = self.col_cfg.xtol
+
+        self.ring_diameter = self.configs["dynamic_cfg"].get_ring_radius() * 2
         self.xlims_extended = (xlims[0] - xtol*self.ring_diameter, xlims[1] + xtol*self.ring_diameter)
         
         ##
@@ -100,9 +115,6 @@ class DeltaCol(collectors.RingCol):
         self.tracking = TrackingList()
         self.init_times = []
         self.final_times = []
-
-        if to_load_autosave:
-            self.load_autosave()
 
     @property
     def vars_to_save(self):
@@ -505,3 +517,4 @@ class DeltaColTime(collectors.RingCol):
 #             ids_name=f"ids_{suffix}",
 #         )
 
+Configs2Collector.add(DeltaColCfg, DeltaCol)

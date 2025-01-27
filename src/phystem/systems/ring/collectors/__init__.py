@@ -1,10 +1,10 @@
 from phystem.core.collectors import ColAutoSaveCfg
-from .base import RingCol, StateSaver
-from .creation_rate import CreationRateCol
-from .delta import DeltaCol, DeltaColTime
-from .density_vel import DenVelCol
-from .manager import ColManager
+from .base import RingCol, StateSaver, ColCfg
+from .creation_rate import CreationRateCol, CreationRateColCfg
+from .delta import DeltaCol, DeltaColTime, DeltaColCfg
+from .density_vel import DenVelCol, DenVelColCfg
+from .manager import ColManager, ColManagerCfg
 from .snapshots import SnapshotsCol, SnapshotsColCfg
-from .checkpoint import CheckpointCol
-from .area import AreaCol
+from .checkpoint import CheckpointCol, CheckpointColCfg
+from .area import AreaCol, AreaColCfg
 from .quantity_pos import *

@@ -89,7 +89,7 @@ class SimulationCore(ABC):
 
         if run_cfg.id is RunType.COLLECT_DATA:
             # Como a configuração 'func' é uma função, ela não é salva.
-            self.init_configs["run_cfg"].func = "nao salvo"
+            self.init_configs["run_cfg"].func = None
 
         if run_cfg.checkpoint:
             # Impede o salvamento de todos os checkpoints utilizados
@@ -139,7 +139,7 @@ class SimulationCore(ABC):
         return cls(**cfgs)
 
     @classmethod
-    def configs_from_autosave(cls, path: Path, checkpoint_kwargs=None):
+    def configs_from_autosave(cls, path: Path, checkpoint_kwargs=None, return_metadata=False):
         autosave_path = AutoSavable.get_autosave_path(path)
         configs = load_configs(autosave_path / settings.system_config_fname)
         
@@ -147,7 +147,15 @@ class SimulationCore(ABC):
             checkpoint_kwargs = {}
         configs["run_cfg"].checkpoint = CheckpointCfg(path, **checkpoint_kwargs)
         
-        return configs
+        if return_metadata:
+            metadata = None
+            metadata_path: Path = autosave_path / "metadata.yaml"
+            if metadata_path.exists():
+                with open(metadata_path, "rb") as f:
+                    metadata = yaml.unsafe_load(f)
+            return configs, metadata
+        else:
+            return configs
 
     @staticmethod
     def configs_from_checkpoint(run_cfg: RunCfg):

@@ -203,8 +203,10 @@ class CollectDataCfg(RunCfg):
                 Configurações para carregar um checkpoint. Casa seja 'None', o checkpoint
                 não é carregado.
         '''
-        if func_id is None and func is None:
-            raise ValueError("'func_id' e 'func' não podem ser ambos nulos.")
+        if func_cfg is None and func is None:
+            raise ValueError("'func_cfg' e 'func' não podem ser ambos nulos.")
+        # if func_id is None and func is None:
+        #     raise ValueError("'func_id' e 'func' não podem ser ambos nulos.")
         
         super().__init__(int_cfg, checkpoint)
         self.tf = tf
