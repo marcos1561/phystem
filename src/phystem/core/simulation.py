@@ -128,6 +128,8 @@ class SimulationCore(ABC):
 
         cfgs = load_configs(config_path / settings.system_config_fname)
         if run_cfg is not None:
+            if run_cfg.int_cfg is None:
+                run_cfg.int_cfg = cfgs["run_cfg"].int_cfg
             cfgs["run_cfg"] = run_cfg
 
         if cp_kwargs is None:
