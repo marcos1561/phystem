@@ -75,11 +75,35 @@ class VelocityCol(QuantityCol):
             self.state.vel_frame = 0
 
 
-# class PolarityCfg:
-#     num_dims = 1
+class PolarityCfg(QuantityCfg):
+    "Configurações do coletor do ângulo das polarizações."
+    name = "pol"
+    num_dims = 1
+
+class PolarityCol(QuantityCol):
+    def collect(self, ids_in_region, cms_in_region):
+        self.data.add(self.solver.self_prop_angle[ids_in_region])
+
+
+class AreaCfg(QuantityCfg):
+    '''
+    Configurações da coletor das áreas.
+    
+    OBS: A área coletada é a área do polígono formado pelos
+        centros das partículas e não a área total dos anéis.
+    '''
+    name = "area"
+    num_dims = 1
+
+class AreaCol(QuantityCol):
+    def collect(self, ids_in_region, cms_in_region):
+        areas = np.array(self.solver.area_debug.area)[ids_in_region]
+        self.data.add(areas)
 
 
 quantity_cfg_to_col = {
     VelocityCfg: VelocityCol,
     CmsCfg: CmsCol,
+    PolarityCfg: PolarityCol,
+    AreaCfg: AreaCol,
 }

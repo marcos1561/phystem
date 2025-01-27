@@ -74,7 +74,7 @@ class ColManager(RingCol):
                 to_load_autosave=collect_cfg.is_autosave,
             )
             for name, ColT in cols.items():
-                collectors.add_collector(ColT, cfg[name], name)
+                collectors.add_collector(ColT, ColT.get_kwargs_configs(cfg[name]), name)
 
             prog = progress.Continuos(collect_cfg.tf)
             while solver.time < collect_cfg.tf:

@@ -24,8 +24,10 @@ class ArraySizeAware:
     def add(self, data: np.array):
         '''
         Adiciona um novo ponto de dados no array. `data` deve
-        ter o shape (max_num_els, num_dims).
+        ter o shape (<= max_num_els, num_dims).
         '''
+        if len(data.shape) == 1:
+            data = data[:, None]
         self.update(self.current_id, data)
         self.current_id += 1
 
@@ -168,9 +170,9 @@ class MultFileList(Generic[ListT, ItemT]):
         return self._num_total_points
     
 if __name__ == "__main__":
-    a = MultFileList[ArraySizeAware, np.ndarray](
-        "/home/marcos/Documents/Programacao/IC/phystem/experiments/ring/density_profile/data/den_vel_test/den_vel/data",
-        "den_cms")
+    data = ArraySizeAware(3, 4, 1)
     
-    for idx, i in enumerate(a):
-        print(idx, i.shape)
+    y = np.array([1,2,3])
+    
+    data.add(y)
+    print(data.data)

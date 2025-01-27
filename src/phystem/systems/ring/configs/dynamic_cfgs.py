@@ -7,7 +7,7 @@ class RingCfg:
     def __init__(self,  spring_k: float, spring_r: float, mobility: float, 
         relax_time: float, vo: float, trans_diff: float, rot_diff: float, 
         diameter: float, max_dist: float, rep_force: float, adh_force: float, 
-        num_particles: int, k_invasion: float | str="auto",
+        num_particles: int, k_invasion: float="auto",
         area_potencial="target_area", p0: float=None, p0_format: float=None, 
         area0: float=None, k_format: float=None, k_area: float=None) -> None:
         '''

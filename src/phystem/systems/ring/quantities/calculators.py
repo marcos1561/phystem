@@ -163,8 +163,7 @@ class DeltaCalculator(Calculator):
         self.data: DeltaData
 
         configs = self.data.configs
-        ring_d = utils.ring_radius(
-            configs["dynamic_cfg"].diameter, configs["creator_cfg"].num_particles) * 2
+        ring_d = configs["dynamic_cfg"].get_ring_radius() * 2
         
         self.edge_k = edge_k
         self.debug = debug
@@ -692,7 +691,7 @@ class PolarityCalculator(Calculator):
 
         self.cell_pol_mean: np.ndarray = None
 
-        self.cell_pol_sum = np.zeros(*self.grid.shape_mpl, dtype=float)
+        self.cell_pol_sum = np.zeros((2, *self.grid.shape_mpl_t), dtype=float)
         self.num_points = 0
         self.next_file_id = 0
 
@@ -701,23 +700,33 @@ class PolarityCalculator(Calculator):
         self.init_kwargs["grid"] = self.grid
 
     def calc_quantity(self):
-        data = self.data
-        while self.next_file_id < data.pol_data.num_files:
-            pols = data.pol_data.get_file(self.next_file_id).strip()
-            cms = data.cms_data.get_file(self.next_file_id).strip()
+        while self.next_file_id < self.data.pol.num_files:
+            pols = self.data.pol.get_file(self.next_file_id)
+            cms = self.data.cms.get_file(self.next_file_id)
+            pols.strip()
+            cms.strip()
 
-            coords = self.grid.coords(cms)
+            pols_data = pols.data[..., 0]
+            pol_x = np.cos(pols_data)
+            pol_y = np.sin(pols_data)
 
-            cell_pol = self.grid.mean_by_cell(pols.data, coords, end_id=cms.point_num_elements)
-            self.cell_pol_sum += cell_pol.sum(axis=0)
-            self.num_points += cell_pol.shape[0]
+            coords = self.grid.coords(cms.data)
+            cell_pol_x = self.grid.mean_by_cell(pol_x, coords, end_id=cms.point_num_elements)
+            cell_pol_y = self.grid.mean_by_cell(pol_y, coords, end_id=cms.point_num_elements)
+
+            self.cell_pol_sum[0] += cell_pol_x.sum(axis=0)
+            self.cell_pol_sum[1] += cell_pol_y.sum(axis=0)
+            self.num_points += cell_pol_x.shape[0]
             self.next_file_id += 1
 
-        self.cell_pol_mean = self.cell_pol_sum /  self.num_points
+        pol_vec_mean = self.cell_pol_sum / self.num_points
+        pol_mean = np.arctan2(pol_vec_mean[1], pol_vec_mean[0]) 
+
+        self.cell_pol_mean = self.grid.remove_cells_out_of_bounds(pol_mean)
         self.metadata["num_points"] = self.num_points
 
     def save_data(self):
-        np.save(self.root_path / "pol.npy", self.cell_den_mean)
+        np.save(self.root_path / "pol.npy", self.cell_pol_mean)
 
     @staticmethod
     def load_data(path):
@@ -806,6 +815,64 @@ class AreaCalculator(Calculator):
     data: AreaData
 
     def __init__(self, data: AreaData, root_path: Path,
+        grid: utils.RegularGrid, start_id=0,
+        autosave_cfg: CalcAutoSaveCfg = None, exist_ok=False) -> None:
+        "Calcula a área média dos anéis dentro das células da grade `grid`."
+        super().__init__(data, root_path, autosave_cfg, exist_ok)
+        self.grid = grid
+
+        self.cell_area_sum = np.zeros(self.grid.shape_mpl_t, dtype=float)
+        self.num_points = start_id
+        self.next_file_id = 0
+        
+        self.grid.save_configs(self.root_path / "grid_configs.yaml")
+
+        self.init_kwargs["grid"] = grid
+        self.init_kwargs["start_id"] = start_id
+
+    def calc_quantity(self):
+        while self.next_file_id < self.data.area.num_files:
+            cms = self.data.cms.get_file(self.next_file_id)
+            areas = self.data.area.get_file(self.next_file_id)
+            cms.strip()
+            areas.strip()
+
+            coords = self.grid.coords(cms.data)
+            cell_area = self.grid.mean_by_cell(areas.data[..., 0], coords)
+
+            self.cell_area_sum += cell_area.sum(axis=0)
+            self.num_points += cell_area.shape[0]
+            self.next_file_id += 1
+
+        self.cell_area_mean = self.grid.remove_cells_out_of_bounds(self.cell_area_sum) / self.num_points
+        self.metadata["num_points"] = self.num_points
+
+    def save_data(self):
+        np.save(self.root_path / "areas.npy", self.cell_area_mean)
+    
+    @staticmethod
+    def load_data(path):
+        path = Path(path)
+        
+        class AreaResults:
+            def __init__(self, grid: utils.RegularGrid, cell_area: np.ndarray, metadata: dict) -> None:
+                self.grid = grid
+                self.cell_area = cell_area
+                self.metadata = metadata  
+
+        grid = utils.RegularGrid.load(path / "grid_configs.yaml")
+        cell_area = np.load(path / "areas.npy")
+        
+        with open(path / "metadata.yaml") as f:
+            metadata = yaml.unsafe_load(f)
+
+        return AreaResults(grid, cell_area, metadata)
+
+class AreaCalculatorOld(Calculator):
+    DataT = AreaDataOld
+    data: AreaDataOld
+
+    def __init__(self, data: AreaDataOld, root_path: Path,
         grid: utils.RegularGrid, start_id=0,
         autosave_cfg: CalcAutoSaveCfg = None, exist_ok=False) -> None:
         "Calcula a área média dos anéis dentro das células da grade `grid`."

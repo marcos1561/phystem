@@ -6,7 +6,7 @@ from pathlib import Path
 
 from phystem.data_utils.data_types import ArraySizeAware, MultFileList
 from phystem.systems.ring.collectors.quantity_pos.collectors import (
-    VelocityCfg, CmsCfg
+    VelocityCfg, CmsCfg, PolarityCfg, AreaCfg
 )
 
 class BaseData(ABC):
@@ -14,6 +14,7 @@ class BaseData(ABC):
     def __init__(self, root_path: Path, data_dirname="data") -> None:
         self.root_path = Path(root_path).absolute().resolve()
         self.data_path = self.root_path / data_dirname
+
 
 class DeltaData(BaseData):
     class Mode(Flag):
@@ -100,18 +101,17 @@ class CreationRateData(BaseData):
         self.num_created = np.load(self.data_path / "num_created.npy")[:num_points]
         self.num_active = np.load(self.data_path / "num_active.npy")[:num_points]
 
-class PolData(BaseData):
+
+class CmsData(BaseData):
     def __init__(self, root_path: Path) -> None:
         '''
-        Carrega os dados da polarização coletados pelo coletor `DensityVelCol`. 
+        Carrega os dados dos centros de massa coletados pelo coletor `QuantityPos`. 
         Para mais informações sobre o formato dos dados, leia a 
         documentação do respectivo coletor.
         '''
         super().__init__(root_path)
-        self.pol_time = np.load(self.data_path / "pol_time.npy")
-        self.pol_data = MultFileList[ArraySizeAware, np.ndarray](self.data_path, "pol") 
-        self.cms_data = MultFileList[ArraySizeAware, np.ndarray](self.data_path, "den_cms") 
-
+        self.time = np.load(self.data_path / "times.npy")
+        self.cms = MultFileList[ArraySizeAware, np.ndarray](self.data_path, CmsCfg.name) 
 
 class VelData(BaseData):
     def __init__(self, root_path: Path) -> None:
@@ -130,16 +130,30 @@ class VelData(BaseData):
             self.frame_dt = metadata["frame_dt"]    
             self.last_point_completed = metadata["last_point_completed"]    
 
-class CmsData(BaseData):
+class PolData(BaseData):
     def __init__(self, root_path: Path) -> None:
         '''
-        Carrega os dados dos centros de massa coletados pelo coletor `QuantityPos`. 
+        Carrega os dados das polarizações coletados pelo coletor `QuantityPos`. 
         Para mais informações sobre o formato dos dados, leia a 
         documentação do respectivo coletor.
         '''
         super().__init__(root_path)
         self.time = np.load(self.data_path / "times.npy")
+        self.pol = MultFileList[ArraySizeAware, np.ndarray](self.data_path, PolarityCfg.name) 
         self.cms = MultFileList[ArraySizeAware, np.ndarray](self.data_path, CmsCfg.name) 
+
+class AreaData(BaseData):
+    def __init__(self, root_path: Path) -> None:
+        '''
+        Carrega os dados das áreas coletados pelo coletor `QuantityPos`. 
+        Para mais informações sobre o formato dos dados, leia a 
+        documentação do respectivo coletor.
+        '''
+        super().__init__(root_path)
+        self.time = np.load(self.data_path / "times.npy")
+        self.area = MultFileList[ArraySizeAware, np.ndarray](self.data_path, AreaCfg.name) 
+        self.cms = MultFileList[ArraySizeAware, np.ndarray](self.data_path, CmsCfg.name) 
+
 
 class DenVelData(BaseData):
     def __init__(self, root_path: Path) -> None:
@@ -175,7 +189,7 @@ class DenVelData(BaseData):
         # self.num_vel_points = self.total_num_data_points_per_file * (self.vel_num_files - 1) + self.vel_data.get_file(self.vel_num_files-1).num_points
         # self.num_den_points = self.total_num_data_points_per_file * (self.den_num_files - 1) + self.den_data.get_file(self.den_num_files-1).num_points
 
-class AreaData(BaseData):
+class AreaDataOld(BaseData):
     def __init__(self, root_path: Path, data_dirname="data") -> None:
         super().__init__(root_path, data_dirname)
 

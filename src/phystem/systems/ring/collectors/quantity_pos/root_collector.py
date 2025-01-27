@@ -44,11 +44,13 @@ class QuantityPosCol(RingCol):
             h = space_cfg.height
         
         num_max_rings = int(l * h / area_eq * 1.2)
-        
+        num_dims = 4
+        num_data_points_per_file = int(self.col_cfg.memory_per_file / (num_max_rings * num_dims * 4))            
+
         self.state = QuantityPosState(self.solver.num_time_steps)
         
         self.quantities: list[QuantityCol] = [
-            quantity_cfg_to_col[type(q_cfg)](q_cfg, self.state, self.col_cfg, self.solver, num_max_rings, self.data_path)
+            quantity_cfg_to_col[type(q_cfg)](q_cfg, self.state, self.col_cfg, self.solver, num_max_rings, num_data_points_per_file, self.data_path)
             for q_cfg in self.col_cfg.quantities_cfg
         ]
 

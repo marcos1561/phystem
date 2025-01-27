@@ -115,7 +115,7 @@ class SimulationCore(ABC):
         return cls(**cfgs)
 
     @classmethod
-    def load_from_checkpoint(cls, path: Path, run_cfg: RunCfg=None):
+    def load_from_checkpoint(cls, path: Path, run_cfg: RunCfg=None, cp_kwargs=None):
         '''
         Carrega uma simulação a partir de um checkpoint em `path`. 
         É possível passar uma `run_cfg` para ser utilizada ao invés
@@ -130,7 +130,10 @@ class SimulationCore(ABC):
         if run_cfg is not None:
             cfgs["run_cfg"] = run_cfg
 
-        checkpoint_cfg = CheckpointCfg(path)
+        if cp_kwargs is None:
+            cp_kwargs = {}
+
+        checkpoint_cfg = CheckpointCfg(path, **cp_kwargs)
         cfgs["run_cfg"].checkpoint = checkpoint_cfg
 
         return cls(**cfgs)

@@ -43,21 +43,23 @@ class StateSaver:
             }
     
     def __init__(self, solver: CppSolver, root_path: Path, configs: dict, xlims=(-1, -1), filenames: FileNames=None) -> None:
-        '''Coletor para salvar o estado do sistema. O seu método `collect` não está implementado, para 
-        salver o estado do sistema utilize `self.save`.
+        '''
+        Coletor para salvar o estado do sistema. O seu método `collect` não está implementado, para 
+        salvar o estado do sistema utilize `self.save`.
         
         Parâmetros:
-            solver:
-                Solver do sistema em questão.
-            
-            root_path:
-                Caminho da pasta onde os dados serão salvos.
+        -----------
+        solver:
+            Solver do sistema em questão.
+        
+        root_path:
+            Caminho da pasta onde os dados serão salvos.
 
-            file_names:
-                Nome dos arquivos que serão salvos. Caso for `None` será utilizado
-                os nomes padrões definidos em `FileNames`.
-                
-                Para não salvar algum dado, sete para `None` o nome do seu arquivo.
+        file_names:
+            Nome dos arquivos que serão salvos. Caso for `None` será utilizado
+            os nomes padrões definidos em `FileNames`.
+            
+            Para não salvar algum dado, sete para `None` o nome do seu arquivo.
         '''
         self.solver = solver 
         self.root_path = Path(root_path)

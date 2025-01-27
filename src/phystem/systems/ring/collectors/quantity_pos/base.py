@@ -10,7 +10,7 @@ from phystem.systems.ring.solvers import CppSolver
 
 @dataclass
 class QuantityPosState:
-    "Variáveis que caracterizam o estado do coletor."
+    "Variáveis que caracterizam o estado do coletor raiz."
     
     # Tempo da última coleta em unidades do passo temporal.
     col_last_time: int
@@ -20,7 +20,8 @@ class QuantityPosState:
 
 @dataclass
 class QuantityState:
-    "Variáveis que caracterizam o estado do coletor."
+    "Variáveis que caracterizam o estado dos coletores gerenciados."
+    
     # Container dos dados coletados.
     data: ArraySizeAware
     
@@ -48,8 +49,9 @@ class QuantityPosCfg:
         both = auto()
         none = auto()
 
-    def __init__(self, transient_time: float, collect_dt: int, xlims: list[float], ylims: list[float], 
-        quantities_cfg: list[QuantityCfg], autosave_cfg: ColAutoSaveCfg=None, memory_per_file=10*1e6):
+    def __init__(self, collect_dt: int, xlims: list[float]="all", ylims: list[float]="all", 
+        quantities_cfg: list[QuantityCfg]=None, transient_time: float=0,
+        autosave_cfg: ColAutoSaveCfg=None, memory_per_file=10*1e6):
         '''
         Configurações do gerenciador de coletores com quantidades associadas às posições
         do centro dos anéis. Para escolher quais coletores serão utilizados, basta
@@ -87,6 +89,9 @@ class QuantityPosCfg:
         memory_per_file:
             Tamanho do arquivo de dados dos coletores em bytes.
         '''
+        if quantities_cfg is None:
+            quantities_cfg = []
+
         self.check_type = self.CheckType.both
         
         self._xlims = xlims
@@ -124,7 +129,7 @@ class QuantityPosCfg:
     @xlims.setter
     def xlims(self, value):
         if value == "all":
-            value = 0
+            value = [-float('inf'), float('inf')]
             self.check_x = False
         else:
             self.check_x = True
@@ -134,7 +139,7 @@ class QuantityPosCfg:
     @ylims.setter
     def ylims(self, value):
         if value == "all":
-            value = 0
+            value = [-float('inf'), float('inf')]
             self.check_y = False
         else:
             self.check_y = True
@@ -146,18 +151,19 @@ class QuantityCol(ABC):
     StateT = QuantityState
     
     def __init__(self, configs: QuantityCfg, root_state: QuantityPosState, root_configs: QuantityPosCfg, 
-        solver: CppSolver, num_max_rings, data_path):
+        solver: CppSolver, num_max_rings, num_data_points_per_file, data_path):
         "Base dos coletores gerenciados por `QuantityPos`."
         self.solver = solver
         self.configs = configs
         self.root_state = root_state
         self.root_configs = root_configs
         self.data_path = data_path
-        self.num_data_points_per_file = int(self.root_configs.memory_per_file / (num_max_rings * configs.num_dims * 4))
+        # self.num_data_points_per_file = int(self.root_configs.memory_per_file / (num_max_rings * configs.num_dims * 4))
 
         self.metadata = {}
 
-        self.state = self.StateT(self.create_data(num_max_rings))
+        self.data = self.create_data(num_data_points_per_file, num_max_rings)
+        self.state = self.StateT(self.data)
 
         self.init_metadata(self.metadata)
 
@@ -167,8 +173,8 @@ class QuantityCol(ABC):
     def before_save_metadata(self, metadata: dict):
         pass
 
-    def create_data(self, num_max_rings):
-        return ArraySizeAware(self.num_data_points_per_file, num_max_rings, self.configs.num_dims)
+    def create_data(self, num_data_points_per_file, num_max_rings):
+        return ArraySizeAware(num_data_points_per_file, num_max_rings, self.configs.num_dims)
 
     def to_collect(self, time_dt: int, is_time: bool) -> bool:
         '''
