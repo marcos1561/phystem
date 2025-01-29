@@ -288,7 +288,7 @@ class Density(ColorBarableComp):
         # self.grid = utils.RegularGrid(l, h, num_cols, num_rows)
 
         self.artist = ax.pcolormesh(*self.density_calc.grid.edges, self.get_density(), shading='flat',
-                zorder=1, cmap="coolwarm" ,**artist_kwargs)
+                zorder=1, cmap="coolwarm", **artist_kwargs)
         self.artist.remove()
 
         self.artist_list.add("main", self.artist)

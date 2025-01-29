@@ -139,7 +139,7 @@ def interpolate_obstacle(data, grid: utils.RegularGrid, stokes_cfg: StokesCfg):
 
     data[in_obstacle_mask] = new_values
 
-def smooth_data(data, grid:utils.RegularGrid, new_cell_size, filter_sigma, skip_start_cols=0, skip_end_cols=0):
+def smooth_data(data, grid:utils.RegularGrid, new_cell_size, filter_sigma, stokes_cfg: StokesCfg, skip_start_cols=0, skip_end_cols=0):
     '''
     Dado o campo escalar `data` na grade `grid`, faz o seguinte:
 
@@ -157,6 +157,7 @@ def smooth_data(data, grid:utils.RegularGrid, new_cell_size, filter_sigma, skip_
     '''
     start_id = skip_start_cols
     end_id = skip_end_cols
+    data = np.copy(data)
 
     edge_end_id = end_id
     if end_id == 0:
@@ -167,6 +168,8 @@ def smooth_data(data, grid:utils.RegularGrid, new_cell_size, filter_sigma, skip_
     grid = utils.RegularGrid.from_edges((
         grid.edges[0][start_id:edge_end_id], grid.edges[1]
     ))
+
+    interpolate_obstacle(data, grid, stokes_cfg)
 
     num_cols = round(grid.length / new_cell_size)
     num_rows = round(grid.height / new_cell_size)
@@ -212,7 +215,7 @@ class Density:
         '''
         coords = self.grid.coords(cms)
         count = self.grid.count(coords, remove_out_of_bounds=True, simplify_shape=True)
-        return count
+        return count / self.grid.cell_area
 
     def get_from_pos(self, pos):
         '''

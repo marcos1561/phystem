@@ -7,4 +7,5 @@ from .manager import ColManager, ColManagerCfg
 from .snapshots import SnapshotsCol, SnapshotsColCfg
 from .checkpoint import CheckpointCol, CheckpointColCfg
 from .area import AreaCol, AreaColCfg
+from .invasion import InvasionCol, InvasionColCfg
 from .quantity_pos import *

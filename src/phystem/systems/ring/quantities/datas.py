@@ -199,4 +199,5 @@ class InvasionData(BaseData):
         self.times = data["times"]
         self.num_invasions = data["num_invasions"]
         self.invasions_pos = data["invasions_pos"]
+        self.unique_invasions = data["unique_invasions"]
         self.relative_areas = data["relative_areas"]
