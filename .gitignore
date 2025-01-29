@@ -11,6 +11,7 @@ experiments
 random_stuff
 lovelace
 notas
+workspaces
 
 examples/ring/stokes/big_test
 examples/ring/stokes/data_test

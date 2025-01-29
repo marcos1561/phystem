@@ -144,7 +144,7 @@ class Calculator(AutoSavable, ABC):
         obj.load_autosave()
         return obj
 
-class DeltaCalculator(Calculator):
+class DeltaCalc(Calculator):
     DataT = DeltaData
 
     def __init__(self, data: DeltaData, edge_k: float, 
@@ -276,7 +276,7 @@ class DeltaCalculator(Calculator):
 
         return DebugDeltaData(**items)
 
-class DenVelCalculator(Calculator):
+class DenVelCalc(Calculator):
     DataT = DenVelData
     data: DenVelData
     # def __init__(self, data: DenVelData, root_path: Path, autosave_cfg: CalcAutoSaveCfg=None, exist_ok=False) -> None:
@@ -348,7 +348,7 @@ class DenVelCalculator(Calculator):
         return DenResults(den_time, den_eq), VelResults(vel_time, vel_order_par)
 
 
-class VelocityCalculator(Calculator):
+class VelocityCalc(Calculator):
     DataT = VelData
     data: VelData
 
@@ -475,7 +475,7 @@ class VelocityCalculator(Calculator):
 #         return VelResults(grid, cell_vel, metadata)
 
 
-class DensityCalculator(Calculator):
+class DensityCalc(Calculator):
     DataT = CmsData
     data: CmsData
 
@@ -574,6 +574,65 @@ class DensityCalculator(Calculator):
             metadata = yaml.unsafe_load(f)
 
         return DenResults(grid, cell_vel, metadata)
+
+class DensityTimeCalc(Calculator):
+    DataT = CmsData
+    data: CmsData
+
+    def __init__(self, xlims, data: CmsData, root_path: Path,
+        autosave_cfg: CalcAutoSaveCfg = None, exist_ok=False) -> None:
+        "Calcula densidade em função do tempo."
+        super().__init__(data, root_path, autosave_cfg, exist_ok)
+
+        self.sim_configs = ring.run_config.load_configs(self.data.root_path / settings.system_config_fname)
+        self.stokes_cfg: ring.configs.StokesCfg = self.sim_configs["other_cfgs"].get("stokes", None)
+
+        self.den = np.zeros(len(self.data.cms), dtype=float)
+        self.start_id = 0
+        self.next_file_id = 0
+
+        self.xlims = xlims
+
+        self.init_kwargs["xlims"] = xlims
+
+    def calc_quantity(self):
+        while self.next_file_id < self.data.cms.num_files:
+            cms = self.data.cms.get_file(self.next_file_id)
+            cms.strip()
+            
+            end_id = self.start_id + cms.point_num_elements.size
+            self.den[self.start_id:end_id] = cms.point_num_elements
+            self.start_id = end_id
+            self.next_file_id += 1
+
+        if self.start_id != self.den.size:
+            print((
+                f"Aviso: O número de pontos preenchidos ({self.start_id}) não foi igual ao \n"
+                f"número de pontos salvos ({self.den.size})"
+            ))
+
+        sim_configs = ring.run_config.load_configs(self.data.root_path / settings.system_config_fname)
+        area = sim_configs["space_cfg"].height * (self.xlims[1] - self.xlims[0]) 
+        
+        self.den /= area
+    
+    def save_data(self):
+        if self.den.size != self.data.times.size:
+            print(f"Aviso: den.size ({self.den.size}) != times.size ({self.data.times.size})")
+
+        np.save(self.root_path / "den.npy", self.den)
+        np.save(self.root_path / "times.npy", self.data.times)
+
+    @staticmethod
+    def load_data(path: Path):
+        path = Path(path)
+
+        DenResults = namedtuple('DenResults', ['den', 'times'])
+
+        den = np.load(path / "den.npy")
+        times = np.load(path / "times.npy")
+
+        return DenResults(den, times)
 
 # class DensityCalculator(Calculator):
 #     DataT = DenVelData
@@ -679,7 +738,7 @@ class DensityCalculator(Calculator):
 #         return DenResults(grid, cell_vel, metadata)
     
 
-class PolarityCalculator(Calculator):
+class PolarityCalc(Calculator):
     DataT = PolData
     data: PolData
 
@@ -746,11 +805,65 @@ class PolarityCalculator(Calculator):
 
         return PolResults(grid, cell_vel, metadata)
     
-class TextureCalc(Calculator):
-    DataT = DenVelData
-    data: DenVelData
+class VelocityOrderParCalc(Calculator):
+    DataT = VelData
+    data: VelData
 
-    def __init__(self, data: DenVelData, root_path: Path, 
+    def calc_quantity(self):
+        data = self.data
+
+        vel_par_order = np.zeros(len(data.vel), dtype=float)
+        start_id = 0
+        for fid in range(data.vel.num_files):
+            vels_cms = data.vel.get_file(fid)
+            vels_cms.strip()
+
+            vels = (vels_cms.data[:,:,2:] - vels_cms.data[:,:,:2])/data.frame_dt
+            speeds = np.sqrt((vels**2).sum(axis=2))
+
+            is_zero_speed = speeds == 0
+            speeds[is_zero_speed] = 1
+
+            vels_norm = vels / speeds.reshape(vels.shape[0], -1, 1)
+            vels_norm_mean = (vels_norm).sum(axis=1) / vels_cms.point_num_elements.reshape(-1, 1)
+            vel_par_order_i = ((vels_norm_mean**2).sum(axis=1))**.5
+
+            final_id = start_id + len(vels_cms)
+            vel_par_order[start_id:final_id] = vel_par_order_i
+            start_id = final_id
+
+        if start_id != len(data.vel):
+            print((
+                f"Aviso: O número de pontos preenchidos ({start_id}) não foi igual ao \n"
+                f"número de pontos salvos ({len(data.vel)})"
+            ))
+
+        self.vel_par_order = vel_par_order
+
+    def save_data(self):
+        times = self.data.times
+        if not self.data.last_point_completed:
+            times = times[:-1]
+
+        np.save(self.root_path / "order_par.npy", self.vel_par_order)
+        np.save(self.root_path / "times.npy", times)
+
+    @staticmethod
+    def load_data(path: Path):
+        path = Path(path)
+
+        VelOrderParResults = namedtuple('VelOrderParResults', ['times', 'order_par'])
+
+        order_par = np.load(path / "order_par.npy")
+        times = np.load(path / "times.npy")
+
+        return VelOrderParResults(times, order_par)
+
+class TextureCalc(Calculator):
+    DataT = CmsData
+    data: CmsData
+
+    def __init__(self, data: CmsData, root_path: Path, 
         grid, ring_diameter: float, 
         edge_k=1.4,
         autosave_cfg: CalcAutoSaveCfg = None, exist_ok=False) -> None:
@@ -774,10 +887,10 @@ class TextureCalc(Calculator):
         import texture
 
         data = self.data
-        cms_vel_data = data.vel_data
+        data_cms = data.cms
         
-        for idx in range(self.current_id, len(cms_vel_data)):
-            cms = cms_vel_data[idx][:, :2]
+        for idx in range(self.current_id, len(data_cms)):
+            cms = data_cms[idx]
             edges = utils.calc_edges(cms, self.ring_diameter, self.edge_k)
 
             sumw, count = texture.texture.bin_texture(cms, edges, self.grid)
@@ -786,7 +899,7 @@ class TextureCalc(Calculator):
 
         cell_count_non_zero = np.maximum(1, self.cell_count)
         self.texture_mean = self.cell_texture_sum / cell_count_non_zero[..., None]
-        self.metadata["num_points"] = len(cms_vel_data)
+        self.metadata["num_points"] = len(data_cms)
 
     def save_data(self):
         np.save(self.root_path / "texture.npy", self.texture_mean)
@@ -810,7 +923,7 @@ class TextureCalc(Calculator):
 
         return TextureResults(grid, texture, metadata)
 
-class AreaCalculator(Calculator):
+class AreaCalc(Calculator):
     DataT = AreaData
     data: AreaData
 
@@ -845,63 +958,6 @@ class AreaCalculator(Calculator):
             self.next_file_id += 1
 
         self.cell_area_mean = self.grid.remove_cells_out_of_bounds(self.cell_area_sum) / self.num_points
-        self.metadata["num_points"] = self.num_points
-
-    def save_data(self):
-        np.save(self.root_path / "areas.npy", self.cell_area_mean)
-    
-    @staticmethod
-    def load_data(path):
-        path = Path(path)
-        
-        class AreaResults:
-            def __init__(self, grid: utils.RegularGrid, cell_area: np.ndarray, metadata: dict) -> None:
-                self.grid = grid
-                self.cell_area = cell_area
-                self.metadata = metadata  
-
-        grid = utils.RegularGrid.load(path / "grid_configs.yaml")
-        cell_area = np.load(path / "areas.npy")
-        
-        with open(path / "metadata.yaml") as f:
-            metadata = yaml.unsafe_load(f)
-
-        return AreaResults(grid, cell_area, metadata)
-
-class AreaCalculatorOld(Calculator):
-    DataT = AreaDataOld
-    data: AreaDataOld
-
-    def __init__(self, data: AreaDataOld, root_path: Path,
-        grid: utils.RegularGrid, start_id=0,
-        autosave_cfg: CalcAutoSaveCfg = None, exist_ok=False) -> None:
-        "Calcula a área média dos anéis dentro das células da grade `grid`."
-        super().__init__(data, root_path, autosave_cfg, exist_ok)
-        self.grid = grid
-
-        self.next_frame_id = 0
-        self.num_points = start_id
-        self.cell_area_mean = np.zeros(self.grid.shape_mpl_t, dtype=float)
-        
-        self.grid.save_configs(self.root_path / "grid_configs.yaml")
-
-        self.init_kwargs["grid"] = grid
-        self.init_kwargs["start_id"] = start_id
-
-    def calc_quantity(self):
-        for idx in range(self.num_points, len(self.data.areas)):
-            areas = self.data.areas[idx]
-            cms = self.data.pos[idx]
-            
-            coords = self.grid.coords(cms, simplify_shape=True)
-            cell_area = self.grid.mean_by_cell(areas, coords, simplify_shape=True)
-
-            self.cell_area_mean += cell_area
-            self.num_points += 1
-            self.next_frame_id += 1
-
-        self.cell_area_mean = self.grid.remove_cells_out_of_bounds(self.cell_area_mean)
-        self.cell_area_mean /= self.num_points
         self.metadata["num_points"] = self.num_points
 
     def save_data(self):

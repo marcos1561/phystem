@@ -97,7 +97,7 @@ class CreationRateData(BaseData):
         with open(self.data_path / "cr_metadata.yaml") as f:
             num_points = yaml.unsafe_load(f)["num_points"]
 
-        self.time = np.load(self.data_path / "time.npy")[:num_points]
+        self.times = np.load(self.data_path / "time.npy")[:num_points]
         self.num_created = np.load(self.data_path / "num_created.npy")[:num_points]
         self.num_active = np.load(self.data_path / "num_active.npy")[:num_points]
 
@@ -110,7 +110,7 @@ class CmsData(BaseData):
         documentação do respectivo coletor.
         '''
         super().__init__(root_path)
-        self.time = np.load(self.data_path / "times.npy")
+        self.times = np.load(self.data_path / "times.npy")
         self.cms = MultFileList[ArraySizeAware, np.ndarray](self.data_path, CmsCfg.name) 
 
 class VelData(BaseData):
@@ -121,7 +121,7 @@ class VelData(BaseData):
         documentação do respectivo coletor.
         '''
         super().__init__(root_path)
-        self.time = np.load(self.data_path / "times.npy")
+        self.times = np.load(self.data_path / "times.npy")
         self.vel = MultFileList[ArraySizeAware, np.ndarray](self.data_path, VelocityCfg.name) 
         self.cms = MultFileList[ArraySizeAware, np.ndarray](self.data_path, CmsCfg.name) 
 
@@ -138,7 +138,7 @@ class PolData(BaseData):
         documentação do respectivo coletor.
         '''
         super().__init__(root_path)
-        self.time = np.load(self.data_path / "times.npy")
+        self.times = np.load(self.data_path / "times.npy")
         self.pol = MultFileList[ArraySizeAware, np.ndarray](self.data_path, PolarityCfg.name) 
         self.cms = MultFileList[ArraySizeAware, np.ndarray](self.data_path, CmsCfg.name) 
 
@@ -150,7 +150,7 @@ class AreaData(BaseData):
         documentação do respectivo coletor.
         '''
         super().__init__(root_path)
-        self.time = np.load(self.data_path / "times.npy")
+        self.times = np.load(self.data_path / "times.npy")
         self.area = MultFileList[ArraySizeAware, np.ndarray](self.data_path, AreaCfg.name) 
         self.cms = MultFileList[ArraySizeAware, np.ndarray](self.data_path, CmsCfg.name) 
 
@@ -189,13 +189,14 @@ class DenVelData(BaseData):
         # self.num_vel_points = self.total_num_data_points_per_file * (self.vel_num_files - 1) + self.vel_data.get_file(self.vel_num_files-1).num_points
         # self.num_den_points = self.total_num_data_points_per_file * (self.den_num_files - 1) + self.den_data.get_file(self.den_num_files-1).num_points
 
-class AreaDataOld(BaseData):
-    def __init__(self, root_path: Path, data_dirname="data") -> None:
-        super().__init__(root_path, data_dirname)
+class InvasionData(BaseData):
+    def __init__(self, root_path):
+        super().__init__(root_path)
 
         with open(self.data_path / "data.pickle", "rb") as f:
             data = pickle.load(f)
-        
+
         self.times = data["times"]
-        self.areas = data["areas"]
-        self.pos = data["pos"]
+        self.num_invasions = data["num_invasions"]
+        self.invasions_pos = data["invasions_pos"]
+        self.relative_areas = data["relative_areas"]
