@@ -33,7 +33,7 @@ class A(AutoSavable):
     def check_autosave(self, i):
         if i % self.autosave_cfg.freq == 0:
             self.num_autosaves += 1
-            self.autosave()
+            self.exec_autosave()
 
 a = A("root_dir", AAutoSaveCfg(freq=2))
 result = a.var1, a.var2, a.num_autosaves
@@ -49,4 +49,3 @@ expected = 8, 9, 5
 print("r:", result)
 print("e:", expected)
 print(result == expected)
-

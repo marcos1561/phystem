@@ -2,11 +2,13 @@ import unittest, os, shutil
 from pathlib import Path
 
 from phystem.systems.ring import Simulation, utils
+from phystem.systems.ring.configs import RingCfg
 from phystem.core.run_config import load_configs, CollectDataCfg, CheckpointCfg
-from phystem.systems.ring.collectors import DeltaCol, ColAutoSaveCfg, DenVelCol, CreationRateCol, CheckpointCol, SnapshotsCol, SnapshotsColCfg, RingCol
+from phystem.systems.ring.collectors import *
+from phystem.systems.ring.quantities.datas import *
 
-current_folder = Path(os.path.dirname(__file__))
-configs_path = current_folder / "data_test/ring/configs/collectors_configs"
+CURRENT_FOLDER = Path(os.path.dirname(__file__))
+CONFIGS_PATH = CURRENT_FOLDER / "data_test/ring/configs/collectors_configs"
 
 class AsteroidError(Exception):
     def __init__(self, *args: object) -> None:
@@ -33,8 +35,7 @@ class TestRingCols(unittest.TestCase):
         
         sim.run()
         shutil.rmtree(run_cfg.folder_path)
-
-        
+       
     def test_autosave_backup(self):
         num_autosaves = 5
         class DeltaInfected(DeltaCol):
@@ -72,7 +73,7 @@ class TestRingCols(unittest.TestCase):
 
     @staticmethod
     def exec_collect(stop_time: float, ColsT: dict[str, RingCol]):
-        configs = load_configs(configs_path)
+        configs = load_configs(CONFIGS_PATH)
         run_cfg: CollectDataCfg = configs["run_cfg"]
         dynamic_cfg = configs["dynamic_cfg"]
         radius = utils.ring_radius(
@@ -127,7 +128,7 @@ class TestRingCols(unittest.TestCase):
 
         # Rodando a simulação
         run_cfg: CollectDataCfg = configs["run_cfg"]
-        run_cfg.folder_path = current_folder / "tmp"
+        run_cfg.folder_path = CURRENT_FOLDER / "tmp"
         run_cfg.func_cfg = func_cfg
         run_cfg.func = TestRingCols.get_pipeline(
             stop_time=stop_time,
@@ -178,6 +179,145 @@ class TestRingCols(unittest.TestCase):
             prog.update(solver.time)
         
         return pipeline
+
+@dataclass
+class InfectedCfg(quantity_pos.base.QuantityCfg):
+    name = "infected"
+    num_dims = 1
+    to_crash = True
+    stop_time: float = None
+
+class InfectedCol(quantity_pos.base.QuantityCol):
+    configs: InfectedCfg
+
+    def to_collect(self, time_dt, is_time):
+        return True
+    
+    def collect(self, ids_in_region, cms_in_region):
+        if self.configs.to_crash and self.solver.time > self.configs.stop_time:
+            self.state.has_crashed = True
+            raise AsteroidError
+        
+quantity_pos.quantity_cfg_to_col[InfectedCfg] = InfectedCol
+
+
+class TestQuantityPos(unittest.TestCase):
+    def test_autosave(self):
+        '''
+        Check if QuantityPos collectors have an equal number of collected data points
+        and saved time points, with the collection process crashing and resuming
+        using an autosave.
+        '''
+        configs = load_configs(CONFIGS_PATH)
+        run_cfg: CollectDataCfg = configs["run_cfg"]
+        dynamic_cfg: RingCfg = configs["dynamic_cfg"]
+        radius = dynamic_cfg.get_ring_radius()
+        
+        #== Parameters ==#
+        tf = 120
+        stop_times = [50, 80]
+        collect_time = 1
+        autosave_freq_time = 5
+
+        quantities_cfg=[
+            quantity_pos.VelocityCfg(frame_dt=utils.time_to_num_dt(0.3, run_cfg.int_cfg.dt)),
+            quantity_pos.PolarityCfg(),
+            quantity_pos.AreaCfg(),
+            InfectedCfg(),
+        ]
+
+        datas_list = {
+            "cms": CmsData,
+            "vel": VelData,
+            "pol": PolData,
+            "area": AreaData,
+        }
+        #================#
+        
+        # Collectors configuration
+        center_region = -4 * 2*radius
+        func_cfg = ColManagerCfg(
+            cols_cfgs={
+            "q": QuantityPosCfg(
+                collect_dt=utils.time_to_num_dt(collect_time, run_cfg.int_cfg.dt),
+                xlims=[center_region - radius, center_region + radius],
+                quantities_cfg=quantities_cfg,
+            ),
+            "cr": CreationRateColCfg(
+                wait_time=4, collect_time=stop_times[0] - 4, collect_dt=2,
+            ),
+            },
+            autosave_cfg=ColAutoSaveCfg(freq_dt=autosave_freq_time),
+        ) 
+        
+
+        # Running simulation
+        run_cfg.folder_path = CURRENT_FOLDER / "tmp"
+        run_cfg.tf = tf
+        run_cfg.func_cfg = func_cfg
+
+        for idx, stop_time in enumerate(stop_times + [-1]):
+            if idx == 0:
+                col_cfg: InfectedCfg
+                for col_cfg in func_cfg.cols_cfgs["q"].quantities_cfg:
+                    if type(col_cfg) is InfectedCfg:
+                        break
+                col_cfg.stop_time = stop_time
+            else:
+                # Reloading simulation
+                configs = Simulation.configs_from_autosave(run_cfg.folder_path / "autosave")
+                
+                if stop_time != -1:
+                    cr_cfg: CreationRateColCfg = configs["run_cfg"].func_cfg.cols_cfgs["cr"]
+                    cr_cfg.collect_time = stop_time - cr_cfg.wait_time 
+
+                for col_cfg in configs["run_cfg"].func_cfg.cols_cfgs["q"].quantities_cfg:
+                    if type(col_cfg) is InfectedCfg:
+                        break
+                col_cfg.stop_time = stop_time
+                if stop_time == -1:
+                    col_cfg.to_crash = False
+
+            sim = Simulation(**configs)
+
+            if idx > 0:
+                if sim.solver.time < stop_times[idx-1] - autosave_freq_time:
+                    raise Exception((
+                        f"Tempo do solver ({sim.solver.time}) está errado após o carregamento do auto-save. "
+                        f"Deveria ser >= {stop_times[idx-1] - autosave_freq_time}"
+                    ))
+                
+            if stop_time != -1:
+                try:
+                    sim.run()
+                except AsteroidError as e:
+                    print("Asteroid!")
+            else:
+                sim.run()
+
+        datas: dict[str, BaseData] = {name: DataT(run_cfg.folder_path / "q") for name, DataT in datas_list.items()}
+
+        all_times = []
+        for name, d in datas.items():
+            time_length = d.times.size
+            data_length = len(d.__getattribute__(name))
+            
+            all_times.append(time_length)
+
+            if name == "vel" and not d.last_point_completed:
+                data_length += 1
+
+            self.assertEqual(time_length, data_length, f"{name}: data.times.size != len(data.{name})")
+            self.assertEqual(time_length, len(d.cms), f"{name}: data.times.size != len(data.cms)")
+
+        self.assertEqual(np.array(all_times).all(), True, "times")
+
+        cr_data = CreationRateData(run_cfg.folder_path / "cr")
+
+        self.assertEqual(cr_data.times.size, cr_data.num_active.size)
+        self.assertEqual(cr_data.times.size, cr_data.num_created.size)
+
+        shutil.rmtree(run_cfg.folder_path)
 
 if __name__ == '__main__':
     unittest.main()

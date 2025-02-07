@@ -8,6 +8,21 @@ from . import settings
 
 class ColAutoSaveCfg:
     def __init__(self, freq_dt: float, to_save_state=True, save_data_freq_dt=None) -> None:
+        '''
+        Configurações de auto-salvamento dos coletores.
+
+        Parâmetros:
+        -----------
+        freq_dt:
+            Intervalo de tempo (em unidades de tempo da simulação) entre os auto-salvamentos.
+        
+        save_data_freq_dt:
+            Intervalo de tempo (em unidades de tempo da simulação) entre o salvamentos dos
+            dados coletados até o momento. Se for `None` os dados apenas são salvos no final da coleta.
+        
+        to_save_state:
+            Flag indicando se o estado od sisteme é salvo no auto-salvamento.
+        '''
         self.freq_dt = freq_dt
         self.to_save_state = to_save_state
         self.save_data_freq_dt = save_data_freq_dt

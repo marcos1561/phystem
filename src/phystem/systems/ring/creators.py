@@ -72,13 +72,13 @@ class CreatorCfg:
         self.center = center
 
     @classmethod
-    def empty(cls, num_particle):
+    def empty(cls):
         '''
         Configurações de uma condição inicial nula. Útil para o
         fluxo de stokes.
         '''
         return cls(
-            num_rings=0, num_particles=num_particle, 
+            num_rings=0, num_particles=None, 
             r=[], angle=[], center=[],
         )
 

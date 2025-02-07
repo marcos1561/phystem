@@ -1,38 +1,40 @@
-creator_cfg: !!python/object:phystem.systems.ring.configs.CreatorCfg
+creator_cfg: !!python/object:phystem.systems.ring.creators.CreatorCfg
   angle: []
   center: []
-  num_particles: 15
+  num_particles: null
   num_rings: 0
-  r: null
-dynamic_cfg: !!python/object:phystem.systems.ring.configs.RingCfg
+  r: []
+dynamic_cfg: !!python/object:phystem.systems.ring.configs.dynamic_cfgs.RingCfg
+  _area0: 3.3933518005540173
+  _num_particles: 10
+  _p0: 3.8
   adh_force: 20
-  area0: null
-  area_potencial: target_area_and_format
+  area_potencial: target_area
   diameter: 1
   k_area: 2
-  k_format: 0.03
-  k_invasion: 8
-  max_dist: 1.05
+  k_format: -1
+  k_invasion: 5.713899612372021
+  max_dist: 1.1
   mobility: 1
-  p0: 3.5449077018
-  p0_format: 3.5449077018
-  relax_time: 0.5
+  p0_format: -1
+  relax_time: 1
   rep_force: 12
   rot_diff: 0.1
   spring_k: 8
   spring_r: 0.7
   trans_diff: 0
-  vo: 1
+  vo: 0.5
 other_cfgs:
-  stokes: !!python/object:phystem.systems.ring.configs.StokesCfg
-    create_length: 4.83378301646785
+  stokes: !!python/object:phystem.systems.ring.configs.others_cfgs.StokesCfg
+    create_length: 3.1648130254712585
     flux_force: 1
-    num_max_rings: 115
+    num_max_rings: 136
     obs_force: 15
-    obstacle_r: 8.417035103302227
+    obstacle_r: 5.510868452313137
     obstacle_x: 0
     obstacle_y: 0
-    remove_length: 4.83378301646785
+    remove_length: 3.1648130254712585
+    vel_dispersion: 0
 rng_seed: 238531723
 run_cfg: !!python/object:phystem.core.run_config.CollectDataCfg
   checkpoint: null
@@ -47,19 +49,20 @@ run_cfg: !!python/object:phystem.core.run_config.CollectDataCfg
       disable: false
       num_col_windows: 12
       num_rows_windows: 6
+      steps_after: 3
       update_freq: 50
-      steps_after: 1
     integration_type: !!python/object/apply:phystem.systems.ring.run_config.IntegrationType
     - 0
     particle_win_cfg: !!python/object:phystem.systems.ring.run_config.ParticleWindows
-      num_cols: 41
+      num_cols: 40
       num_rows: 19
       update_freq: 1
     solver_type: !!python/object/apply:phystem.core.run_config.SolverType
     - 2
     update_type: !!python/object/apply:phystem.systems.ring.run_config.UpdateType
     - 3
+  replay_data_cfg: null
   tf: 120
-space_cfg: !!python/object:phystem.systems.ring.configs.SpaceCfg
-  height: 33.66814041320891
-  length: 72.14601517116195
+space_cfg: !!python/object:phystem.systems.ring.configs.space_cfgs.SpaceCfg
+  height: 22.043473809252546
+  length: 47.23601530554117

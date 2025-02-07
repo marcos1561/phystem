@@ -162,10 +162,13 @@ class QuantityCol(ABC):
 
         self.metadata = {}
 
-        self.data = self.create_data(num_data_points_per_file, num_max_rings)
-        self.state = self.StateT(self.data)
+        self.state = self.StateT(self.create_data(num_data_points_per_file, num_max_rings))
 
         self.init_metadata(self.metadata)
+
+    @property
+    def data(self):
+        return self.state.data
 
     def init_metadata(self, metadata: dict):
         pass

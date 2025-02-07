@@ -133,7 +133,7 @@ class RingCfg:
     
     @p0.setter
     def p0(self, value):
-        self._p0 = value
+        self._p0 = float(value)
         self._area0 = self.get_area0(self.num_particles)
 
     @property
@@ -142,7 +142,7 @@ class RingCfg:
     
     @area0.setter
     def area0(self, value):
-        self._area0 = value
+        self._area0 = float(value)
         self._p0 = self.get_p0(self.num_particles)
 
     @property

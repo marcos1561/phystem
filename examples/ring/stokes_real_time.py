@@ -6,17 +6,18 @@ from phystem.systems.ring.ui.graph import graphs_cfg
 from phystem.systems.ring.configs import *
 from phystem.systems.ring.run_config import *
 
-creator_cfg = CreatorCfg.empty(10)
+creator_cfg = CreatorCfg.empty()
 
+num_particles = 10
 dynamic_cfg = RingCfg(
-    num_particles=10,
+    num_particles=num_particles,
 
     spring_k=20,
     spring_r=1*0.7,
     
     area_potencial="target_area",
     k_area=4,
-    p0=ring.utils.equilibrium_p0(creator_cfg.num_particles),
+    p0=ring.utils.equilibrium_p0(num_particles),
 
     k_invasion = 11,
     
