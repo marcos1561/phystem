@@ -37,7 +37,7 @@ class QuantityPosCol(RingCol):
         if h > space_cfg.height:
             h = space_cfg.height
         
-        num_max_rings = int(l * h / area_eq * 2)
+        num_max_rings = int(l * h / area_eq * 2.5)
         num_dims = 4
         num_data_points_per_file = int(self.col_cfg.memory_per_file / (num_max_rings * num_dims * 4))            
 
