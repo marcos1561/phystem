@@ -951,7 +951,7 @@ class AreaCalc(Calculator):
             areas.strip()
 
             coords = self.grid.coords(cms.data)
-            cell_area = self.grid.mean_by_cell(areas.data[..., 0], coords)
+            cell_area = self.grid.mean_by_cell(areas.data[..., 0], coords, end_id=cms.point_num_elements)
 
             self.cell_area_sum += cell_area.sum(axis=0)
             self.num_points += cell_area.shape[0]

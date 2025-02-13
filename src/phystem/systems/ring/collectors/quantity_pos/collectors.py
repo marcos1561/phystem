@@ -49,7 +49,7 @@ class VelocityCol(QuantityCol):
     StateT = VelState
 
     def init_metadata(self, metadata):
-        metadata["frame_dt"] = self.configs.frame_dt
+        metadata["frame_dt"] = self.configs.frame_dt * self.solver.dt
 
     def before_save_metadata(self, metadata):
         metadata["last_point_completed"] = self.state.vel_frame == 0 
