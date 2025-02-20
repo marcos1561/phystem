@@ -159,27 +159,49 @@ class RectangularGridCfg:
         self.base_ring_pos = dynamic_cfg.ring_spawn_pos()
         self.ring_radius = dynamic_cfg.get_ring_radius()
         self.ring_radius_k = ring_radius_k
+        self.particle_radius = dynamic_cfg.diameter / 2
+        
+        self.real_ring_radius = (self.ring_radius - self.particle_radius) * self.ring_radius_k + self.particle_radius
 
     @classmethod
-    def from_relative_density(cls, num_x, num_y, rel_density, dynamic_cfg: RingCfg, ring_radius_k=1):
+    def from_density(cls, num_x, num_y, density, dynamic_cfg: RingCfg):
+        '''
+        Configurações que possuem densidade total igual a `density` utilizando
+        o mesmo espaçamento em ambos os eixos, ou seja, `space_x = space_y`.
+
+        OBS: Se o espaçamento necessário for negativo, o estado inicial dos anéis será
+        reescalonado, tal que o espaçamento seja zero.
+        '''
+        r = dynamic_cfg.get_ring_radius()
+        pr = dynamic_cfg.diameter / 2
+        
+        space = 1/density**.5 - 2*r
+
+        ring_radius_k = 1
+        if space < 0:
+            space = 0
+            ring_radius_k = (1/(2*density**.5) - pr) / (r - pr)
+
+        return cls(num_x, num_y, space, space, dynamic_cfg, ring_radius_k)
+
+    @classmethod
+    def from_relative_density(cls, num_x, num_y, rel_density, dynamic_cfg: RingCfg):
         '''
         Configurações que possuem a densidade relativa setada em `rel_density` utilizando
         o mesmo espaçamento em ambos os eixos, ou seja, `space_x = space_y`.
 
-        Sendo d a densidade (Nº de anéis por un. de área), temos que a densidade relativa é
+        Sendo d a densidade (Nº de anéis por un. de área), a densidade relativa é
 
         d_r = d/d_eq - 1
 
-        Em que d_eq é a densidade de equilíbrio (1/área de equilíbrio dos anéis).
+        em que d_eq é a densidade de equilíbrio (1/área de equilíbrio dos anéis).
         '''
-        rho_eq = 1 / dynamic_cfg.get_equilibrium_area()
-        ring_d = 2 * dynamic_cfg.get_ring_radius()
-        rho = (rel_density + 1) * rho_eq
-        space = (1/rho)**.5 - ring_d
-        return cls(num_x, num_y, space, space, dynamic_cfg, ring_radius_k)
+        den_eq = 1 / dynamic_cfg.get_equilibrium_area()
+        density = (rel_density + 1) * den_eq
+        return cls.from_density(num_x, num_y, density, dynamic_cfg)
 
     def get_space_cfg(self):
-        ring_d = 2 * self.ring_radius
+        ring_d = 2 * self.real_ring_radius
         height = self.num_y * (ring_d + self.space_y)
         length = self.num_x * (ring_d + self.space_x)
         return SpaceCfg(height, length)
@@ -187,6 +209,7 @@ class RectangularGridCfg:
 class RectangularGridCreator(CreatorCore):
     def __init__(self, cfg: RectangularGridCfg, rng_seed: int=None) -> None:
         super().__init__(rng_seed)
+        self.cfg = cfg
         self.num_x = cfg.num_x
         self.num_y = cfg.num_y
         self.space_x = cfg.space_x
@@ -194,12 +217,13 @@ class RectangularGridCreator(CreatorCore):
         self.base_ring_pos = cfg.base_ring_pos
         self.ring_radius = cfg.ring_radius
         self.ring_radius_k = cfg.ring_radius_k
+        self.real_ring_d = cfg.real_ring_radius * 2
     
     def create(self) -> InitData:
-        real_ring_d = 2 * self.ring_radius
         num_rings = self.num_x * self.num_y
-
         base_pos = self.base_ring_pos * self.ring_radius_k
+        real_ring_d = self.real_ring_d
+        
         pos = []
         for i in range(self.num_x):
             x = (i + 1/2) * (self.space_x + real_ring_d)

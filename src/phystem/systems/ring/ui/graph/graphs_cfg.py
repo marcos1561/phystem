@@ -42,8 +42,8 @@ class RegionsCfg:
         self.remove_color = remove_color
 
 class SimpleGraphCfg(BaseGraphCfg):
-    def __init__(self, begin_paused=False, pause_on_high_vel=False, show_scatter=True, show_density=False,
-        show_circles=False, show_springs=False, show_cms=False, show_invasion=False,
+    def __init__(self, begin_paused=False, pause_on_high_vel=False, show_scatter=False, show_density=False,
+        show_circles=True, show_springs=False, show_cms=False, show_invasion=False,
         show_ith_points=False, show_scatter_cont=False,
         show_f_springs=False, show_f_vol=False, show_f_area=False, show_f_total=False,
         show_f_format=False, show_f_obs=False, show_f_invasion=False, show_f_creation=False,

@@ -9,6 +9,11 @@ from .config_to_col import Configs2Collector
 
 class CheckpointColCfg(ColCfg):
     def __init__(self, autosave_cfg = None):
+        '''
+        Salva o estado da simulação quando ela termina. O checkpoint
+        salvo estará no caminho "folder_path/checkpoint", em que "folder_path"
+        é o caminho da pasta raiz da configuração de coleta de dados.
+        '''
         super().__init__(autosave_cfg)
         self.to_load_autosave = False
 

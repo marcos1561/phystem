@@ -12,6 +12,7 @@ from phystem.systems.ring.collectors.config_to_col import Configs2Collector
 
 class QuantityPosCol(RingCol):
     solver: CppSolver
+    col_cfg: QuantityPosCfg
 
     def setup(self):
         has_cms_cfg = False
@@ -107,6 +108,9 @@ class QuantityPosCol(RingCol):
         return (cms_active[:, 1] > self.col_cfg.ylims[0]) & (cms_active[:, 1] < self.col_cfg.ylims[1])
 
     def collect(self):
+        if self.solver.time < self.col_cfg.transient_time:
+            return
+
         time_dt = self.solver.num_time_steps
         is_time = self.get_is_time()
 

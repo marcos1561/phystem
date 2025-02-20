@@ -480,11 +480,12 @@ class DensityCalc(Calculator):
     data: CmsData
 
     def __init__(self, data: CmsData, root_path: Path,
-        grid: utils.RegularGrid, den_eq: float=None,
+        grid: utils.RegularGrid, den_eq: float=None, start_id=0,
         autosave_cfg: CalcAutoSaveCfg = None, exist_ok=False) -> None:
         super().__init__(data, root_path, autosave_cfg, exist_ok)
         self.grid = grid
         self.den_eq = den_eq
+        self.start_id = start_id
 
         self.sim_configs = ring.run_config.load_configs(self.data.root_path / settings.system_config_fname)
         self.stokes_cfg: ring.configs.StokesCfg = self.sim_configs["other_cfgs"].get("stokes", None)
@@ -497,18 +498,30 @@ class DensityCalc(Calculator):
         
         self.init_kwargs["grid"] = self.grid
         self.init_kwargs["den_eq"] = self.den_eq
+        self.init_kwargs["start_id"] = self.start_id
 
     def calc_quantity(self):
+        begin_id = 0
         while self.next_file_id < self.data.cms.num_files:
             cms = self.data.cms.get_file(self.next_file_id)
             cms.strip()
 
-            coords = self.grid.coords(cms.data)
-            count = self.grid.count(coords, end_id=cms.point_num_elements)
+            end_id = begin_id + len(cms) - 1
+
+            cut_id = 0
+            if self.start_id > end_id:
+                continue
+            
+            if self.start_id >= begin_id:
+                cut_id = self.start_id - begin_id
+
+            coords = self.grid.coords(cms.data[cut_id:])
+            count = self.grid.count(coords, end_id=cms.point_num_elements[cut_id:])
 
             self.cell_den_mean += count.sum(axis=0)
             self.num_points += count.shape[0]
             self.next_file_id += 1
+            begin_id = end_id + 1
 
         self.cell_den_mean = self.grid.remove_cells_out_of_bounds(self.cell_den_mean)
         self.cell_den_mean /= self.num_points
