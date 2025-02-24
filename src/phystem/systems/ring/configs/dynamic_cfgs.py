@@ -149,6 +149,16 @@ class RingCfg:
     def num_particles(self):
         return self._num_particles
 
+    @property
+    def peclet(self):
+        '''
+        Péclet number (Pe) of the system. High Pe means advection is
+        more relevant than diffusion and low Pe means the contrary. 
+        '''
+        tau_advection = self.get_ring_radius() / self.vo
+        tau_diffusion = 1 / self.rot_diff
+        return tau_diffusion / tau_advection
+
     def change_num_particles(self, value: int, fix="p0"):
         '''
         Muda o número de partículas setado. É possível escolher
