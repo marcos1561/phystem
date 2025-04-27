@@ -19,13 +19,14 @@ class ColManager(RingCol):
     def setup(self):
         self.cols: dict[str, RingCol] = {}
 
+        for name, col_i_cfg in self.col_cfg.cols_cfgs.items():
+            self.add_collector(col_i_cfg, name)
+
         if self.col_cfg.to_load_autosave:
             # self.use_backup = self.get_autosave_path(self.autosave_container_path).stem == settings.autosave_root_backup_name
             # print("Use backup:", self.use_backup)
             self.load_autosave()
 
-        for name, col_i_cfg in self.col_cfg.cols_cfgs.items():
-            self.add_collector(col_i_cfg, name)
 
     def add_collector(self, configs: ColCfg, name: str):
         if configs.autosave_cfg is not None:
@@ -41,13 +42,13 @@ class ColManager(RingCol):
         )
 
         self.cols[name] = col
-        if self.col_cfg.to_load_autosave:
-            col.load_autosave()
+        # if self.col_cfg.to_load_autosave:
+        #     col.load_autosave()
 
-            if abs(col.autosave_last_time - self.autosave_last_time) > 0.01:
-                col.load_autosave(use_backup=True)
-                if abs(col.autosave_last_time - self.autosave_last_time) > 0.01:
-                    raise Exception(f"O coletor '{name}' não possui um auto-salvamento válido!")
+        #     if abs(col.autosave_last_time - self.autosave_last_time) > 0.01:
+        #         col.load_autosave(use_backup=True)
+        #         if abs(col.autosave_last_time - self.autosave_last_time) > 0.01:
+        #             raise Exception(f"O coletor '{name}' não possui um auto-salvamento válido!")
 
     def collect(self) -> None:
         for col in self.cols.values():
@@ -62,6 +63,19 @@ class ColManager(RingCol):
         for col in self.cols.values():
             col.autosave_last_time = self.solver.time
             col.exec_autosave()
+
+    def load_autosave(self, use_backup=False):
+        r = super().load_autosave(use_backup)
+
+        for col in self.cols.values():
+            col.load_autosave()
+
+            if abs(col.autosave_last_time - self.autosave_last_time) > 0.01:
+                col.load_autosave(use_backup=True)
+                if abs(col.autosave_last_time - self.autosave_last_time) > 0.01:
+                    raise Exception(f"O coletor '{name}' não possui um auto-salvamento válido!")
+        
+        return r
 
     def save(self):
         for col in self.cols.values():

@@ -13,6 +13,9 @@ from phystem.systems import ring
 from phystem.systems.ring import utils
 from .datas import *
 
+import texture as tx
+import grids
+
 class CalcAutoSaveCfg:
     def __init__(self, freq: int) -> None:
         self.freq = freq
@@ -877,41 +880,35 @@ class TextureCalc(Calculator):
     data: CmsData
 
     def __init__(self, data: CmsData, root_path: Path, 
-        grid, ring_diameter: float, 
-        edge_k=1.4,
-        autosave_cfg: CalcAutoSaveCfg = None, exist_ok=False) -> None:
+        grid: grids.RegularGrid, links_cfg: tx.links.LinkCfg, 
+        autosave_cfg: CalcAutoSaveCfg=None, exist_ok=False) -> None:
         super().__init__(data, root_path, autosave_cfg, exist_ok)
         self.grid = grid
-        self.ring_diameter = ring_diameter
-        self.edge_k = edge_k
+        self.links_cfg = links_cfg
 
-        self.cell_texture_sum = np.zeros(grid.shape+(3,), dtype=np.float64)
-        self.cell_count = np.zeros(grid.shape, np.int64)
+        self.cell_texture_sum = np.zeros(tuple(reversed(grid.shape))+(3,), dtype=np.float64)
+        self.cell_count = np.zeros(tuple(reversed(grid.shape)), np.int64)
         self.num_points = 0
         self.current_id = 0
 
         self.grid.save_configs(self.root_path / "grid_configs.yaml")
 
         self.init_kwargs["grid"] = self.grid
-        self.init_kwargs["ring_diameter"] = self.ring_diameter
-        self.init_kwargs["edge_k"] = self.edge_k
+        self.init_kwargs["links_cfg"] = self.links_cfg
 
     def calc_quantity(self):
-        import texture
-
         data = self.data
         data_cms = data.cms
         
         for idx in range(self.current_id, len(data_cms)):
             cms = data_cms[idx]
-            edges = utils.calc_edges(cms, self.ring_diameter, self.edge_k)
+            links = self.links_cfg.link_func(cms)
 
-            sumw, count = texture.texture.bin_texture(cms, edges, self.grid)
-            self.cell_texture_sum += sumw
+            sum_texture, count = tx.bin_texture_sum(cms, links, self.grid)
+            self.cell_texture_sum += sum_texture
             self.cell_count += count
 
-        cell_count_non_zero = np.maximum(1, self.cell_count)
-        self.texture_mean = self.cell_texture_sum / cell_count_non_zero[..., None]
+        self.texture_mean = tx.grid_data_mean(self.cell_texture_sum, self.cell_count)
         self.metadata["num_points"] = len(data_cms)
 
     def save_data(self):
@@ -925,10 +922,14 @@ class TextureCalc(Calculator):
             def __init__(self, grid: utils.RegularGrid, texture: np.ndarray, metadata: dict) -> None:
                 self.grid = grid
                 self.texture = texture
-                self.metadata = metadata  
+                self.metadata = metadata
+                
+                with open(path / "init_kwargs.yaml", "r") as f:
+                    init_kwargs = yaml.unsafe_load(f)
 
-        import texture
-        grid = texture.grid.GridWrapper.load(path / "grid_configs.yaml")
+                self.configs = load_configs(init_kwargs["data"] / settings.system_config_fname)
+
+        grid = grids.RegularGrid.load(path / "grid_configs.yaml")
         texture = np.load(path / "texture.npy")
         
         with open(path / "metadata.yaml") as f:

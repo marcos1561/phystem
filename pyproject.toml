@@ -24,6 +24,7 @@ dependencies = [
     "scipy",
     "pybind11",
     "shapely",
+    "texture @ git+https://github.com/marcos1561/texture.git"
 ]
 
 [tool.setuptools.packages.find]

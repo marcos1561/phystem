@@ -4,6 +4,8 @@ import numpy as np
 from enum import Flag, auto
 from pathlib import Path
 
+from phystem.core import settings
+from phystem.core.run_config import load_configs
 from phystem.data_utils.data_types import ArraySizeAware, MultFileList
 from phystem.systems.ring.collectors.quantity_pos.collectors import (
     VelocityCfg, CmsCfg, PolarityCfg, AreaCfg
@@ -14,7 +16,7 @@ class BaseData(ABC):
     def __init__(self, root_path: Path, data_dirname="data") -> None:
         self.root_path = Path(root_path).absolute().resolve()
         self.data_path = self.root_path / data_dirname
-
+        self.configs = load_configs(self.root_path / settings.system_config_fname)
 
 class DeltaData(BaseData):
     class Mode(Flag):
