@@ -1,50 +1,50 @@
 ---
 ---
 
-## Como utilizar os sistemas físicos já implementados com o phystem?
-O sub-pacote `phystem.systems` contém os sistemas físicos já implementados com o phystem. 
+## How to use the physical systems already implemented with phystem?
 
-Em geral, para utilizá-los é necessário criar uma instância de `Simulation`, que está no módulo `simulation.py` do respectivo sistema, e rodar o método `run`. `Simulation` requer que sejam passadas as seguintes configurações
+The sub-package `phystem.systems` contains the physical systems already implemented with phystem.
 
-1. creator_cfg: Configurações da criação da configuração inicial do sistema.
-2. dynamic_cfg: Configurações da dinâmica do sistema.
-3. space_cfg: Configurações do espaço físico em que o sistema se encontra.
-4. run_cfg: Configurações do modo de execução.
+In general, to use them, you need to create an instance of `Simulation`, which is located in the `simulation.py` module of the respective system, and run the `run` method. `Simulation` requires the following configurations:
 
-Os itens 1, 2 e 3 estão no módulo `configs.py` do respectivo sistema, então basta olhar nesse arquivo para saber como instanciar essas configurações.
+1. `creator_cfg`: Settings for creating the initial configuration of the system.
+2. `dynamic_cfg`: Settings for the system's dynamics.
+3. `space_cfg`: Settings for the physical space where the system is located.
+4. `run_cfg`: Settings for the execution mode.
 
-O item 4 pode estar em dois locais:
+Items 1, 2, and 3 are located in the `configs.py` module of the respective system, so you can check this file to understand how to instantiate these configurations.
 
-1. Caso o sistema utiliza as configurações padrões de execução, elas se encontram em `phystem.core.run_config`
-2. Caso o sistema extendeu tais configurações, elas se encontram no módulo `run_config.py` do respectivo sistema. 
+Item 4 can be found in two locations:
+
+1. If the system uses the default execution settings, they are located in `phystem.core.run_config`.
+2. If the system has extended these settings, they are located in the `run_config.py` module of the respective system.
 
 > ⚠️
 >
-> 1. Caso você utilize um sistema que utiliza o módulo feito em c++ (ring e szabo), é necessário compilar o código que gera tal módulo. 
-Para tal, consulte [Compilando o módulo em C++]({{ "docs/installation.html#installation_compilation" | relative_url }}).
+> 1. If you are using a system that relies on the C++ module (ring and szabo), you need to compile the code that generates this module. 
+For more information, refer to [Compiling the C++ Module]({{ "docs/installation.html#installation_compilation" | relative_url }}).
 
-No momento atual, existem os seguintes sistemas implementados:
+Currently, the following systems are implemented:
 
 ### [Ring]({{ "docs/systems/ring.html" | relative_url }})
-Implementação de múltiplos anéis ativos, com algumas pequenas modificações, apresentado em Teixeira [[1]](#1).
+Implementation of multiple active rings, with some minor modifications, as presented by Teixeira et al. [[1]](#1).
 
 <!-- ![]({{ "assets/images/rings.gif" | relative_url }}) -->
 <img src="{{ 'assets/images/rings.gif' | relative_url }}" alt width="700"/>
-
 ### Szabo
-Implementação do modelo de partículas ativas proposto em Szabó [[2]](#2)
+Implementation of the active particle model proposed by Szabó et al. [[2]](#2).
 
 <!-- ![]({{ "assets/images/szabo.gif" | relative_url }}) -->
 <img src="{{ 'assets/images/szabo.gif' | relative_url }}" alt width="700"/>
 
 ### Vicsek
-Implementação do modelo proposto em Vicsek [[3]](#3). 
+Implementation of the model proposed by Vicsek et al. [[3]](#3). 
 > ⚠️
 > 
-> A implementação não está completa, apenas tem uma versão do seu solver extremamente desorganizada.
+> The implementation is incomplete and currently contains only a highly disorganized version of its solver.
 
 ### Random Walker
-Sistema implementado no tutorial [Como utilizar o phystem?]({{ 'docs/tutorial_step_by_step.html' | relative_url }}).
+System implemented in the tutorial [How to use phystem?]({{ 'docs/tutorial_step_by_step.html' | relative_url }}).
 
 ## Referências
 <a id="1">[1]</a> 

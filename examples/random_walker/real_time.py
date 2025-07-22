@@ -1,6 +1,6 @@
 '''
-Exemplo simples de execução em tempo real
-do exemplo desenvolvido na documentação.
+Simple example of real-time execution
+of the example developed in the documentation.
 '''
 from phystem.core.run_config import RealTimeCfg, SaveCfg, IntegrationCfg
 

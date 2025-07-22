@@ -4,55 +4,52 @@
 * This will become a table of contents (this text will be scrapped).
 {:toc}
 
-# Ring (Anéis ativos)
-No atual momento, esse é o sistema mais desenvolvido. O seu `Solver` é completamente implementado em `C++` e loops foram paralelizados quando
-possível para obter mais desempenho. Duas geometrias estão implementadas
+# Ring (Active rings)
+At the present time, this is the most developed system. Its `Solver` is completely implemented with `C++` and loops are parallelized (in the CPU) when possible to improve performance. 
 
-- Bordas periódicas
-- Fluxo de Stokes
+Two geometry types are implemented:
 
-Existem 4 modos de execução implementados
+- Periodic Borders
+- Stokes Geometry
 
-- `RealTime`: Renderização em tempo real
-- `Collect`: Apenas coleta de dados (sem renderização)
-- `Replay`: Replay de dados salvos
-- `Video`: Geração de vídeo em tempo real ou de dados salvos
+There are 4 execution modes implemented:
 
-Vários coletores e calculadores já implementados, sendo alguns
+- `RealTime`: Real-time rendering.
+- `Collect`: Only data collection, without rendering.
+- `Replay`: Saved data replay. Similar to `RealTime` but with saved data instead of on the fly data.
+- `Video`: Video generation in real time or with saved data.
 
-1. Coletores:
-    1. `CheckpointCol`: Utilizado para gerar um checkpoint que podem ser carregado em outras simulações.
-    2. `SnapshotsCol`: Utilizado para periodicamente coletar "snapshots" de uma simulação. Ótimo
-        para gerar dados que podem ser visualizados no modo de execução `Replay` ou transformados em
-        vídeo no modo `Video`.
-    3. `DeltaCol`, `DenVelCol`, `CreationRateCol`: Coletores de quantidades de interesse cujas explicações estão fora de escopo do presente texto. Mais detalhes podem ser encontrados nas suas respectivas documentações no código.
-    4. `ColManager`: Gerenciador de múltiplos coletores. Útil para utilizar mais de um coletor na mesma simulação. 
+Many collectors and calculators have already been implemented:
 
-2. Calculadores: Cada coletor no item 3 também possui seu calculador.
+1. Collectors:
+    1. `CheckpointCol`: Generates a checkpoint that can be loaded by other simulations.
+    2. `SnapshotsCol`: Periodically collect "simulation snapshots", that can be visualized by the `Replay` or `Video` execution mode.
+    3. `DeltaCol`, `DenVelCol`, `CreationRateCol`: Collectors outside the scope of this text. See more details in their respective code documentation.
+    4. `ColManager`: Manager for multiple collectors. Useful to run simulations with more than one data collector. 
 
-Todos os coletores e calculadores tomam vantagem do sistema de auto-salvamento presente no phystem. É possível abruptamente interromper uma simulação coletando dados, ou uma análise de dados, e continuar sua execução do último ponto salvo. 
+2. Calculators: Each collector above, when applicable, has its respective calculator.
 
-# Como rodar uma simulação?
-Para rodar uma simulação precisamos instanciar as configurações necessárias. Nesta seção será dado um exemplo concreto de um possível conjunto de configurações com alguns comentários sobre as mesmas.
+All collectors and calculators use the auto-save system in the core Phystem module, that is, a simulation can be stopped abruptly and resumed from the last saved point. 
+
+# How to run a simulation?
+To run a simulation, we need to instantiate the required configurations. In this section, a concrete example of a possible set of configurations will be provided, along with some comments about each one.
 
 > ⚠️ 
 >
-> A partir de agora é assumido a seguinte importação `from phystem.systems import ring`.
+> From this point on, it is assumed that the following import has been made: `from phystem.systems import ring`.
 
-## Configurações da dinâmica do sistema
-Controlam elementos como constantes das forças, diâmetro das partículas, etc. Uma possível escolha é a seguinte:
+## System Dynamics Configuration
+Controls elements such as force constants, particle diameter, etc. A possible choice is as follows:
 
 ```python
 dynamic_cfg = ring.configs.RingCfg(
+    num_particles=10,
+
     spring_k=8,
     spring_r=0.7,
     
-    area_potencial="target_area_and_format",
     k_area=2,
-    p0=3.5449077018, # Círculo
-    
-    k_format=0.1,
-    p0_format=3.5449, # Círculo
+    p0=3.545, # Circle
     
     k_invasion=10,
 
@@ -70,8 +67,8 @@ dynamic_cfg = ring.configs.RingCfg(
 )
 ```
 
-## Configurações do espaço
-Configurações do espaço físico em que se encontram os anéis. Sempre é um retângulo. Ex:
+## Space Configuration
+Settings for the physical space where the rings are located. The space is always a rectangle. Example:
 
 ```python
 space_cfg = ring.configs.SpaceCfg(
@@ -80,92 +77,73 @@ space_cfg = ring.configs.SpaceCfg(
 )
 ```
 
-## Configurações do estado inicial
-Configurações passados para o `Creator`, o objeto responsável por criar a configuração
-inicial do sistema. No momento apenas existe um único `Creator`, que necessita das posições iniciais
-dos centros de massa dos anéis e suas direções autopropulsoras. O seguinte exemplo gera 4 anéis com 30 partículas,
-colocado-os ao redor da origem com a direção autopropulsora apontando para a origem:
+## Initial State Configuration
+Settings passed to the `Creator`, the object responsible for generating the initial configuration of the system. Currently, there is two types:
+
+- `CreatorCfg`: Generates rings according to data passed by the user. It requires the initial positions of the rings' centers of mass and their self-propulsion directions. The following example generates 4 rings with 30 particles each, placing them around the origin with their self-propulsion directions pointing toward the origin:
+
+    ```python
+    from math import pi
+
+    radius = dynamic_cfg.get_ring_radius() 
+    k = 2
+
+    creator_cfg = ring.configs.CreatorCfg(
+        num_particles=dynamic_cfg.num_particles,
+        num_rings=4,
+        r=radius,
+        angle=[pi/4, -3*pi/4, 3*pi/4, -pi/4],
+        center=[
+            [-k * radius, -k * radius], 
+            [k * radius, k * radius], 
+            [k * radius, -k * radius], 
+            [-k * radius, k * radius], 
+        ]
+    )
+    ```
+
+    It is also possible to create an empty initial state (useful when working with stokes geometry.)
+
+    ```python
+    creator_cfg = ring.configs.CreatorCfg.empty()
+    ```
+
+- `RectangularGridCfg`: Generates rings in the vertices of a rectangular grid.
+
+## Integration Configuration
+These settings are related to the integration of the equations governing the system, such as $$ \Delta t $$. A space partitioning technique is used to optimize distance calculations, and its parameters are set here. Additionally, this is where you choose whether to use periodic boundaries or Stokes Geometry. Example:
 
 ```python
-from math import pi
+from phystem.systems.ring.run_config import IntegrationCfg, ParticleWindows, IntegrationType, InPolCheckerCfg, UpdateType
 
-num_particles = 30
-radius = ring.utils.get_ring_radius(
-    dynamic_cfg.diameter, num_particles
-)
-k = 2
+# Equilibrium ring radius
+radius = dynamic_cfg.get_ring_radius()
 
-creator_cfg = ring.configs.CreatorCfg(
-    num_rings=4,
-    num_p=num_particles,
-    r=radius,
-    angle=[pi/4, -3*pi/4, 3*pi/4, -pi/4],
-    center=[
-        [-k * radius, -k * radius], 
-        [k * radius, k * radius], 
-        [k * radius, -k * radius], 
-        [-k * radius, k * radius], 
-    ]
+# Dimensions of space partitioning at the level of particles.
+num_cols, num_rows = space_cfg.particle_grid_shape(dynamic_cfg.max_dist)
+
+int_cfg = IntegrationCfg(
+    dt=0.01,
+    particle_win_cfg=ParticleWindows(
+        num_cols=num_cols, num_rows=num_rows,
+        update_freq=1,
+    ),
+    integration_type=IntegrationType.euler,
+    update_type=UpdateType.PERIODIC_WINDOWS,
 )
 ```
 
-Essa configuração é irrelevante para a geometria do fluxo de stokes, no entanto,
-é nela que é especificado o número de partículas por anel, informação importante para o stokes, então é possível criá-la ignorando todos os outros parâmetros
+This configuration is always passed to one of the execution mode configurations.
+
+## Stokes Geometry Configuration
+If Stokes flow (`update_type=UpdateType.STOKES`) is selected in the integration settings, you must provide the configuration for this geometry. Example: An obstacle centered at the origin with a radius equal to 1/5 of the channel height.
 
 ```python
-creator_cfg = ring.configs.CreatorCfg(
-    num_rings=0,
-    num_p=30,
-    r=None, angle=[], center=[],
-)
-```
+# Equilibrium ring radius
+radius = dynamic_cfg.get_ring_radius()
 
-> ℹ️
->
-> No futuro pretendo melhor isso, tornado necessário apenas informar `num_p`.
-
-## Configurações de integração
-Configuração relacionadas a integração das equações que governam o sistema, como o $$ \Delta t $$. Uma técnica de particionamento de espaço é utiliza para otimizar o cálculo de distâncias, suas configurações são setadas aqui. Ainda, é aqui que escolhemos se queremos bordas periódicas ou fluxo de stokes. Ex:
-
-```python
-from ring.run_config import ParticleWindows, IntegrationType, InPolCheckerCfg
-
-# Raio do anel em equilíbrio
-radius = ring.utils.get_ring_radius(
-    dynamic_cfg.diameter, num_particles
-)
-
-# Dimensões do particionamento do espaço a nível das
-# partículas e dos anéis.
-num_cols, num_rows = ring.utils.particle_grid_shape(space_cfg, dynamic_cfg.max_dist)
-num_cols_cm, num_rows_cm = ring.utils.rings_grid_shape(space_cfg, radius)
-
-int_cfg = ring.configs.IntegrationCfg(
-        dt=0.001,
-        particle_win_cfg=ParticleWindows(
-            num_cols=num_cols, num_rows=num_rows,
-            update_freq=1
-        ),
-        integration_type=IntegrationType.euler,
-        update_type=UpdateType.PERIODIC_WINDOWS,
-        in_pol_checker=InPolCheckerCfg(num_cols_cm, num_rows_cm, 50),
-)
-```
-
-Essa configuração sempre é passada para alguma configuração de execução.
-
-## Configurações da Geometria de Stokes
-Caso seja escolhido o fluxo de stokes (`update_type=UpdateType.STOKES`) nas configurações de integração, é necessário informar a configuração dessa geometria. Ex: Obstáculo centrado na origem com
-raio igual a 1/5 da altura do canal.
-
-```python
-# Raio do anel em equilíbrio
-radius = ring.utils.get_ring_radius(
-    dynamic_cfg.diameter, num_particles
-)
-
-# Quantidade de anéis que cabem no canal
-num_ring_in_rect = ring.utils.num_rings_in_rect(2*radius, space_cfg)
+# Number of rings that fit in the channel
+num_ring_in_rect = space_cfg.max_num_inside(2 * radius)
 
 stokes_cfg = ring.configs.StokesCfg(
     obstacle_r  = space_cfg.height/5,
@@ -179,73 +157,69 @@ stokes_cfg = ring.configs.StokesCfg(
 )
 ```
 
-## Configurações do modo de execução
-Agora apenas nos resta escolher o modo de execução e rodar a simulação
+## Execution Mode Configuration
+Now all that's left is to choose the execution mode and run the simulation.
 
 ### RealTime
-Nessa configuração podemos controlar o fps, número de passos que o `Solver` executa por frame, etc. Também podemos escolher qual gráfico utilizar para ver o sistema, exitem duas opções
-
-- `MainGraph`: Possui vários auxílios visuais, como coloração das molas, setas indicando as forças. etc. É bastante lento.
-- `SimpleGraph`: Sem muitos auxílios visuais, mas é mais rápido.
-
-Para escolher o gráfico apenas basta passar a sua configuração, vamos escolher o `MainGraph`
+In this configuration, you can control the FPS, the number of steps the Solver executes per frame, etc. You can also customize what is being rendered by the `graph_cfg` argument.
 
 ```python
-from phystem.systems.ring.ui.graphs_cfg import MainGraphCfg
+from phystem.systems.ring.ui.graph.graphs_cfg import SimpleGraphCfg
 
 real_time_cfg = ring.run_config.RealTimeCfg(
     int_cfg=int_cfg,
     num_steps_frame=500,
     fps=30,
-    graph_cfg=MainGraphCfg(
+    graph_cfg=SimpleGraphCfg(
         show_circles=True,
     ),
 )
 ```
 
 ### Video
-Configurações para salvar um vídeo. O principal elemento que podemos controlar é a
-velocidade da animação, que é influenciada pelos seguintes parâmetros
+Settings for saving a video. The main element you can control is the animation speed, which is influenced by the following parameters:
 
-- speed: Razão entre o tempo da simulação e o tempo do vídeo.
-- tf: Tempo final da simulação.
-- duration: Duração do vídeo.
+- speed: Ratio between simulation time and video time.
+- tf: Final simulation time.
+- duration: Video duration.
 
-Esses 3 parâmetros não são independentes, mas essa configuração aceita qualquer combinação de 2 deles (então fixando o valor do último). Ex: Gerar um vídeo 
-chamado "video_test.mp4" de um simulação que vai até t=60:
+These three parameters are not independent, but this configuration accepts any combination of two (fixing the value of the third). Example: Generate a video called "video_test.mp4" from a simulation that runs until t=60:
+
 
 ```python
 from phystem.systems.ring.ui.graphs_cfg import MainGraphCfg
 
 save_cfg = ring.run_config.SaveCfg(
     int_cfg=int_cfg,
-    path = "./video_test.mp4",
+    path="./video_test.mp4",
     speed=3,
     tf=60,
     fps=30, 
-    graph_cfg = MainGraphCfg(
-        show_circles  = True,
+    graph_cfg=SimpleGraphCfg(
+        show_circles=True,
     ),
 )
 ```
 
-Os últimos dois modos de execução restantes (`Collect` e `Replay`) possuem suas próprias seções.
+The last two execution modes (`Collect` and `Replay`) have their own sections.
 
-## Finalmente rodando a simulação
-Com as configurações criadas, agora é só instancias o `Simulation` e executar
+## Running the Simulation
+With all configurations created, you just need to instantiate the `Simulation` and execute it:
+
 ```python
 sim = ring.Simulation(
     creator_cfg=creator_cfg, 
     dynamic_cfg=dynamic_cfg, 
     space_cfg=space_cfg, 
-    run_cfg=run_cfg
+    run_cfg=run_cfg,
 )
 
 sim.run()
 ```
-Em que `run_cfg` é alguma das configurações dos modos de execução.
+where run_cfg is one of the execution mode configurations.
 
-As configurações da geometria de Stokes devem ser passadas da seguinte forma:
+If you are using Stokes geometry, the configuration should be passed as follows:
+
 ```python
 sim = ring.Simulation(
     creator_cfg=creator_cfg, 
@@ -256,26 +230,23 @@ sim = ring.Simulation(
 )
 ```
 
-# Como salvar, carregar e compartilhar simulações?
+# How to Save, Load, and Share Simulations?
 {: #saving_configs}
-Após ter criado uma instância de `Simulation`, todas as suas configurações
-podem ser salvas da seguinte forma
+After creating a `Simulation` instance, all its configurations can be saved as follows:
 
 ```python
 sim = ring.Simulation(**configs)
 sim.save_configs("<path to my_configs>")
 ```
-
-As configurações são salvas em um arquivo [.yaml](https://yaml.org/spec/1.2.2/). Esse arquivo, então, pode ser utilizado para carregar uma simulação
+The configurations are saved in a [.yaml](https://yaml.org/spec/1.2.2/) file. This file can then be used to load a simulation:
 
 ```python
 sim = ring.Simulation.load_from_configs("<path to some configs>")
 sim.run()
 ```
+Therefore, to share a simulation with someone, you only need to share the configuration file generated by the .save_configs() method.
 
-Portanto, para compartilhar uma simulação com alguém, apenas é necessário compartilhar o arquivo de configurações gerado pelo método `.save_configs()`.
-
-Ainda, caso seja necessário modificar as configurações salvas antes da execução, digamos dobrar a altura do espaço, podemos fazer assim
+If you need to modify the saved configurations before running, for example, to double the height of the space, you can do the following:
 
 ```python
 configs = ring.run_config.load_configs("<path to configs>")
@@ -285,20 +256,24 @@ sim = ring.Simulation(**configs)
 sim.run()
 ```
 
-# Como coletar dados?
-Para coletar dados, precisamos utilizar a configuração de execução `CollectCfg`. Suas principais configurações são
+# How to Collect Data?
+To collect data, you need to use the `CollectCfg` execution configuration. Its main settings are:
 
-- func: Função que realiza o procedimento de coleta de dados. Sua assinatura é a seguinte:
+- func: The function that performs the data collection procedure. Its signature is as follows:
+
     ```python
     def func_name(sim: ring.Simulation, cfg: Any) -> None
     ```
-    Geralmente, essa função é chamada de pipeline de coletada de dados.
+    This function is usually called the data collection pipeline.
 
-- func_cfg: Configurações que são passadas para func (o parâmetro `cfg` acima).
+- func_cfg: The configurations that are passed to func (the cfg parameter above).
 
-## Exemplo: Simples
-Vamos criar uma função que coleta as posições dos anéis de forma periódica no tempo,
-até o tempo final da simulação. 
+> ℹ️
+>
+> One does not need to provide `func` if `func_cfg` is a `Collector` as explained in the section [Example: Using Collectors](#example-using-collectors).
+
+## Exemple: Simple
+Let's create a function that periodically collects the positions of the rings over time until the end of the simulation.
 
 ```python
 import numpy as np
@@ -308,11 +283,11 @@ from phystem.systems import ring
 from phystem.systems.ring.run_config import CollectDataCfg
 
 def collect_pipeline(sim: ring.Simulation, cfg):
-    # Extraindo objetos de interesse
+    # Extracting objects of interest
     solver = sim.solver
     collect_cfg: CollectDataCfg = sim.run_cfg
     
-    # Pasta onde os dados serão salvos
+    # Folder where the data will be saved
     save_path = collect_cfg.folder_path 
 
     count = 0
@@ -321,40 +296,38 @@ def collect_pipeline(sim: ring.Simulation, cfg):
     while solver.time < collect_cfg.tf:
         solver.update()
 
-        # Realiza a coleta a cada 'cfg["collect_dt"]' unidades de tempo.
+        # Collect data every 'cfg["collect_dt"]' units of time
         if solver.time - collect_last_time > cfg["collect_dt"]:
-            # Ids dos anéis ativos:
-            # Em bordas periódicos isso é desnecessário
-            # e self.solver.rings_ids pode ser utilizado
-            # diretamente.
+            # IDs of active rings:
+            # For periodic boundaries, this is unnecessary
+            # and self.solver.rings_ids can be used directly.
             ring_ids = solver.rings_ids[:solver.num_active_rings]
 
-            # Posições dos anéis
+            # Positions of the rings
             pos = np.array(solver.pos)[ring_ids]
             
-            # Guardando o tempo de coleta
+            # Storing the collection time
             times.append(solver.time)
 
-            # Salvando as posições
+            # Saving the positions
             file_path = save_path / f"pos_{count}.npy"
             np.save(file_path, pos)
             
             count += 1
             collect_last_time = solver.time
     
-    # Salvando o tempo
+    # Saving the collection times
     file_path = save_path / "times.npy"
     np.save(file_path, np.array(times))
 
-    # Salvando as configurações da simulação
+    # Saving the simulation configurations
     sim.save_configs(save_path / "configs")
 ```
-
-Com a função de coleta criada, a instanciação de `CollectCfg` é feita assim
+With the collection function created, the instantiation of `CollectDataCfg` is done as follows:
 
 ```python
 collect_data_cfg = CollectDataCfg(
-    int_cfg=int_cfg, # Configuração criada anteriormente
+    int_cfg=int_cfg, # Configuration created earlier
     tf=10,
     folder_path="./data",
     func=collect_pipeline,
@@ -362,7 +335,7 @@ collect_data_cfg = CollectDataCfg(
 )
 ```
 
-e a execução da simulação é o usual
+and running the simulation is as usual:
 
 ```python
 sim = ring.Simulation(
@@ -375,29 +348,27 @@ sim = ring.Simulation(
 sim.run()
 ```
 
-## Exemplo: Usando coletores
-Existe um coletor que já coleta as posições dos anéis de forma periódica no tempo 
-(para ser mais exato, ele coleta o estado do sistema, que inclui mais do que somente a posição), chamado `SnapshotsCol`, então podemos usá-lo. Ainda, ele já possui a sua pipeline de coleta de dados pronta, dessa forma só precisamos setar as configurações:
+## Example: Using Collectors
+There is a collector that periodically collects the positions of the rings over time (more precisely, it collects the entire system state, which includes more than just the positions), called `SnapshotsCol`. So we can use it. With collectors, you only need to provide `func_cfg` with the respective collector configuration; it is not necessary to pass `func`:
 
 ```python
 from phystem.systems.ring.collectors import SnapshotsCol, SnapshotsColCfg
 
 collect_data_cfg = CollectDataCfg(
-    int_cfg=int_cfg, # Configuração criada anteriormente
+    int_cfg=int_cfg, # Configuration created earlier
     tf=10,
     folder_path="./data",
-    func=SnapshotsCol.pipeline,
     func_cfg=SnapshotsColCfg(
         snaps_dt=1,
     ), 
 )
 ```
 
-Rodando a simulação com essa configuração, vamos obter o mesmo resultado do [Exemplo: Simples](#exemplo-simples), com a adição de mais alguns dados.
+Running the simulation with this configuration will yield the same result as the [Exemple: Simple](#exemple-simple), with the addition of some extra data.
 
 > ℹ️
 >
-> O `SnapshotsCol` vai gerar a seguinte estrutura de arquivos
+> `SnapshotsCol` will generate the following file structure:
 >
 >   
 ```
@@ -408,10 +379,10 @@ data
 ├── data
 ├── config.yaml
 ```
-> Os dados estão em `data/data` e `config.yaml` são as configurações da simulação. Como não configuramos nada sobre auto-salvamento, a pasta `autosave` pode ser ignorada nesse caso. 
+> The data is in `data/data` and `config.yaml` contains the simulation configurations. Since we did not configure anything related to auto-saving, the `autosave` folder can be ignored in this case.
 
-## Como utilizar auto-salvamentos?
-As simulações em geral são bem demoradas, então é interessante criar pontos de salvamento que podem ser restabelecidos em casos de interrupções. Os coletores possuem a configuração `ColAutoSaveCfg`, que quando informada faz com que ocorra o auto-salvamento. Vamos utilizar o `SnapshotsCol` para demostrar esse sistema em ação, a única modificação que precisamos fazer para realizar o auto-salvamento do [Exemplo: Usando coletores](#exemplo-usando-coletores) é a seguinte
+## How to Use Auto-Saves?
+Simulations are generally time-consuming, so it is useful to create save points that can be restored in case of interruptions. Collectors have the `ColAutoSaveCfg` configuration, which, when provided, enables auto-saving. Let's use `SnapshotsCol` to demonstrate this system in action. The only modification needed to enable auto-saving in the [Example: Using Collectors](#example-using-collectors) is as follows:
 
 ```python
 from phystem.systems import ring
@@ -422,7 +393,7 @@ from phystem.systems.ring.collectors import (
 )
 
 collect_data_cfg = ring.run_config.CollectDataCfg(
-    int_cfg=int_cfg, # Configuração criada anteriormente
+    int_cfg=int_cfg, # Configuration created earlier
     tf=10,
     folder_path="./data",
     func=SnapshotsCol.pipeline,
@@ -435,7 +406,8 @@ collect_data_cfg = ring.run_config.CollectDataCfg(
 )
 ```
 
-ou seja, adicionamos a configuração `ColAutoSaveCfg` nas configurações de `SnapshotsColCfg`, fazendo com que o auto-salvamento ocorra a cada 3 unidades de tempo. A simulação pode ser rodada a partir do seguinte arquivo:
+In other words, we add the `ColAutoSaveCfg` configuration to `SnapshotsColCfg`, causing auto-saving to occur every 3 time units. The simulation can be run from the following file:
+
 ```python
 # main.py
 from phystem.systems import ring
@@ -445,7 +417,7 @@ from phystem.systems.ring.collectors import (
     ColAutoSaveCfg,
 )
 
-# Criando as configurações:
+# Creating the configurations:
 #   - creator_cfg 
 #   - dynamic_cfg 
 #   - space_cfg 
@@ -472,13 +444,12 @@ sim = ring.Simulation(
 )
 sim.run()
 ```
-Rode `main.py` e interrompa a execução com `Ctrl-C` antes que ela termine. Para recarregar do último ponto salvo, basta adicionar o parâmetro `checkpoint` em
-`CollectDataCfg`, passando um instância de `CheckpointCfg`, cujo principal argumento
-é a pasta onde está o auto-salvamento, no nosso caso sendo `./data/autosave`. Portanto, `collect_data_cfg` deve ficar assim:
+
+Run `main.py` and interrupt the execution with Ctrl-C before it finishes. To reload from the last saved point, simply add the checkpoint parameter to `CollectDataCfg`, passing an instance of `CheckpointCfg`, whose main argument is the folder where the auto-save is located, in our case `./data/autosave`. Therefore, `collect_data_cfg` should look like this:
 
 ```python
 collect_data_cfg = CollectDataCfg(
-    int_cfg=int_cfg, # Configuração criada anteriormente
+    int_cfg=int_cfg, # Configuration created earlier
     tf=10,
     folder_path="./data",
     func=SnapshotsCol.pipeline,
@@ -491,9 +462,9 @@ collect_data_cfg = CollectDataCfg(
     checkpoint=ring.run_config.CheckpointCfg("./data/autosave"),
 )
 ```
-com essa modificação, rodando `main.py` novamente irá fazer com que a execução continue do último ponto salvo.
+With this modification, running `main.py` again will resume execution from the last saved point.
 
-Alternativamente, é possível carregar o último ponto salvo em um arquivo novo
+Alternatively, you can load the last saved point in a new file:
 
 ```python
 # load_autosave.py
@@ -507,10 +478,10 @@ sim = Simulation(**configs)
 sim.run()
 ```
 
-E necessário setar `run_cfg` antes de rodar, pois essa configuração não é salva. `load_autosave.py` deve estar na mesma pasta de `main.py`.
+It is necessary to set `run_cfg` before running, as this configuration is not saved. `load_autosave.py` should be in the same folder as `main.py`.
 
-## Exemplo: Utilizando vários coletores na mesma simulação
-Suponha que queremos coletar as quantidades arbitrárias Q1, Q2 e Q3 em uma simulação. Elas são completamente independentes. Se criarmos um coletor para cada quantidade, digamos `ColQ1`, `ColQ2` e `ColQ3`, poderíamos prosseguir criando uma pipeline de coleta de dados que os utiliza, mas como isso é algo relativamente comum, existe um gerenciador de coletores que automatiza esse processo. Uma forma de configurar essa simulação de coleta de múltiplos dados é:
+## Example: Using Multiple Collectors in the Same Simulation
+Suppose we want to collect arbitrary quantities Q1, Q2, and Q3 in a simulation. These quantities are completely independent. If we create a collector for each quantity, say `Q1Col`, `Q2Col`, and `Q3Col` (and their respective configurations), we could proceed by writing a data collection pipeline that uses them. However, since this is a relatively common task, there is a collector manager that automates this process. One way to configure such a multi-data collection simulation is:
 
 ```python
 from phystem.systems.ring.collectors import ColManager, ColAutoSaveCfg
@@ -519,21 +490,21 @@ collect_data_cfg = CollectDataCfg(
     int_cfg=int_cfg, 
     tf=tf,
     folder_path="<path to datas directory>",
-    func=ColManager.get_pipeline({
-            "q1": ColQ1,
-            "q2": ColQ2,
-            "q3": ColQ3,
-    }),
-    func_cfg={
-        "q1": "<configs to ColQ1>",
-        "q2": "<configs to ColQ2>",
-        "q3": "<configs to ColQ3>",
-        "autosave_cfg": ColAutoSaveCfg(freq_dt=freq_dt),
-    },
+    func_cfg=ColManagerCfg(
+        cols_cfgs={
+            "q1": Q1ColCfg,
+            "q2": Q2ColCfg,
+            "q3": Q3ColCfg,
+        },
+        autosave_cfg=ColAutoSaveCfg(
+            freq_dt=100,
+            save_data_freq_dt=100,
+        ),
+    ),
 )
 ```
 
-Agora é só rodar a simulação para iniciar o processo de coleta. As vantagens de fazer assim são:
+Now, just run the simulation to start the data collection process. The advantages of this approach are:
 
-- Não é preciso manualmente escrever a pipeline de coleta de dados.
-- O `ColManger` se encarregar de realizar o auto-salvamento de todos os seus coletores de forma sincronizada, e de salvar o estado do sistema somente uma vez. Se a pipeline fosse feita manualmente, além de precisar garantir que todo mundo salva no mesmo instante, cada coletor teria uma cópia do estado do sistema em seu auto-salvamento, o que é redundante.
+- There is no need to manually write the data collection pipeline.
+- `ColManager` takes care of auto-saving all collectors in a synchronized manner and saves the system state only once. If the pipeline were written manually, besides having to ensure that all collectors save at the same time, each collector would have its own copy of the system state in its auto-save, which is redundant.

@@ -3,22 +3,22 @@
 
 # Linux
 
-## Criando um ambiente virtual
-Se for do seu gosto, crie um ambiente virtual, mas essa etapa não é necessária. Além de isolar o ambiente de desenvolvimento (ótimo para evitar problemas com dependências entre múltiplos projetos), a criação de um ambiente virtual permite que o usuário consiga instalar pacotes sem problemas, o que pode acontecer quando você não é administrador.
+## Creating a virtual environment
+If you prefer, create a virtual environment, although this step is not mandatory. In addition to isolating the development environment (great for avoiding dependency issues between multiple projects), creating a virtual environment allows the user to install packages without problems, which can occur when you are not an administrator.
 
-Para criar um ambiente virtual no caminho `<venv path>`, execute
+To create a virtual environment at the path `<venv path>`, execute:
 
 ```bash
 python3 -m venv <venv path>
 ```
 
-Após a criação, é necessário ativar o ambiente
+After creation, you need to activate the environment:
 
 ```bash
 source <venv path>/bin/activate
 ```
 
-Para desativar o ambiente, apenas execute
+To deactivate the environment, simply execute:
 
 ```bash
 deactivate
@@ -26,52 +26,52 @@ deactivate
 
 > ℹ️
 >
-> Para mais informações sobre ambientes virtuais, [clique aqui](https://packaging.python.org/en/latest/tutorials/installing-packages/#creating-virtual-environments).
+> For more information about virtual environments, <a href="https://packaging.python.org/en/latest/tutorials/installing-packages/#creating-virtual-environments" target="_blank">click here</a>.
 
-## Método 1: A partir do git
-A forma mais fácil de instalar o phystem é através do git, que apenas necessita do seguinte comando
+## Method 1: From Git
+The easiest way to install phystem is through Git, which only requires the following command:
 
 ```bash
 pip install -e "git+https://github.com/marcos1561/phystem.git/#egg=phystem"
 ```
 
-Após sua execução, será possível executar `import phystem` em qualquer lugar. Os arquivos do phystem são instalados em:
+After its execution, it will be possible to run `import phystem` anywhere. The phystem files are installed in:
 
-- `<venv path>/src/`: Utilizando ambiente virtual.
-- `<current dir>/src/`: Utilizando instalação global.
+- `<venv path>/src/`: When using a virtual environment.
+- `<current dir>/src/`: When using a global installation.
 
-Se desejável, é possível configurar o local da instalação com a flag `--src`.
+If desired, you can configure the installation location using the `--src` flag.
 
-A flag `-e` é para a instalação ser editável, dessa forma, mudanças nos arquivos do phystem são aplicadas automaticamente, caso contrário, é necessário reinstalar a cada alteração feita.
+The `-e` flag makes the installation editable, so changes to the phystem files are applied automatically. Otherwise, you will need to reinstall after each modification.
 
-## Método 2: Clonando o repositório
-Primeiro clone o repositório
+## Method 2: Cloning the repository
+First, clone the repository:
 
 ```bash
 git clone https://github.com/marcos1561/phystem.git
 ```
 
-em sequência, instale utilizando o `pip`
+Then, install it using `pip`:
 
 ```bash
 pip install -e phystem
 ```
 
-## Testando a instalação
-Para testar a instalação, abra um REPL do python e execute
+## Testing the installation
+To test the installation, open a Python REPL and execute:
 
 ```python
 >>> import phystem.test_install
 ```
 
-Uma janela deve abrir contendo uma animação do sistema implementado no tutorial [Como utilizar o phystem?]({{ 'docs/tutorial_step_by_step.html' | relative_url }}).
+A window should open containing an animation of the system implemented in the tutorial [How to use phystem?]({{ 'docs/tutorial_step_by_step.html' | relative_url }}).
 
-## Compilando o módulo em C++
+## Compiling the C++ module
 {: #installation_compilation}
-Para explorar sistemas que utilizam o módulo feito em C++, é necessário compilar esse código.
-Para isso, apenas execute o script `build.sh` que está localizado na pasta `/src/phystem/cpp/pybind`.
-A compilação pode demorar um pouco. 
+To explore systems that use the module written in C++, it is necessary to compile this code.
+To do so, simply execute the `build.sh` script located in the folder `/src/phystem/cpp/pybind`.
+The compilation may take a while.
 
 ```bash
-source <caminho para o build.sh>/build.sh
+source <path to build.sh>/build.sh
 ```

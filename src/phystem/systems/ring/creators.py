@@ -140,17 +140,17 @@ class Creator(CreatorCore):
 
 
 class RectangularGridCfg:
-    def __init__(self, num_x, num_y, space_x, space_y, dynamic_cfg: RingCfg, ring_radius_k=1) -> None:
+    def __init__(self, num_x, num_y, dynamic_cfg: RingCfg, space_x=0, space_y=0, ring_radius_k=1) -> None:
         '''
-        Cria anéis em grade retangular (centrada na origem) com `num_x` anéis no eixo x e `num_y` no eixo y.
-        O espaçamento entre anéis vizinhos no eixo x é `space_x` e no eixo y `space_y`.
-        A direção das polarizações é aleatória com distribuição uniforme entre [0, 2*pi).
+        Creates rings in a rectangular grid (centered at the origin) with `num_x` rings along the x-axis and `num_y` along the y-axis.
+        The spacing between neighboring rings on the x-axis is `space_x` and on the y-axis is `space_y`.
+        The direction of the polarizations is random with a uniform distribution between [0, 2*pi).
         
         Parameters
         -----------
         ring_radius_k:
-            Constante que multiplica o raio do anel. Dessa forma, é possível iniciar os anéis comprimidos (< 0)
-            ou expandidos (> 1).
+            Constant that multiplies the ring radius. This allows the rings to be initialized compressed (< 0)
+            or expanded (> 1).
         '''
         self.num_x = num_x 
         self.num_y = num_y 
@@ -166,11 +166,11 @@ class RectangularGridCfg:
     @classmethod
     def from_density(cls, num_x, num_y, density, dynamic_cfg: RingCfg):
         '''
-        Configurações que possuem densidade total igual a `density` utilizando
-        o mesmo espaçamento em ambos os eixos, ou seja, `space_x = space_y`.
+        Configurations with total density equal to `density`, using
+        the same spacing on both axes, i.e., `space_x = space_y`.
 
-        OBS: Se o espaçamento necessário for negativo, o estado inicial dos anéis será
-        reescalonado, tal que o espaçamento seja zero.
+        NOTE: If the required spacing is negative, the initial state of the rings will be
+        rescaled so that the spacing is zero.
         '''
         r = dynamic_cfg.get_ring_radius()
         pr = dynamic_cfg.diameter / 2
@@ -182,25 +182,26 @@ class RectangularGridCfg:
             space = 0
             ring_radius_k = (1/(2*density**.5) - pr) / (r - pr)
 
-        return cls(num_x, num_y, space, space, dynamic_cfg, ring_radius_k)
+        return cls(num_x, num_y, dynamic_cfg, space, space, ring_radius_k)
 
     @classmethod
     def from_relative_density(cls, num_x, num_y, rel_density, dynamic_cfg: RingCfg):
         '''
-        Configurações que possuem a densidade relativa setada em `rel_density` utilizando
-        o mesmo espaçamento em ambos os eixos, ou seja, `space_x = space_y`.
+        Configurations with relative density set to `rel_density`, using
+        the same spacing on both axes, i.e., `space_x = space_y`.
 
-        Sendo d a densidade (Nº de anéis por un. de área), a densidade relativa é
+        Let d be the density (number of rings per unit area), the relative density is
 
         d_r = d/d_eq - 1
 
-        em que d_eq é a densidade de equilíbrio (1/área de equilíbrio dos anéis).
+        where d_eq is the equilibrium density (1/equilibrium area of the rings).
         '''
         den_eq = 1 / dynamic_cfg.get_equilibrium_area()
         density = (rel_density + 1) * den_eq
         return cls.from_density(num_x, num_y, density, dynamic_cfg)
 
     def get_space_cfg(self):
+        "Returns a `SpaceCfg` that contains all rings."
         ring_d = 2 * self.real_ring_radius
         height = self.num_y * (ring_d + self.space_y)
         length = self.num_x * (ring_d + self.space_x)

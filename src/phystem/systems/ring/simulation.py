@@ -24,7 +24,7 @@ class Simulation(SimulationCore):
     def __init__(self, creator_cfg: CreatorCfg, dynamic_cfg: RingCfg, space_cfg, run_cfg: RunCfg, other_cfgs: dict = None, rng_seed: float = None) -> None:
         int_cfg: IntegrationCfg = run_cfg.int_cfg
         if int_cfg.update_type is UpdateType.INVAGINATION and type(creator_cfg) != InvaginationCreatorCfg:
-            raise ValueError(f"No mode 'INVAGINATION', a configuração de criação deve ser 'InvaginationCreatorCfg', mas é {type(creator_cfg)}.")
+            raise ValueError(f"In mode 'INVAGINATION', the `creator_cfg` must be of type 'InvaginationCreatorCfg', but is {type(creator_cfg)}.")
         
         super().__init__(creator_cfg, dynamic_cfg, space_cfg, run_cfg, other_cfgs, rng_seed)
 
@@ -243,7 +243,7 @@ class Simulation(SimulationCore):
     @staticmethod
     def configure_ui(run_type: RunType):
         '''
-        Configura as posições e tamanhos dos elementos gráficos.
+        Sets the positions and sizes of the graphical elements.
         '''
         from phystem.gui_phystem.mpl.gui_config import StandardGui
         from phystem.gui_phystem.mpl.geometry import VerticalGeometry

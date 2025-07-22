@@ -1,6 +1,6 @@
 '''
-Exemplo simples de renderização em tempo real para bordas periódicas.
-Esse exemplo cria os anéis nos vértices de uma grade retangular.
+Simple example of real-time rendering for periodic borders.
+This example creates rings at the vertices of a rectangular grid.
 '''
 from phystem.systems import ring
 from phystem.systems.ring.ui.graph import graphs_cfg 
@@ -15,7 +15,6 @@ dynamic_cfg = RingCfg(
     spring_k=14,
     spring_r=0.8,
     
-    area_potencial="target_area",
     k_area=5,
     p0=ring.utils.equilibrium_p0(num_particles) * 1.1,
 
@@ -35,9 +34,9 @@ dynamic_cfg = RingCfg(
 )
 
 creator_cfg = RectangularGridCfg.from_relative_density(
-        num_x=4,
-        num_y=4,
-        rel_density=0,
+        num_x=13,
+        num_y=13,
+        rel_density=-0.2,
         dynamic_cfg=dynamic_cfg,
 )
 
@@ -51,7 +50,7 @@ real_time_cfg = RealTimeCfg(
     int_cfg=IntegrationCfg(
         dt = 0.01,
         particle_win_cfg=ParticleWindows(
-            num_cols=num_cols, num_rows=num_cols,
+            num_cols=num_cols, num_rows=num_rows,
             update_freq=1
         ),
         update_type=UpdateType.PERIODIC_WINDOWS,

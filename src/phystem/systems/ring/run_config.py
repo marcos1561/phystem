@@ -16,22 +16,22 @@ from phystem.core.run_config import (
 
 
 class UpdateType(Enum):
-    '''Modo de integração a ser utilizado pelo solver.
+    '''
+    Integration mode to be used by the solver.
 
-    Variantes:
+    Variants:
     ---------
         PERIODIC_NORMAL:
-            Integração normal, sem mágicas envolvidas, com bordas periódicas.
+            Normal integration, no tricks involved, with periodic boundaries.
         
         PERIODIC_WINDOWS:
-            Técnica das janelas com bordas periódicas.
+            Window technique with periodic boundaries.
 
         STOKES:
-            Geometria do fluxo de Stokes.
+            Stokes flow geometry.
 
         INVAGINATION:
-            Anel feito de anéis com controle das configurações da superfície
-            interna e externa do anel.
+            Ring made of rings with control of the inner and outer surface configurations.
     '''
     PERIODIC_NORMAL = auto()
     PERIODIC_WINDOWS = auto()
@@ -73,8 +73,8 @@ class IntegrationCfg(run_config.IntegrationCfg):
 
     def update_grid_shapes(self, space_cfg: SpaceCfg, dynamic_cfg: RingCfg):
         '''
-        Atualiza o shape das grades das partículas e anéis, dado uma nova configuração
-        do espaço (`space_cfg`), de tal forma que o número de células é o maior possível.
+        Updates the shape of the particle and ring grids, given a new space configuration (`space_cfg`),
+        so that the number of cells is as large as possible.
         '''
         num_cols, num_rows = space_cfg.particle_grid_shape(dynamic_cfg.max_dist)
         num_cols_cm, num_rows_cm = space_cfg.rings_grid_shape(dynamic_cfg.get_ring_radius())

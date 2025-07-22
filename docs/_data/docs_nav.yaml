@@ -1,10 +1,10 @@
-- name: Introdução
+- name: Introduction
   link: /docs/introduction.html
-- name: Instalação
+- name: Installation
   link: /docs/installation.html
-- name: Como utilizar o Phystem?
+- name: How to use Phystem?
   link: /docs/tutorial_step_by_step.html
-- name: Sistemas já implementados
+- name: Systems already implemented
   link: /docs/systems.html
   itens:
     - name: Ring

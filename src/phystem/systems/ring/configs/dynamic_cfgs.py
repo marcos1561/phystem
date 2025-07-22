@@ -11,81 +11,81 @@ class RingCfg:
         area_potencial="target_area", p0: float=None, p0_format: float=None, 
         area0: float=None, k_format: float=None, k_area: float=None) -> None:
         '''
-        Variáveis relacionadas a dinâmica do sistema de anéis.
+        Variables related to the dynamics of the ring system.
 
-        Parâmetros:
+        Parameters:
         -----------
         spring_k:
-            Constante das molas que conectam partículas vizinhas no mesmo anel.
+            Spring constant connecting neighboring particles in the same ring.
         
         spring_r:
-            Comprimento de equilíbrio das molas que conectam partículas vizinhas no mesmo anel.
+            Equilibrium length of the springs connecting neighboring particles in the same ring.
 
         mobility:
-            Constate que multiplica a força resultante na equação de movimento da velocidade.
+            Constant that multiplies the resultant force in the velocity equation of motion.
         
         relax_time:
-            Tempo de relaxamento da polarização em direção a velocidade do anel.
+            Relaxation time of the polarization towards the ring velocity.
         
         vo:
-            Rapidez da velocidade auto-propulsora.
+            Magnitude of the self-propulsion velocity.
         
         trans_diff:
-            Ruído translacional.
+            Translational noise.
         
         rot_diff:
-            Ruído rotacional.
+            Rotational noise.
 
         diameter:
-            Diâmetro efetivo das partículas (Distância em que a a força partícula-partícula é nula).
+            Effective diameter of the particles (distance at which the particle-particle force is zero).
         
         max_dist:
-            Distância máxima de interação entre as partículas.
+            Maximum interaction distance between particles.
         
         rep_force:
-            Constante da força de repulsão entre as partículas.
+            Constant of the repulsive force between particles.
         
         adh_force: 
-            Constante da força de atração entre as partículas.
+            Constant of the attractive force between particles.
         
         k_invasion:
-            Valor do módulo da força anti-invasões. O padrão é "auto", que seta automaticamente
-            esse parâmetro para o menor valor possível capaz de desfazer invasões.
+            Magnitude of the anti-invasion force. Default is "auto", which automatically sets
+            this parameter to the minimum value capable of undoing invasions.
         
         area_potencial: str
-            Tipo de potencial a ser utilizada na área dos anéis. O único que faz sentido é "target_area",
-            os outros apenas estão ai por experimentação.
+            Type of potential to be used for the ring area. The only meaningful value is "target_area",
+            others are included for experimentation.
 
         p0:
-            Flexibilidade da membrana dos anéis. Se for `None`, o parâmetro `area0`
-            deve ser informado.
+            Flexibility of the ring membrane. If `None`, the parameter `area0`
+            must be provided.
 
         area0:
-            Área alvo dos anéis. Essa área é relativa a área do polígono formado 
-            pelos centros das partículas do anel (a área das partículas não é considerada).
-            Se for `None`, o parâmetro `p0` deve ser informado.
+            Target area of the rings. This area is relative to the area of the polygon formed 
+            by the centers of the ring particles (the area of the particles themselves is not considered).
+            If `None`, the parameter `p0` must be provided.
         
         k_area:
-            Constante da força da área.
+            Constant of the area force.
         '''
         valid_potentials = ["target_area", "target_area_and_format", "format", "target_perimeter"]
         if area_potencial not in valid_potentials:
-            raise ValueError(f"Potencial '{area_potencial}' não válido. Os valores permitidos são {valid_potentials}")
+            raise ValueError(f"Potential '{area_potencial}' not  valid. Valid values are: {valid_potentials}")
 
         if p0 is None and area0 is None:
-            raise Exception("Ao menos um dos parâmetros 'p0' e 'area0' devem ser setados.")
+            raise Exception("At least one of the parameters 'p0' and 'area0' should be specified.")
 
         has_format = area_potencial in ["format", "target_area_and_format"]
         has_target_area = area_potencial in ["target_area", "target_area_and_format"]
 
         if has_format:
             if k_format is None:
-                raise ValueError(f"'k_format' deve ser especificado para o potencial '{area_potencial}'.")
+                raise ValueError(f"'k_format' must be specified for the potential '{area_potencial}'.")
             if p0_format is None:
-                raise ValueError(f"'p0_format' deve ser especificado para o potencial '{area_potencial}'.")
+                raise ValueError(f"'p0_format' must be specified for the potential '{area_potencial}'.")
         
         if has_target_area and k_area is None:
-            raise ValueError("'k_area' deve ser especificado para o potencial.")
+            raise ValueError("'k_area' must be specified for the potential.")
 
         if area_potencial == "format":
             area0 = -1
@@ -161,13 +161,12 @@ class RingCfg:
 
     def change_num_particles(self, value: int, fix="p0"):
         '''
-        Muda o número de partículas setado. É possível escolher
-        qual quantidade fica fixa com o parâmetro `fix`, cujos
-        possíveis valores são: ["p0", "area0"]
+        Changes the set number of particles. You can choose which quantity remains fixed with the `fix` parameter,
+        whose possible values are: ["p0", "area0"]
         '''
         fix_names = ["p0", "area0"]
         if fix not in ["p0", "area0"]:
-            raise ValueError(f"fix deve ser um dos valores em {fix_names}")
+            raise ValueError(f"fix must be one of the values in {fix_names}")
 
         self._num_particles = value
         if fix == "p0":
@@ -177,8 +176,8 @@ class RingCfg:
 
     def get_equilibrium_relative_area(self):
         '''
-        Área de equilíbrio do anel relativa a `area0`. Essa área
-        é apenas a área do polígono formado pelos centros das partículas do anel.
+        Equilibrium area of the ring relative to `area0`. This area
+        is only the area of the polygon formed by the centers of the ring particles.
         '''
         return utils.equilibrium_relative_area(
             k_a=self.k_area, k_m=self.spring_k, a0=self.area0,
@@ -187,14 +186,14 @@ class RingCfg:
     
     def get_equilibrium_area(self, consider_particles=True):
         '''
-        Área de equilíbrio do anel.
-        
-        Parâmetros:
+        Equilibrium area of the ring.
+
+        Parameters:
         ----------
         consider_particles:
-            Se for `True`, leva em consideração a área das partículas do anel,
-            caso contrário, a área retornada é a área do polígono formado pelos
-            centros das partículas do anel.
+            If `True`, takes into account the area of the ring particles,
+            otherwise, the returned area is the area of the polygon formed by
+            the centers of the ring particles.
         '''
         area_add = 0
         if consider_particles:
@@ -204,9 +203,9 @@ class RingCfg:
 
     def get_max_k_adh(self, dt, relative_area, x=1):
         '''
-        Retorna o valor máximo de `k_adh` em relação a problemas numéricos. `x` deve
-        ser um valor entre 0 e 1, que será utilizado para definir em qual ponto da região de
-        adesão (que será `x * adh_size`) é feito o cálculo.
+        Returns the maximum value of `k_adh` with respect to numerical issues. `x` should
+        be a value between 0 and 1, which will be used to define at which point in the adhesion region
+        (which will be `x * adh_size`) the calculation is performed.
         '''
         area0 = self.area0
         adh_size = self.max_dist - self.diameter
@@ -215,23 +214,23 @@ class RingCfg:
 
     def get_min_inv_force(self):
         '''
-        Valor mínimo da força de anti-invasão para ganhar da força
-        de repulsão entra as partículas no pior dos casos.
+        Minimum value of the anti-invasion force required to overcome the repulsive force
+        between particles in the worst-case scenario.
         '''
         theta = math.acos((1/2 * self.spring_r / self.diameter)**(1/3)) 
         return self.spring_k * (2 * math.sin(theta) - self.spring_r/self.diameter * math.tan(theta))
 
     def get_area0(self, num_particles):
         '''
-        Retorna a área de equilíbrio da força da área para
-        o dado número de partículas, levando em consideração `p0`.
+        Returns the equilibrium area of the area force for
+        the given number of particles, taking into account `p0`.
         '''
         return (num_particles * self.spring_r / self.p0)**2
     
     def get_p0(self, num_particles):
         '''
-        Retorna o p0 para o dado número de partículas, levando em 
-        consideração `area0`.
+        Returns p0 for the given number of particles, taking into 
+        account `area0`.
         '''
         return num_particles * self.spring_r / self.area0**.5
     
@@ -242,20 +241,20 @@ class RingCfg:
         )
     
     def get_particles_area(self):
-        "Contribuição das partículas na área dos anéis."
+        "Contribution of the particles to the area of the rings."
         return utils.particles_area(
             self.num_particles, self.spring_r, self.diameter,
         )
     
     def ring_spawn_pos(self):
         '''
-        Posições de um anel centrado em x=(0, 0) com área igual
-        a sua área de equilíbrio no formato de um polígono regular.
+        Positions of a ring centered at x=(0, 0) with area equal
+        to its equilibrium area in the shape of a regular polygon.
 
-        Retorno:
+        Returns:
         --------
-        pos: ndarray com shape (num_particles, 2)
-            Posições das partículas do anel.
+        pos: ndarray with shape (num_particles, 2)
+            Positions of the ring particles.
         '''
         return utils.ring_spawn_pos(
             self.k_area, self.spring_k, self.area0, 

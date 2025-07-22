@@ -1,5 +1,5 @@
 '''
-Exemplo simples de renderização em tempo real para o fluxo de stokes.
+Simple example of real-time rendering for Stokes flow.
 '''
 from phystem.systems import ring
 from phystem.systems.ring.ui.graph import graphs_cfg
@@ -15,7 +15,6 @@ dynamic_cfg = RingCfg(
     spring_k=20,
     spring_r=1*0.7,
     
-    area_potencial="target_area",
     k_area=4,
     p0=ring.utils.equilibrium_p0(num_particles),
 

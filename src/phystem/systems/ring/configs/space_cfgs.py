@@ -1,6 +1,6 @@
 class SpaceCfg:
-    "Configurações do espaço na qual as partículas se encontram."
     def __init__(self, height: float, length: float) -> None:
+        "Configurations of the space in which the particles are located."
         self.height = height
         self.length = length
     
@@ -9,7 +9,7 @@ class SpaceCfg:
         self.length = other.length
     
     def max_num_inside(self, ring_diameter):
-        'Número ne anéis que cabem dentro do espaço'
+        'Number of rings that fit inside the space'
         return int(self.height * self.length / ring_diameter**2)
 
     def particle_grid_shape(self, max_dist, frac=1.05):

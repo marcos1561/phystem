@@ -7,12 +7,9 @@ layout: index
 title: Home
 ---
 
-O phystem permite a construção de sistemas físicos complexos, dando uma arquitetura
-pronta que pode ser customizada ou expandida de acordo com o gosto do usuário. 
+Phystem enables the construction of complex physical systems by providing a ready-to-use architecture that can be customized or expanded according to the user's needs.
 
-Também existem sistemas já implementados que podem ser utilizados para exploração. Um sistema geral 
-de coletores de dados e calculadores de quantidades permite exploradores fazerem seu trabalho de forma mais
-eficiente, sendo possível utilizar o que já está disponível ou criar seus próprios coletores/calculadores.
+There are also pre-built systems available for exploration. A general framework for data collectors and quantity calculators allows researchers to work more efficiently, making it possible to use existing tools or create custom collectors and calculators as needed.
 
-* Interessado no projeto? Dê uma olhada na [documentação]({{ "docs/introduction.html" | relative_url }}).
-* Dê uma olhada no que eu ando fazendo no [blog do Phystem]({{ "blog.html" | relative_url }})
+* Interested in the project? Take a look at the [documentation]({{ "docs/introduction.html" | relative_url }}).
+* See what I've been working on in the [Phystem blog]({{ "blog.html" | relative_url }})

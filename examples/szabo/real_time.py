@@ -1,5 +1,5 @@
 '''
-Exemplo simples de execução em tempo real
+Simple example of real-time execution
 '''
 from phystem.systems.szabo.simulation import Simulation
 import phystem.systems.szabo.collect_pipelines as collect_pipelines

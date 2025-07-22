@@ -308,6 +308,7 @@ class ReplayDataCfg(RealTimeCfg):
         super().__init__(int_cfg=init_cfg, num_steps_frame=num_steps_frame, fps=fps, 
                          graph_cfg=graph_cfg, ui_settings=ui_settings)
 
+        self.original_run_cfg = self.system_cfg["run_cfg"]
         self.system_cfg["run_cfg"] = self
 
 class SaveCfg(RunCfg):
