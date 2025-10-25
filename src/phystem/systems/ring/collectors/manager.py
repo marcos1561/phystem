@@ -67,7 +67,7 @@ class ColManager(RingCol):
     def load_autosave(self, use_backup=False):
         r = super().load_autosave(use_backup)
 
-        for col in self.cols.values():
+        for name, col in self.cols.items():
             col.load_autosave()
 
             if abs(col.autosave_last_time - self.autosave_last_time) > 0.01:
