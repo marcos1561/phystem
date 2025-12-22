@@ -380,8 +380,8 @@ class VelocityCalc(Calculator):
             
             coords = self.grid.coords(cms1)
             
-            if vels.shape[0] == 1:
-                vels = self.grid.simplify_shape(vels)
+            # if vels.shape[0] == 1:
+            #     vels = self.grid.simplify_shape(vels)
             
             cell_vel = self.grid.mean_by_cell(vels, coords, end_id=vels_cms.point_num_elements)
 
