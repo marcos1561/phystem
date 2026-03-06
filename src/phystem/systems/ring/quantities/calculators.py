@@ -13,7 +13,7 @@ from phystem.systems import ring
 from phystem.systems.ring import utils
 from .datas import *
 
-import texture as tx
+import textures as tx
 import grids
 
 class CalcAutoSaveCfg:
@@ -880,7 +880,7 @@ class TextureCalc(Calculator):
     data: CmsData
 
     def __init__(self, data: CmsData, root_path: Path, 
-        grid: grids.RegularGrid, links_cfg: tx.links.LinkCfg, 
+        grid: grids.RegularRectGrid, links_cfg: tx.links.LinkCfg, 
         autosave_cfg: CalcAutoSaveCfg=None, exist_ok=False) -> None:
         super().__init__(data, root_path, autosave_cfg, exist_ok)
         self.grid = grid
@@ -929,7 +929,7 @@ class TextureCalc(Calculator):
 
                 self.configs = load_configs(init_kwargs["data"] / settings.system_config_fname)
 
-        grid = grids.RegularGrid.load(path / "grid_configs.yaml")
+        grid = grids.load_grid(path / "grid_configs.yaml")
         texture = np.load(path / "texture.npy")
         
         with open(path / "metadata.yaml") as f:
