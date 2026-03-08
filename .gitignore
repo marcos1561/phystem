@@ -8,6 +8,7 @@ results
 dist
 experiments
 build
+.vscode
 
 random_stuff
 lovelace
@@ -22,3 +23,6 @@ tests/data_test/ring/test/*
 src/phystem/cpp/tests_ui/build
 src/phystem/cpp/tests_ui/ui/build
 src/phystem/cpp/tests_ui/ui/deps
+
+.sync_journal*
+.owncloud*

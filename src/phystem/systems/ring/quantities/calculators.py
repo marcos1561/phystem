@@ -370,6 +370,7 @@ class VelocityCalc(Calculator):
     def calc_quantity(self):
         data = self.data
         cms_vel_data = data.vel
+        self.vel_time = []
         while self.next_file_id < cms_vel_data.num_files:
             vels_cms = cms_vel_data.get_file(self.next_file_id)
             vels_cms.strip()
@@ -385,16 +386,21 @@ class VelocityCalc(Calculator):
             
             cell_vel = self.grid.mean_by_cell(vels, coords, end_id=vels_cms.point_num_elements)
 
+            self.vel_time.append(cell_vel)
+
             self.cell_vel_mean += cell_vel.sum(axis=0)
             self.num_points += cell_vel.shape[0]
             self.next_file_id += 1
 
+        self.vel_time = np.concatenate(self.vel_time, axis=0)
         self.cell_vel_mean = self.grid.remove_cells_out_of_bounds(self.cell_vel_mean)
         self.cell_vel_mean /= self.num_points
         self.metadata["num_points"] = self.num_points
 
     def save_data(self):
         np.save(self.root_path / "vels.npy", self.cell_vel_mean)
+        np.save(self.root_path / "times.npy", self.data.times)
+        np.save(self.root_path / "vels_time.npy", self.vel_time)
 
     @staticmethod
     def load_data(path):
