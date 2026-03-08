@@ -42,12 +42,13 @@ class QuantityCfg(ABC):
         "Nome raiz dos arquivos de dados salvos."
         pass
 
+class CheckType(Enum):
+    only_x = 1
+    only_y = 2
+    both = 3
+    none = 4
+
 class QuantityPosCfg:
-    class CheckType:
-        only_x = auto()
-        only_y = auto()
-        both = auto()
-        none = auto()
 
     def __init__(self, collect_dt: int, xlims: list[float]="all", ylims: list[float]="all", 
         quantities_cfg: list[QuantityCfg]=None, transient_time: float=0,
@@ -92,7 +93,7 @@ class QuantityPosCfg:
         if quantities_cfg is None:
             quantities_cfg = []
 
-        self.check_type = self.CheckType.both
+        self.check_type = CheckType.both
         
         self._xlims = xlims
         self._ylims = ylims
@@ -110,13 +111,13 @@ class QuantityPosCfg:
         check_y = self.ylims != 0
 
         if check_x and check_y:
-            return self.CheckType.both
+            return CheckType.both
         if check_x and not check_y:
-            return self.CheckType.only_x
+            return CheckType.only_x
         if not check_x and check_y:
-            return self.CheckType.only_y
+            return CheckType.only_y
         if not check_x and not check_y:
-            return self.CheckType.none
+            return CheckType.none
 
     @property
     def xlims(self):

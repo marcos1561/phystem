@@ -5,7 +5,7 @@ from phystem.systems.ring.solvers import CppSolver
 from phystem.systems.ring.run_config import RingCfg
 from phystem.systems.ring.configs import SpaceCfg
 
-from .base import QuantityPosState, QuantityPosCfg, QuantityCol
+from .base import QuantityPosState, QuantityPosCfg, QuantityCol, CheckType
 from .collectors import CmsCfg, quantity_cfg_to_col
 
 from phystem.systems.ring.collectors.config_to_col import Configs2Collector
@@ -85,10 +85,10 @@ class QuantityPosCol(RingCol):
         
         cms_active = cms[ids_active]
         
-        if self.col_cfg.check_type is not self.col_cfg.CheckType.none:
-            if self.col_cfg.check_type is self.col_cfg.CheckType.only_x:
+        if self.col_cfg.check_type is not CheckType.none:
+            if self.col_cfg.check_type is CheckType.only_x:
                 mask_in_region = self.mask_x_region(cms_active)
-            elif self.col_cfg.check_type is self.col_cfg.CheckType.only_y:
+            elif self.col_cfg.check_type is CheckType.only_y:
                 mask_in_region = self.mask_y_region(cms_active)
             else:
                 mask_in_region = self.mask_y_region(cms_active) & self.mask_x_region(cms_active)
