@@ -198,7 +198,7 @@ class SimulationCore(ABC):
 
     def run(self):
         if self.run_cfg.id in RunType.REAL_TIME | RunType.SAVE_VIDEO | RunType.REPLAY_DATA:
-            self.run_real_time()
+            return self.run_real_time()
         elif self.run_cfg.id is RunType.COLLECT_DATA:
             self.run_only_sim()
 

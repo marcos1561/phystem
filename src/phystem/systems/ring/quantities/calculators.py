@@ -418,15 +418,17 @@ class VelocityCalc(Calculator):
 
         grid = utils.RegularGrid.load(path / "grid_configs.yaml")
         cell_vel = np.load(path / "vels.npy")
-        vel_time = np.load(path / "vels_time.npy")
-        times = np.load(path / "times.npy")
-        vel_time = np.load(path / "vels_time.npy")
-        times = np.load(path / "times.npy")
         
+        try:
+            times = np.load(path / "times.npy")
+            vel_time = np.load(path / "vels_time.npy")
+        except Exception as e:
+            times = None
+            vel_time = None
+
         with open(path / "metadata.yaml") as f:
             metadata = yaml.unsafe_load(f)
 
-        return VelResults(grid, cell_vel, vel_time, times, metadata)
         return VelResults(grid, cell_vel, vel_time, times, metadata)
 
 # class VelocityCalculator(Calculator):

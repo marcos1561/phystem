@@ -122,8 +122,12 @@ class Simulation(SimulationCore):
         if graph_cfg is None:
             graph_cfg = graphs_cfg.SimpleGraphCfg()
 
-        fig = Figure(dpi=real_time_cfg.ui_settings.dpi, constrained_layout=True, **graph_cfg.figure_kwargs)
-        ax = fig.add_subplot()
+        if real_time_cfg.fig_ax is None:
+            fig = Figure(dpi=real_time_cfg.ui_settings.dpi, constrained_layout=True, **graph_cfg.figure_kwargs)
+            ax = fig.add_subplot()
+        else:
+            fig, ax = real_time_cfg.fig_ax
+
         self.fig = fig
         self.ax = ax
 
@@ -177,7 +181,7 @@ class Simulation(SimulationCore):
                 self.time_it.decorator("graph", particles_graph.update)
 
             self.save_video(fig, update_video)
-        else:
+        elif not self.run_cfg.ignore_app:
             ui_settings = real_time_cfg.ui_settings
             if type(real_time_cfg) is RealTimeCfg:
                 if ui_settings.ControlT is None: 
@@ -191,6 +195,8 @@ class Simulation(SimulationCore):
                     ui_settings.InfoT = ui_components.InfoReplay
             
             self.run_app(fig, update, particles_graph, "Ring", real_time_cfg.ui_settings)
+        
+        return fig, ax
 
     def run_real_time_only_mpl(self):
         from phystem.systems.ring.ui.mpl import graph as mpl_graph

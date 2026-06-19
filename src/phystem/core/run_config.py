@@ -236,7 +236,7 @@ class RealTimeCfg(RunCfg):
     '''Renderização em tempo real da simulação.'''
     id = RunType.REAL_TIME
     def __init__(self, int_cfg: IntegrationCfg, num_steps_frame: int, fps: int=30, graph_cfg=None,
-        ui_settings: config_ui.UiSettings=None, checkpoint: CheckpointCfg=None) -> None:
+        ui_settings: config_ui.UiSettings=None, checkpoint: CheckpointCfg=None, ignore_app=False, fig_ax=None) -> None:
         '''
         Parameters
         -----------
@@ -267,6 +267,8 @@ class RealTimeCfg(RunCfg):
         self.num_steps_frame = num_steps_frame
         self.fps = fps
         self.graph_cfg = graph_cfg
+        self.ignore_app = ignore_app
+        self.fig_ax = fig_ax
 
 class ReplayDataCfg(RealTimeCfg):
     "Reproduz dados salvos utilizando a interface visual da renderização em tempo real."
