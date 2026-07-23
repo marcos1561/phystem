@@ -32,7 +32,7 @@ class ArtistList:
     @property
     def items(self):
         return self._artist_list.values()
-
+    
 class GraphComponent:
     def __init__(self, ax: Axes, show_cfg_name: str):
         self.ax = ax
@@ -416,6 +416,102 @@ class RingForce(CollectionComp):
         # self.artist.set_UVC(U=self.forces[:self.active_rings.num_particles_active, 0], V=self.forces[:self.active_rings.num_particles_active, 1])
 
         self.artist_list.add("main", self.artist)
+
+
+class RingVelPos(CollectionComp):
+    artist: collections.PolyCollection
+    def __init__(self, ax: Axes, active_rings: ActiveRings, solver: CppSolver, show_cfg_name, 
+        vel_color="black", pol_color="gray", norm_vel=False, pol_artist_kwargs=None, vel_artist_kwargs=None):
+        super().__init__(ax, show_cfg_name)
+        self.active_rings = active_rings
+        self.solver = solver
+        self.norm_vel = norm_vel
+        self.data = None
+        self.update_data()
+
+        self.vel = solver.vel
+        self.pol_angle = solver.self_prop_angle
+        self.forces = np.empty((self.active_rings.total_num_particles, 2), dtype=float)
+        
+        if pol_artist_kwargs is None:
+            pol_artist_kwargs = {}
+        if vel_artist_kwargs is None:
+            vel_artist_kwargs = {}
+        
+        self.pol_artist_kwargs = {
+            "color": pol_color, 
+            "scale": 1,
+            "angles": "xy",
+            "scale_units": "xy",
+        }
+        self.vel_artist_kwargs = {
+            "color": vel_color, 
+            "scale": 1,
+            "angles": "xy",
+            "scale_units": "xy",
+        }
+        self.pol_artist_kwargs.update(pol_artist_kwargs)
+        self.vel_artist_kwargs.update(vel_artist_kwargs)
+
+        self.artist_kwargs = {
+            "pol": self.pol_artist_kwargs,
+            "vel": self.vel_artist_kwargs,
+        }
+
+        self.pol_artist = self.ax.quiver(
+                [], [], [], [],   
+                **pol_artist_kwargs
+        )
+        self.vel_artist = self.ax.quiver(
+                [], [], [], [],   
+                **vel_artist_kwargs
+        )
+        self.pol_artist.remove()
+        self.vel_artist.remove()
+        self.artist_list.add("pol", self.pol_artist)
+        self.artist_list.add("vel", self.vel_artist)
+    
+    def update_data(self):
+        pol_angle = np.array(self.solver.self_prop_angle)
+        pol_vec = np.array([np.cos(pol_angle), np.sin(pol_angle)])
+
+        vel_solver = np.array(self.solver.vel)
+        vel = []
+        for v in vel_solver:
+            n = self.active_rings.num_particles_active
+            vel.append(np.sum(v[:n, :], axis=0) / n)
+        vel = np.array(vel).T
+        
+        if self.norm_vel:
+            norm = np.sqrt(vel[0]**2 + vel[1]**2)
+            norm[norm == 0] = 1
+            vel = vel / norm
+        
+        self.data = {
+            "pol": pol_vec[self.active_rings.ids],
+            "vel": vel[self.active_rings.ids],
+        }
+
+    def update_artists(self):
+        self.update_data()
+
+        for name, artist in self.artist_list._artist_list.items():
+            if artist in self.ax.collections:
+                artist.remove()
+            
+            d = self.data[name]
+            artist_kwargs = self.artist_kwargs[name]
+
+            artist = self.ax.quiver(
+                self.active_rings.cms[:, 0], self.active_rings.cms[:, 1], 
+                d[0], d[1],   
+                **artist_kwargs
+            )
+
+            # self.artist.set_offsets(self.active_rings.pos)
+            # self.artist.set_UVC(U=self.forces[:self.active_rings.num_particles_active, 0], V=self.forces[:self.active_rings.num_particles_active, 1])
+
+            self.artist_list.add(name, artist)
 
 class CenterMass(CollectionComp):
     def __init__(self, ax: Axes, active_rings: ActiveRings):

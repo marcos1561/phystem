@@ -236,7 +236,7 @@ class RealTimeCfg(RunCfg):
     '''Renderização em tempo real da simulação.'''
     id = RunType.REAL_TIME
     def __init__(self, int_cfg: IntegrationCfg, num_steps_frame: int, fps: int=30, graph_cfg=None,
-        ui_settings: config_ui.UiSettings=None, checkpoint: CheckpointCfg=None, ignore_app=None, fig_ax=None) -> None:
+        ui_settings: config_ui.UiSettings=None, checkpoint: CheckpointCfg=None, ignore_app=False, fig_ax=None) -> None:
         '''
         Parameters
         -----------

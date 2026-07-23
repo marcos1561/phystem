@@ -407,24 +407,25 @@ class VelocityCalc(Calculator):
         path = Path(path)
         
         class VelResults:
-            def __init__(self, grid: utils.RegularGrid, cell_vel: np.ndarray, vel_time, times, metadata: dict) -> None:
+            def __init__(self, grid: utils.RegularGrid, cell_vel: np.ndarray, vel_time: np.ndarray, times: np.ndarray, metadata: dict) -> None:
                 self.grid = grid
                 self.cell_vel = cell_vel
                 self.metadata = metadata  
+                self.vel_time = vel_time
+                self.times = times
                 self.vel_time = vel_time
                 self.times = times
 
         grid = utils.RegularGrid.load(path / "grid_configs.yaml")
         cell_vel = np.load(path / "vels.npy")
         
-        vel_time = None
-        times = None
         try:
-            vel_time = np.load(path / "vels_time.npy")
             times = np.load(path / "times.npy")
+            vel_time = np.load(path / "vels_time.npy")
         except Exception as e:
-            pass
-        
+            times = None
+            vel_time = None
+
         with open(path / "metadata.yaml") as f:
             metadata = yaml.unsafe_load(f)
 

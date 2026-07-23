@@ -25,6 +25,11 @@ class ParticleCircleCfg:
         self.linewidth = linewidth
         self.match_face_edge_color = match_face_edge_color
 
+class ObstacleCfg:
+    def __init__(self, fill=False, color="black"):
+        self.fill = fill
+        self.color = color
+
 class ForceName(Enum):
     spring = auto()
     vol = auto()
@@ -69,11 +74,11 @@ class SimpleGraphCfg(BaseGraphCfg):
         show_ith_points=False, show_scatter_cont=False,
         show_f_springs=False, show_f_vol=False, show_f_area=False, show_f_total=False,
         show_f_format=False, show_f_obs=False, show_f_invasion=False, show_f_creation=False,
-        show_regions=False, show_cell_area=False, figure_kwargs=None,
+        show_regions=False, show_cell_area=False, show_pol_vel=False, figure_kwargs=None,
         force_color: dict[ForceName, str]=None, circles_cfg: ParticleCircleCfg=None,
         regions_cfg: RegionsCfg=None, cell_area_cfg: CellAreaCfg=None, 
         density_kwargs=None, scatter_kwargs=None, cbar_kwargs=None, ax_kwargs=None,
-        show_particle_info=False,
+        show_particle_info=False, obstacle_cfg: ObstacleCfg=None, pol_vel_kwargs=None,
         cell_shape=None, cpp_is_debug=True) -> None:
         super().__init__(begin_paused, pause_on_high_vel, cpp_is_debug, ax_kwargs, figure_kwargs)
         if cell_shape is None:
@@ -90,6 +95,7 @@ class SimpleGraphCfg(BaseGraphCfg):
         self.show_regions = show_regions
         self.cell_shape = cell_shape
         self.show_cell_area = show_cell_area
+        self.show_pol_vel = show_pol_vel
 
         if circles_cfg is None:
             circles_cfg = ParticleCircleCfg()
@@ -99,10 +105,16 @@ class SimpleGraphCfg(BaseGraphCfg):
         
         if cell_area_cfg is None:
             cell_area_cfg = CellAreaCfg()
+
+        if obstacle_cfg is None:
+            obstacle_cfg = ObstacleCfg()
         
+
         self.circle_cfg = circles_cfg
         self.regions_cfg = regions_cfg
         self.cell_area_cfg = cell_area_cfg
+        self.obstacle_cfg = obstacle_cfg
+        self.pol_vel_kwargs = pol_vel_kwargs
 
         self.show_f_springs = show_f_springs
         self.show_f_vol = show_f_vol
@@ -132,8 +144,9 @@ class SimpleGraphCfg(BaseGraphCfg):
         self.density_kwargs = density_kwargs
         self.cbar_kwargs = cbar_kwargs
         self.scatter_kwargs = scatter_kwargs
-        
-        for name in ["density_kwargs", "cbar_kwargs", "scatter_kwargs"]:
+        self.pol_vel_kwargs = pol_vel_kwargs
+
+        for name in ["density_kwargs", "cbar_kwargs", "scatter_kwargs", "pol_vel_kwargs"]:
             if getattr(self, name) is None:
                 setattr(self, name, {})
 

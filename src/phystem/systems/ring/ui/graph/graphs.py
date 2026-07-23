@@ -15,13 +15,13 @@ from phystem.systems.ring.solvers import CppSolver, SolverReplay
 from phystem.systems.ring.configs import SpaceCfg, StokesCfg
 from phystem.systems.ring import utils, rings_quantities
 
-from .graphs_cfg import SimpleGraphCfg, ReplayGraphCfg, ForceName
+from .graphs_cfg import SimpleGraphCfg, ReplayGraphCfg, ForceName, ObstacleCfg
 from .graph_components import *
 from .active_rings import ActiveRings, CustomColors
 
 class BaseGraph(ABC):
     @abstractmethod
-    def __init__(self, fig: Figure, ax: Axes, solver: CppSolver, sim_configs: dict, graph_cfg=None):
+    def __init__(self, fig: Figure, ax: Axes, solver: CppSolver, sim_configs: dict, graph_cfg=None, obstacle_cfg=None):
         self.fig = fig
         self.ax = ax
         self.solver = solver
@@ -37,7 +37,9 @@ class BaseGraph(ABC):
 
         self.borders()
         if sim_configs["other_cfgs"].get("stokes") is not None:
-            self.stokes_obstacle(zorder=3)
+            if obstacle_cfg is None:
+                obstacle_cfg = ObstacleCfg()
+            self.stokes_obstacle(fill=obstacle_cfg.fill, color=obstacle_cfg.color, zorder=3)
 
         num_particles = self.sim_configs["dynamic_cfg"].num_particles
         self.active_rings = ActiveRings(num_particles, solver)
@@ -65,9 +67,9 @@ class BaseGraph(ABC):
         self.ax.plot([ l, -l], [ h,  h], color="black")
         self.ax.plot([ l, -l], [-h, -h], color="black")
 
-    def stokes_obstacle(self, zorder=3):
+    def stokes_obstacle(self, fill, color, zorder=3):
         stokes_cfg: StokesCfg = self.sim_configs["other_cfgs"]["stokes"] 
-        self.ax.add_patch(Circle((stokes_cfg.obstacle_x, stokes_cfg.obstacle_y), stokes_cfg.obstacle_r, fill=False,  zorder=zorder))
+        self.ax.add_patch(Circle((stokes_cfg.obstacle_x, stokes_cfg.obstacle_y), stokes_cfg.obstacle_r, fill=fill, color=color, zorder=zorder))
 
     def update(self):
         self.active_rings.reset_updated_flags()
@@ -138,7 +140,7 @@ class ParticleInfoWindow(tk.Toplevel):
 
 class MainGraph(BaseGraph):
     def __init__(self, fig: Figure, ax: Axes, solver: CppSolver, sim_configs, graph_cfg: SimpleGraphCfg=None):
-        super().__init__(fig, ax, solver, sim_configs, graph_cfg)
+        super().__init__(fig, ax, solver, sim_configs, graph_cfg, graph_cfg.obstacle_cfg)
         if self.graph_cfg is None:
             self.graph_cfg = SimpleGraphCfg()
 
@@ -175,6 +177,10 @@ class MainGraph(BaseGraph):
             "springs": RingSprings(ax, self.active_rings,
                 solver = self.solver,
                 dynamic_cfg = sim_configs["dynamic_cfg"]),
+            "pol_vel": RingVelPos(ax, self.active_rings,
+                solver=self.solver,
+                show_cfg_name = "show_pol_vel",
+                **graph_cfg.pol_vel_kwargs),
             "f_springs": RingForce(ax, self.active_rings,
                 solver_forces = self.solver.spring_forces,
                 color = self.graph_cfg.force_color[ForceName.spring],

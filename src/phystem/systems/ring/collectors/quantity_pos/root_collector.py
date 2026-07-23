@@ -145,6 +145,7 @@ class QuantityPosCol(RingCol):
         
         for q, s in zip(self.quantities, self.quantities_states):
             q.state = s
+            q.root_state = self.state
 
         return r
 
