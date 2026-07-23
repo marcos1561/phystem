@@ -99,7 +99,7 @@ class RingCfg:
 
         self.spring_k = spring_k
         self.spring_r = spring_r
-        
+
         if p0 is None:
             self.area0 = area0
         else:
