@@ -313,11 +313,30 @@ class ReplayDataCfg(RealTimeCfg):
         self.original_run_cfg = self.system_cfg["run_cfg"]
         self.system_cfg["run_cfg"] = self
 
+class TimeFormatter:
+    def __init__(self, unit_name="", unit_value=1, num_digits=3):
+        self.name = unit_name
+        self.value = unit_value
+        self.num_digits = num_digits
+
+        if self.name is None:
+            self.time_name = "t"
+        else:
+            self.time_name = F"t/{unit_name}"
+
+
+    def get_time_format(self, t):
+        t = t / self.value
+        if self.name is None:
+            return f"$t = {t:.{self.num_digits}f}$"
+        else:
+            return f"$t = {t:.{self.num_digits}f}~{self.name}$"
+
 class SaveCfg(RunCfg):
     "Salva um vídeo da simulação."
     id = RunType.SAVE_VIDEO
     def __init__(self, int_cfg: IntegrationCfg, path:str, fps: int, speed: float=None, duration: float = None, 
-        tf: float = None, ti=0, num_frames=None, graph_cfg=None, dt=None, 
+        tf: float = None, ti=0, num_frames=None, graph_cfg=None, dt=None, fig_ax=None, time_formatter: TimeFormatter = None,
         ui_settings: config_ui.UiSettings=None, checkpoint: CheckpointCfg=None, replay: ReplayDataCfg=None) -> None:  
         '''
         Salva um vídeo da simulação em `path`. Ao menos um dos seguintes parâmetros deve ser 
@@ -358,6 +377,12 @@ class SaveCfg(RunCfg):
                 Configurações para carregar um checkpoint. Caso seja 'none', o checkpoint
                 não é carregado.
         '''
+        self.fig_ax = fig_ax
+
+        self.time_formatter = time_formatter
+        if time_formatter is None:
+            self.time_formatter = TimeFormatter()
+
         if duration is not None and speed is not None:
             tf = speed * duration + ti
         elif tf is not None and duration is not None:
@@ -402,12 +427,16 @@ class SaveCfg(RunCfg):
         self.num_steps_frame = self.t / (self.fps * self.duration * self.dt)
         if self.num_steps_frame < 1:
             self.num_steps_frame = 1
+            self.fps =  self.t / (self.duration * self.dt)
         else:
             self.num_steps_frame = int(round(self.num_steps_frame))
 
-        self.num_frames = int(duration * fps)
+        self.num_frames = int(self.duration * self.fps)
 
         print("num_steps_frame:", self.num_steps_frame)
         print("duration:", self.duration)
         print("t:", self.t)
         print("speed:", self.speed)
+        print("fps:", self.fps)
+        print("dt:", self.dt)
+        print("num_frames:", self.num_frames)

@@ -266,10 +266,10 @@ class SimulationCore(ABC):
 
         frames = save_video_cfg.num_frames
         progress = Progress(frames, 10)
-        ani = animation.FuncAnimation(fig, update, frames=frames)
+        ani = animation.FuncAnimation(fig, update, frames=frames, interval=1/save_video_cfg.fps * 1e3)
 
         self.save_configs(save_video_cfg.path.parent / (save_video_cfg.path.stem + "_config"))
-        ani.save(save_video_cfg.path, fps=save_video_cfg.fps, progress_callback=progress.update)
+        ani.save(save_video_cfg.path, progress_callback=progress.update)
 
         t2 = time.time()
         from datetime import timedelta

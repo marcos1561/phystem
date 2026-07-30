@@ -75,7 +75,8 @@ class SimpleGraphCfg(BaseGraphCfg):
         show_f_springs=False, show_f_vol=False, show_f_area=False, show_f_total=False,
         show_f_format=False, show_f_obs=False, show_f_invasion=False, show_f_creation=False,
         show_regions=False, show_cell_area=False, show_pol_vel=False, figure_kwargs=None,
-        force_color: dict[ForceName, str]=None, circles_cfg: ParticleCircleCfg=None,
+        force_color: dict[ForceName, str]=None, force_kwargs: dict[ForceName, str]=None,
+        circles_cfg: ParticleCircleCfg=None,
         regions_cfg: RegionsCfg=None, cell_area_cfg: CellAreaCfg=None, 
         density_kwargs=None, scatter_kwargs=None, cbar_kwargs=None, ax_kwargs=None,
         show_particle_info=False, obstacle_cfg: ObstacleCfg=None, pol_vel_kwargs=None,
@@ -141,6 +142,15 @@ class SimpleGraphCfg(BaseGraphCfg):
             for fname, color in force_color.items():
                 self.force_color[fname] = color
 
+        self.force_kwargs = {
+            ForceName.spring: {},
+            ForceName.vol: {},
+            ForceName.area: {},
+        }
+        if force_kwargs:
+            for fname, f_kwargs in force_kwargs.items():
+                self.force_kwargs[fname] = f_kwargs
+
         self.density_kwargs = density_kwargs
         self.cbar_kwargs = cbar_kwargs
         self.scatter_kwargs = scatter_kwargs
@@ -155,6 +165,7 @@ class ReplayGraphCfg(BaseGraphCfg):
         x_lims=None, vel_colors=False, circles_cfg: ParticleCircleCfg=None,
         cell_shape=None, figure_kwargs=None, ax_kwargs=None,
         show_scatter=True, show_circles=False, show_density=False, show_cms=False,
+        obstacle_cfg: ObstacleCfg=None,
         begin_paused=False, pause_on_high_vel=False, cpp_is_debug=True) -> None:
         super().__init__(begin_paused, pause_on_high_vel, cpp_is_debug, ax_kwargs, figure_kwargs)
         if cell_shape is None:
@@ -169,6 +180,10 @@ class ReplayGraphCfg(BaseGraphCfg):
         self.x_lims = x_lims
         self.vel_colors =  vel_colors
         self.cell_shape = cell_shape
+
+        if obstacle_cfg is None:
+            obstacle_cfg = ObstacleCfg()
+        self.obstacle_cfg = obstacle_cfg 
 
         if circles_cfg is None:
             circles_cfg = ParticleCircleCfg(color="#1f77b4")

@@ -486,10 +486,10 @@ class RingVelPos(CollectionComp):
             norm = np.sqrt(vel[0]**2 + vel[1]**2)
             norm[norm == 0] = 1
             vel = vel / norm
-        
+
         self.data = {
-            "pol": pol_vec[self.active_rings.ids],
-            "vel": vel[self.active_rings.ids],
+            "pol": pol_vec[:, self.active_rings.ids],
+            "vel": vel[:, self.active_rings.ids],
         }
 
     def update_artists(self):

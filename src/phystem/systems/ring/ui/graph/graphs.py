@@ -184,15 +184,21 @@ class MainGraph(BaseGraph):
             "f_springs": RingForce(ax, self.active_rings,
                 solver_forces = self.solver.spring_forces,
                 color = self.graph_cfg.force_color[ForceName.spring],
-                show_cfg_name = "show_f_springs"),
+                show_cfg_name = "show_f_springs",
+                artist_kwargs = self.graph_cfg.force_kwargs[ForceName.spring],
+                ),
             "f_vol": RingForce(ax, self.active_rings,
                 solver_forces = self.solver.vol_forces,
                 color = self.graph_cfg.force_color[ForceName.vol],
-                show_cfg_name = "show_f_vol"),
+                show_cfg_name = "show_f_vol",
+                artist_kwargs = self.graph_cfg.force_kwargs[ForceName.vol],
+                ),
             "f_area": RingForce(ax, self.active_rings,
                 solver_forces = self.solver.area_forces,
                 color = self.graph_cfg.force_color[ForceName.area],
-                show_cfg_name = "show_f_area"),
+                show_cfg_name = "show_f_area",
+                artist_kwargs = self.graph_cfg.force_kwargs[ForceName.area],
+                ),
             "f_format": RingForce(ax, self.active_rings,
                 solver_forces = self.solver.format_forces,
                 color = self.graph_cfg.force_color[ForceName.format],
@@ -275,7 +281,7 @@ class ReplayGraph(BaseGraph):
         if type(solver) != SolverReplay:
             raise Exception("Tipo de solver incompatível. 'ReplayGraph' apenas aceita 'SolverReplay'.")
 
-        super().__init__(fig, ax, solver, sim_configs, graph_cfg)
+        super().__init__(fig, ax, solver, sim_configs, graph_cfg, graph_cfg.obstacle_cfg)
 
         if self.graph_cfg is None:
             self.graph_cfg = ReplayGraphCfg()

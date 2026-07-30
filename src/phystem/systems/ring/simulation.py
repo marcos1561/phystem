@@ -6,7 +6,7 @@ from phystem.systems.ring.solvers import CppSolver, SolverReplay
 from phystem.systems.ring.creators import CreatorRD, Creator, config_to_creator
 
 from phystem.systems.ring.configs import CreatorCfg, RingCfg, InvaginationCfg, InvaginationCreatorCfg
-from phystem.systems.ring.run_config import IntegrationCfg, UpdateType, RealTimeCfg, RunType, ReplayDataCfg
+from phystem.systems.ring.run_config import IntegrationCfg, UpdateType, RealTimeCfg, RunType, ReplayDataCfg, SaveCfg
 from phystem.core.run_config import RunCfg, CollectDataCfg
 
 from phystem.systems.ring.ui.graph import graph_type
@@ -138,6 +138,7 @@ class Simulation(SimulationCore):
             fig=fig, ax=ax, solver=self.solver, sim_configs=self.configs,
             graph_cfg=graph_cfg
         )
+        self.particles_graph = particles_graph
 
         ## Initialize graphs ###
         # particles_graph.init()
@@ -171,13 +172,15 @@ class Simulation(SimulationCore):
                 self.time_it.decorator("graph", particles_graph.update)
 
         if self.run_cfg.id is RunType.SAVE_VIDEO:
+            save_cfg: SaveCfg = self.run_cfg 
+            time_formatter = save_cfg.time_formatter
             def update_video(frame=None):
                 i = 0
                 while i < real_time_cfg.num_steps_frame:
                     self.time_it.decorator("solver", self.solver.update)
                     i += 1
 
-                ax.set_title(f"t = {self.solver.time:.3f}")
+                ax.set_title(time_formatter.get_time_format(self.solver.time))
                 self.time_it.decorator("graph", particles_graph.update)
 
             self.save_video(fig, update_video)

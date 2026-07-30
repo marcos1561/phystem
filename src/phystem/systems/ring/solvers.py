@@ -262,6 +262,15 @@ class CppSolver:
 
     def mean_vel(self, ring_id: int):
         return self.cpp_solver.mean_vel(ring_id)
+
+    def get_vel_cm(self):
+        ids = self.rings_ids[:self.num_active_rings]
+        vels = np.array(self.vel)[ids]
+        vels_cm = np.sum(vels, axis=1) / vels.shape[1]
+        # vels_cm_norm = np.sum(vels_cm**2, 1)**(1/2)
+        vels_cm_dir = np.arctan2(vels_cm[:, 1], vels_cm[:, 0])
+        # vels_cm_dir = vels_cm / vels_cm_norm[:, None]
+        return vels_cm, vels_cm_dir
     
 class SolverReplay:
     def __init__(self, run_cfg: ReplayDataCfg, num_max_rings, cfg: ReplaySolverCfg=None) -> None:
