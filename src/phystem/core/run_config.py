@@ -53,12 +53,17 @@ def load_configs(path: Path, load_checkpoint_cfgs=False):
     return cfgs
 
 def save_configs(configs: dict, path: Path):
+    configs_to_save = copy.copy(configs)
+    run_cfg = configs_to_save["run_cfg"]
+    if hasattr(run_cfg, "fig_ax"):
+        run_cfg.fig_ax = None
+
     path = Path(path)
     if path.suffix == "":
         path = path.with_suffix(".yaml")
     
     with open(path, "w") as f:
-        yaml.dump(configs, f)
+        yaml.dump(configs_to_save, f)
 
 class RunType(Flag):
     COLLECT_DATA = auto()
@@ -314,23 +319,18 @@ class ReplayDataCfg(RealTimeCfg):
         self.system_cfg["run_cfg"] = self
 
 class TimeFormatter:
-    def __init__(self, unit_name="", unit_value=1, num_digits=3):
-        self.name = unit_name
+    def __init__(self, name="t", unit_name="", unit_value=1, num_digits=3):
+        self.name = name
+        self.unit_name = unit_name
         self.value = unit_value
         self.num_digits = num_digits
 
-        if self.name is None:
-            self.time_name = "t"
-        else:
-            self.time_name = F"t/{unit_name}"
-
-
     def get_time_format(self, t):
         t = t / self.value
-        if self.name is None:
-            return f"$t = {t:.{self.num_digits}f}$"
+        if self.unit_name is None:
+            return f"${self.name} = {t:.{self.num_digits}f}$"
         else:
-            return f"$t = {t:.{self.num_digits}f}~{self.name}$"
+            return f"${self.name} = {t:.{self.num_digits}f}~{self.unit_name}$"
 
 class SaveCfg(RunCfg):
     "Salva um vídeo da simulação."
