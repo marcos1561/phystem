@@ -1,4 +1,9 @@
 from enum import Enum, auto
+from matplotlib import cm
+from matplotlib.colors import Normalize
+import numpy as np
+
+from phystem.systems.ring import utils
 
 class BaseGraphCfg:
     def __init__(self, begin_paused=False, pause_on_high_vel=False, cpp_is_debug=True, 
@@ -160,9 +165,40 @@ class SimpleGraphCfg(BaseGraphCfg):
             if getattr(self, name) is None:
                 setattr(self, name, {})
 
+class RingColorsCfg:
+    cmap = None
+    def __init__(self, cmap=None, colorbar_kwargs=None):
+        if colorbar_kwargs is None:
+            colorbar_kwargs = {}
+        self.colorbar_kwargs = colorbar_kwargs
+        if cmap is not None:
+            self.cmap = cmap
+        
+class RandomColorsCfg(RingColorsCfg):
+    name="random"
+    cmap=cm.tab20
+
+class VelocityColorsCfg(RingColorsCfg):
+    name="vel"
+    def __init__(self, colorbar_kwargs=None):
+        cmap = cm.ScalarMappable(
+            norm=Normalize(-np.pi, np.pi),
+            cmap=utils.roll_segmented_cmap(cm.hsv, amount=0.5),
+        )
+        super().__init__(cmap, colorbar_kwargs)
+
+class AsphericityColorsCfg(RingColorsCfg):
+    name="a"
+    def __init__(self, min=0, max=1, cmap=cm.viridis, colorbar_kwargs=None):
+        cmap = cm.ScalarMappable(
+            norm=Normalize(min, max),
+            cmap=cmap,
+        )
+        super().__init__(cmap, colorbar_kwargs)
+
 class ReplayGraphCfg(BaseGraphCfg):
     def __init__(self, scatter_kwargs=None, density_kwargs=None, colorbar_kwargs=None, 
-        x_lims=None, vel_colors=False, circles_cfg: ParticleCircleCfg=None,
+        x_lims=None, ring_colors_cfg=None, circles_cfg: ParticleCircleCfg=None,
         cell_shape=None, figure_kwargs=None, ax_kwargs=None,
         show_scatter=True, show_circles=False, show_density=False, show_cms=False,
         obstacle_cfg: ObstacleCfg=None,
@@ -170,7 +206,9 @@ class ReplayGraphCfg(BaseGraphCfg):
         super().__init__(begin_paused, pause_on_high_vel, cpp_is_debug, ax_kwargs, figure_kwargs)
         if cell_shape is None:
             cell_shape = [1, 1]
-            
+
+        if ring_colors_cfg is None:
+            ring_colors_cfg = RandomColorsCfg()
 
         self.show_scatter = show_scatter
         self.show_circles = show_circles
@@ -178,7 +216,7 @@ class ReplayGraphCfg(BaseGraphCfg):
         self.show_cms = show_cms
 
         self.x_lims = x_lims
-        self.vel_colors =  vel_colors
+        self.ring_colors_cfg = ring_colors_cfg
         self.cell_shape = cell_shape
 
         if obstacle_cfg is None:
@@ -204,7 +242,10 @@ class ReplayGraphCfg(BaseGraphCfg):
         if colorbar_kwargs is None:
             self.colorbar_kwargs = {}
 
-        if vel_colors:
+        if (
+            type(self.ring_colors_cfg) is str and self.ring_colors_cfg != RandomColorsCfg.name
+            or type(self.ring_colors_cfg) is not RandomColorsCfg
+        ):
             if self.scatter_kwargs.get("c"):
                 del self.scatter_kwargs["c"]
             self.circle_cfg.color = None

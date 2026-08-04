@@ -16,6 +16,8 @@ from phystem.systems.ring.configs import SpaceCfg, StokesCfg
 from phystem.systems.ring import utils, rings_quantities
 
 from .graphs_cfg import SimpleGraphCfg, ReplayGraphCfg, ForceName, ObstacleCfg
+from .graphs_cfg import RandomColorsCfg, VelocityColorsCfg, AsphericityColorsCfg
+from .graph_type import get_ring_colors
 from .graph_components import *
 from .active_rings import ActiveRings, CustomColors
 
@@ -236,30 +238,12 @@ class MainGraph(BaseGraph):
 
         self.update()
 
-class VelocityColor(CustomColors):
-    def __init__(self, solver: SolverReplay, colorbar_kwargs=None):
-        cmap = cm.ScalarMappable(
-            norm=Normalize(-np.pi, np.pi),
-            cmap=utils.roll_segmented_cmap(cm.hsv, amount=0.5),
-        )
-        super().__init__(cmap, colorbar_kwargs)
-        
-        self.solver = solver
-
-        self.update()
-
-    def update(self):
-        _, vel_cm_dir = self.solver.get_vel_cm()
-        self.colors_value = (np.zeros((self.solver.num_particles, vel_cm_dir.size), dtype=np.float32) + vel_cm_dir).T.flatten() 
-        self.colors_rgb = self.cmap.to_rgba(self.colors_value)
-        # return (np.zeros((self.solver.num_particles, vel_cm_dir.size), dtype=np.float32) + vel_cm_dir).T.flatten()
-
 class RandomColor(CustomColors):
-    def __init__(self, solver: SolverReplay, colorbar_kwargs=None) -> None:
-        super().__init__(cm.tab20, colorbar_kwargs)
-        self.solver = solver
+    def __init__(self, cfg: RandomColorsCfg,  solver: SolverReplay) -> None:
+        super().__init__(cfg, solver, to_update=False)
         self.uids_to_color = {}
-        self.possible_values = np.arange(len(self.cmap.colors)) / (len(self.cmap.colors) - 1)
+        print(self.cfg.cmap)
+        self.possible_values = np.arange(len(self.cfg.cmap.colors)) / (len(self.cfg.cmap.colors) - 1)
         self.update()
 
     def update(self):
@@ -274,7 +258,68 @@ class RandomColor(CustomColors):
             colors_values[idx] = color
 
         self.colors_values = colors_values.flatten() 
-        self.colors_rgb = self.cmap(self.colors_values)
+        self.colors_rgb = self.cfg.cmap(self.colors_values)
+
+class VelocityColor(CustomColors):
+    def update(self):
+        _, vel_cm_dir = self.solver.get_vel_cm()
+        self.colors_value = (np.zeros((self.solver.num_particles, vel_cm_dir.size), dtype=np.float32) + vel_cm_dir).T.flatten() 
+        self.colors_rgb = self.cfg.cmap.to_rgba(self.colors_value)
+        # return (np.zeros((self.solver.num_particles, vel_cm_dir.size), dtype=np.float32) + vel_cm_dir).T.flatten()
+
+class AsphericityColor(CustomColors):
+    def update(self):
+        _, _, asphericity = self.gyration_tensor()
+        self.colors_value = np.repeat(asphericity, self.solver.num_particles)
+        self.colors_rgb = self.cfg.cmap.to_rgba(self.colors_value)
+
+        _, vel_cm_dir = self.solver.get_vel_cm()
+        self.colors_value = (np.zeros((self.solver.num_particles, vel_cm_dir.size), dtype=np.float32) + vel_cm_dir).T.flatten() 
+        self.colors_rgb = self.cfg.cmap.to_rgba(self.colors_value)
+
+    def gyration_tensor(self):
+        solver = self.solver
+
+        # Cpp Solver
+        # ids = solver.rings_ids[:solver.num_active_rings]
+        # centers_of_mass = solver.center_mass[ids]
+        # positions = np.array(solver.pos)[ids, :, :]
+        
+        # Replay Solver
+        centers_of_mass = solver.center_mass
+        positions = solver.pos
+
+        # Relative positions:
+        # shape: (N, n, 2)
+        relative_positions = positions - centers_of_mass[:, None, :]
+
+        # R_ab = (1/n) sum_i r_{i,a} r_{i,b}
+        # shape: (N, 2, 2)
+        gyration_tensor = np.einsum(
+            "npi,npj->nij",
+            relative_positions,
+            relative_positions,
+        ) / positions.shape[1]
+
+        # R_g² = Tr(R)
+        radius_squared = np.trace(gyration_tensor, axis1=1, axis2=2)
+        gyration_radius = np.sqrt(np.maximum(radius_squared, 0.0))
+
+        # For a 2x2 tensor:
+        #
+        # A = (lambda_1 - lambda_2)² / (lambda_1 + lambda_2)²
+        #   = 1 - 4 det(R) / Tr(R)²
+        determinant = np.linalg.det(gyration_tensor)
+
+        asphericity = np.zeros_like(radius_squared)
+
+        nonzero = radius_squared > np.finfo(float).eps
+        asphericity[nonzero] = 1.0 - 4.0 * determinant[nonzero] / radius_squared[nonzero]**2
+
+        # Remove small floating-point violations of the theoretical range.
+        asphericity = np.clip(asphericity, 0.0, 1.0)
+
+        return gyration_tensor, gyration_radius, asphericity
 
 class ReplayGraph(BaseGraph):
     def __init__(self, fig: Figure, ax: Axes, solver: SolverReplay, sim_configs: dict, graph_cfg: ReplayGraphCfg=None):
@@ -291,20 +336,29 @@ class ReplayGraph(BaseGraph):
 
         self.ax.set(**self.graph_cfg.ax_kwargs)
 
-        self.active_rings.add_custom_colors(
-            "vel",
-            VelocityColor(solver, graph_cfg.colorbar_kwargs)
-        )
-        self.active_rings.add_custom_colors(
-            "random",
-            RandomColor(solver),
-        )
+        # self.active_rings.add_custom_colors(
+        #     "vel",
+        #     VelocityColor(solver, graph_cfg.colorbar_kwargs)
+        # )
+        # self.active_rings.add_custom_colors(
+        #     "random",
+        #     RandomColor(solver),
+        # )
         
-        if self.graph_cfg.vel_colors:
-            self.active_rings.set_custom_colors("vel")
+        # if self.graph_cfg.vel_colors:
+        #     self.active_rings.set_custom_colors("vel")
+        #     self.active_rings.custom_colors.add_colorbar(ax)
+        # else:
+        #     self.active_rings.set_custom_colors("random")
+        
+        ring_colors = get_ring_colors(graph_cfg.ring_colors_cfg, self.solver)
+        self.active_rings.add_custom_colors(
+            ring_colors.cfg.name,
+            ring_colors
+        )
+        self.active_rings.set_custom_colors(ring_colors.cfg.name)
+        if ring_colors.cfg.name == "vel":
             self.active_rings.custom_colors.add_colorbar(ax)
-        else:
-            self.active_rings.set_custom_colors("random")
 
         self.components: dict[str, GraphComponent] = {
             "scatter": ParticlesScatter(ax, self.active_rings, 

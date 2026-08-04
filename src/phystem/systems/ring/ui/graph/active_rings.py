@@ -10,13 +10,14 @@ from matplotlib.colorbar import Colorbar
 class CustomColors(ABC):
     "Classe base para calcular as cores dos anéis."
     
-    def __init__(self, cmap, colorbar_kwargs=None) -> None:
-        if colorbar_kwargs is None:
-            colorbar_kwargs = {}
-        
-        self.cmap = cmap
-        self.colorbar_kwargs = colorbar_kwargs
+    def __init__(self, cfg, solver, to_update=True) -> None:
+        self.cfg = cfg
+        self.solver = solver
         self.colorbar: Colorbar = None
+        self.colors_value = None
+        self.colors_rgb = None
+        if to_update:
+            self.update()
 
     @abstractmethod
     def update(self):
@@ -25,8 +26,9 @@ class CustomColors(ABC):
 
     def add_colorbar(self, ax: Axes):
         if self.colorbar is None:
-            self.colorbar = ax.figure.colorbar(self.cmap, ax=ax, **self.colorbar_kwargs)
+            self.colorbar = ax.figure.colorbar(self.cfg.cmap, ax=ax, **self.cfg.colorbar_kwargs)
             self.ax = ax
+
     def remove_colorbar(self):
         if self.colorbar is not None:
             self.colorbar.remove()
