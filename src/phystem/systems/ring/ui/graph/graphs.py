@@ -17,7 +17,6 @@ from phystem.systems.ring import utils, rings_quantities
 
 from .graphs_cfg import SimpleGraphCfg, ReplayGraphCfg, ForceName, ObstacleCfg
 from .graphs_cfg import RandomColorsCfg, VelocityColorsCfg, AsphericityColorsCfg
-from .graph_type import get_ring_colors
 from .graph_components import *
 from .active_rings import ActiveRings, CustomColors
 
@@ -238,6 +237,7 @@ class MainGraph(BaseGraph):
 
         self.update()
 
+
 class RandomColor(CustomColors):
     def __init__(self, cfg: RandomColorsCfg,  solver: SolverReplay) -> None:
         super().__init__(cfg, solver, to_update=False)
@@ -320,6 +320,23 @@ class AsphericityColor(CustomColors):
         asphericity = np.clip(asphericity, 0.0, 1.0)
 
         return gyration_tensor, gyration_radius, asphericity
+
+def get_ring_colors(cfg, solver):
+    ring_cfg_to_cls = {
+        RandomColorsCfg: RandomColor,
+        VelocityColorsCfg: VelocityColor,
+        AsphericityColorsCfg: AsphericityColor,
+    }
+    if type(cfg) is str:
+        for Cfg_i in ring_cfg_to_cls.keys():
+            if cfg == Cfg_i.name:
+                cfg = Cfg_i()
+                break
+        else:
+            valid_name = [c.name for c in ring_cfg_to_cls.keys()]
+            raise Exception(f"RingColorCfg name `{cfg}` in not valid. Valid names: {valid_name}")
+    
+    return ring_cfg_to_cls[type(cfg)](cfg, solver)
 
 class ReplayGraph(BaseGraph):
     def __init__(self, fig: Figure, ax: Axes, solver: SolverReplay, sim_configs: dict, graph_cfg: ReplayGraphCfg=None):
