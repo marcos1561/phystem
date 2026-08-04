@@ -273,10 +273,6 @@ class AsphericityColor(CustomColors):
         self.colors_value = np.repeat(asphericity, self.solver.num_particles)
         self.colors_rgb = self.cfg.cmap.to_rgba(self.colors_value)
 
-        _, vel_cm_dir = self.solver.get_vel_cm()
-        self.colors_value = (np.zeros((self.solver.num_particles, vel_cm_dir.size), dtype=np.float32) + vel_cm_dir).T.flatten() 
-        self.colors_rgb = self.cfg.cmap.to_rgba(self.colors_value)
-
     def gyration_tensor(self):
         solver = self.solver
 
